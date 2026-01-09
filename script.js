@@ -133,6 +133,22 @@ if (searchClear) {
   });
 }
 
+  /* ================= WARENKORB INITIALISIERUNG ================= */
+
+  const cartTrigger = Array.from(document.querySelectorAll(".profile"))
+    .find(p => p.textContent.includes("Warenkorb"));
+
+  if (cartTrigger) {
+    cartTrigger.style.cursor = "pointer";
+    cartTrigger.addEventListener("click", openCart);
+  }
+
+  document.getElementById("cartClose")?.addEventListener("click", closeCart);
+  document.getElementById("cartOverlay")?.addEventListener("click", closeCart);
+
+  document.getElementById("btnShowCart")?.addEventListener("click", showCart);
+  document.getElementById("btnTotal")?.addEventListener("click", showTotal);
+
 }
 
 // ---------- Actions ----------
@@ -492,3 +508,149 @@ function escapeHtml(s) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[m]));
 }
+
+// ================= WARENKORB LOGIK =================
+
+const cartPanel = document.getElementById("cartPanel");
+const cartOverlay = document.getElementById("cartOverlay");
+const cartContent = document.getElementById("cartContent");
+const cartTotal = document.getElementById("cartTotal");
+
+
+document.getElementById("cartClose").addEventListener("click", closeCart);
+cartOverlay.addEventListener("click", closeCart);
+
+document.getElementById("btnShowCart").addEventListener("click", showCart);
+document.getElementById("btnTotal").addEventListener("click", showTotal);
+
+function openCart() {
+  cartPanel.classList.add("open");
+  cartOverlay.classList.add("open");
+}
+
+function closeCart() {
+  cartPanel.classList.remove("open");
+  cartOverlay.classList.remove("open");
+}
+
+function showCart() {
+  const sql = `
+    SELECT p.name, p.preis, w.menge
+    FROM warenkorb w
+    JOIN produkte p ON p.id = w.produkt_id;
+  `;
+
+  const res = db.exec(sql);
+  cartTotal.textContent = "";
+
+  if (!res.length || !res[0].values.length) {
+    cartContent.innerHTML = `<p class="cart-hint">Warenkorb ist leer.</p>`;
+    return;
+  }
+
+  const rows = res[0].values;
+  cartContent.innerHTML = rows.map(r => `
+    <div class="cart-row">
+      <strong>${escapeHtml(r[0])}</strong>
+      <span>${Number(r[1]).toFixed(2)} €</span>
+      <span>× ${r[2]}</span>
+    </div>
+  `).join("");
+}
+
+function showTotal() {
+  const sql = `
+    SELECT ROUND(SUM(p.preis * w.menge), 2) AS gesamtpreis
+    FROM warenkorb w
+    JOIN produkte p ON p.id = w.produkt_id;
+  `;
+
+  const res = db.exec(sql);
+
+  if (!res.length || !res[0].values.length || res[0].values[0][0] == null) {
+    cartTotal.textContent = "Gesamtpreis: 0,00 €";
+    return;
+  }
+
+  cartTotal.textContent = `Gesamtpreis: ${res[0].values[0][0].toFixed(2)} €`;
+}
+
+// ================= KONTO & LISTEN LOGIK =================
+
+const accountPanel = document.getElementById("accountPanel");
+const accountOverlay = document.getElementById("accountOverlay");
+const accountResult = document.getElementById("accountResult");
+
+// Trigger: Klick auf "Hallo, Anna – Konto & Listen"
+const accountTrigger = Array.from(document.querySelectorAll(".profile"))
+  .find(p => p.textContent.includes("Konto"));
+
+if (accountTrigger) {
+  accountTrigger.style.cursor = "pointer";
+  accountTrigger.addEventListener("click", openAccount);
+}
+
+document.getElementById("accountClose")?.addEventListener("click", closeAccount);
+accountOverlay?.addEventListener("click", closeAccount);
+
+document.getElementById("btnOrders")?.addEventListener("click", showOrders);
+document.getElementById("btnTopProducts")?.addEventListener("click", showTopProducts);
+
+function openAccount() {
+  closeCart(); // 🔥 wichtig: nie beide Panels gleichzeitig
+  accountPanel.classList.add("open");
+  accountOverlay.classList.add("open");
+}
+
+function closeAccount() {
+  accountPanel.classList.remove("open");
+  accountOverlay.classList.remove("open");
+}
+
+// ---------- Aufgabe 1: Bestellungen ----------
+function showOrders() {
+  const sql = `
+    SELECT p.name, v.anzahl
+    FROM verkäufe v
+    JOIN produkte p ON p.id = v.produkt_id
+    ORDER BY v.anzahl DESC;
+  `;
+
+  const res = db.exec(sql);
+  if (!res.length) {
+    accountResult.innerHTML = `<p class="account-hint">Keine Bestellungen gefunden.</p>`;
+    return;
+  }
+
+  accountResult.innerHTML = res[0].values.map(r => `
+    <div class="account-row">
+      <span>${escapeHtml(r[0])}</span>
+      <strong>× ${r[1]}</strong>
+    </div>
+  `).join("");
+}
+
+// ---------- Aufgabe 2: Top-Produkte ----------
+function showTopProducts() {
+  const sql = `
+    SELECT p.name, SUM(v.anzahl) AS gesamt
+    FROM verkäufe v
+    JOIN produkte p ON p.id = v.produkt_id
+    GROUP BY p.id
+    ORDER BY gesamt DESC;
+  `;
+
+  const res = db.exec(sql);
+  if (!res.length) {
+    accountResult.innerHTML = `<p class="account-hint">Keine Daten vorhanden.</p>`;
+    return;
+  }
+
+  accountResult.innerHTML = res[0].values.map(r => `
+    <div class="account-row">
+      <span>${escapeHtml(r[0])}</span>
+      <strong>${r[1]} Käufe</strong>
+    </div>
+  `).join("");
+}
+

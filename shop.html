@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="style/style.css" />
 </head>
 
+
+
 <body>
 
 <div class="app">
@@ -20,6 +22,62 @@
        LINKER BEREICH – SHOP
        ====================================================== -->
   <div class="browser">
+
+    <!-- ================= WARENKORB SLIDE-IN ================= -->
+<div class="cart-overlay" id="cartOverlay"></div>
+
+
+
+
+<aside class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h3>🛒 Warenkorb</h3>
+    <button class="cart-close" id="cartClose">✕</button>
+  </div>
+
+  <div class="cart-body" id="cartContent">
+    <p class="cart-hint">Warenkorb laden…</p>
+  </div>
+
+  <div class="cart-footer">
+    <button class="cart-btn primary" id="btnShowCart">
+      Warenkorb anzeigen
+    </button>
+    <button class="cart-btn secondary" id="btnTotal">
+      Gesamtpreis anzeigen
+    </button>
+
+    <div class="cart-total" id="cartTotal"></div>
+  </div>
+</aside>
+
+<!-- ================= KONTO & LISTEN PANEL ================= -->
+<div class="account-overlay" id="accountOverlay"></div>
+
+<aside class="account-panel" id="accountPanel">
+  <div class="account-header">
+    <div>
+      <div class="account-title">👤 Konto & Listen</div>
+      <div class="account-user">Anna Müller</div>
+    </div>
+    <button class="account-close" id="accountClose">✕</button>
+  </div>
+
+  <div class="account-body">
+    <button class="account-btn" id="btnOrders">
+      🧾 Meine Bestellungen anzeigen
+    </button>
+
+    <button class="account-btn secondary" id="btnTopProducts">
+      ⭐ Meine Top-Produkte
+    </button>
+
+    <div class="account-result" id="accountResult">
+      <p class="account-hint">Wähle eine Aktion aus.</p>
+    </div>
+  </div>
+</aside>
+
 
     <!-- Fake-Browser-Leiste -->
     <div class="browser-bar">
@@ -159,9 +217,11 @@
   </div>
 </div>
 
+
+
 <!-- Skripte -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<script src="script.js"></script>
+<script src="script.js"></script
 
 </body>
 </html>
