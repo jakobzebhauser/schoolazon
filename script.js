@@ -140,10 +140,10 @@ async function onAction(actionId) {
       break;
 
     case "express":
-      resetFilters();
-      state.fastDelivery = true;
-      setActiveButton("shop", "express");
-      break;
+     resetFilters();
+    state.expressDelivery = true; // ✅ RICHTIG
+    setActiveButton("shop", "express");
+    break;
 
     case "bestseller":
       resetFilters();

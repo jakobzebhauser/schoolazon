@@ -399,7 +399,7 @@ body {
   letter-spacing: 0.02em;
 }
 
-.badge.fast-delivery {
+.badge.express-delivery {
   background: #e6f4ea;
   color: #137333;
   font-size: 11px;
@@ -407,6 +407,8 @@ body {
   padding: 4px 8px;
   border-radius: 6px;
 }
+
+
 
 
 
