@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Schulazon – Lernplattform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Schrift -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style/style.css" />
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- ======================================================
+       LINKER BEREICH – SHOP
+       ====================================================== -->
+  <div class="browser">
+
+    <!-- Fake-Browser-Leiste -->
+    <div class="browser-bar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <div class="url">https://www.schulazon.de</div>
+    </div>
+
+    <div class="shop">
+
+      <!-- ================= HEADER ================= -->
+      <div class="shop-header">
+        <div class="logo">schul<span>azon</span></div>
+
+        <div class="search">
+          <input placeholder="Produkte suchen" disabled />
+          <button disabled>🔍</button>
+        </div>
+
+        <div class="profile">
+          Hallo, Anna<br><strong>Konto & Listen</strong>
+        </div>
+
+        <div class="profile">
+          🛒<br><strong>Warenkorb</strong>
+        </div>
+      </div>
+
+      <!-- ================= SHOP-BAR ================= -->
+      <div class="shop-bar">
+
+        <!-- Aktionen -->
+        <div class="shop-actions left">
+          <button class="shop-btn" data-task="all">Alle Produkte</button>
+          <button class="shop-btn" data-task="today">Expresslieferung</button>
+          <button class="shop-btn" data-task="bestseller">Bestseller</button>
+          <button class="shop-btn" data-task="available">Nur noch wenige auf Lager</button>
+        </div>
+
+        <!-- Sortieren -->
+        <div class="shop-actions right">
+          <div class="sort-dropdown" id="sortDropdown">
+
+            <div class="sort-selected" data-task="sort">
+              ⇅ Sortieren
+              <span class="sort-arrow">▾</span>
+            </div>
+
+            <div class="sort-options">
+              <div class="sort-option" data-task="priceAsc">Preis ↑</div>
+              <div class="sort-option" data-task="priceDesc">Preis ↓</div>
+              <div class="sort-option" data-task="popularity">Beliebtheit</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= INHALT ================= -->
+      <div class="shop-content">
+
+        <!-- Filter -->
+        <aside class="filters">
+
+          <div class="filter-section">
+            <div class="filter-title">Kategorie</div>
+            <button class="filter-btn" data-task="cat-electronics">Elektronik</button>
+            <button class="filter-btn" data-task="cat-household">Haushalt</button>
+            <button class="filter-btn" data-task="cat-sport">Sport</button>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Preis</div>
+            <button class="filter-btn" data-task="price-25">Unter 25 €</button>
+            <button class="filter-btn" data-task="price-50">25–50 €</button>
+            <button class="filter-btn" data-task="price-100">50–100 €</button>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Bewertung</div>
+            <button class="filter-btn" data-task="rating-5">★★★★★</button>
+            <button class="filter-btn" data-task="rating-4">★★★★☆+</button>
+          </div>
+
+          <button class="filter-btn reset" data-task="reset-filters">
+             Filter zurücksetzen
+          </button>
+
+
+
+        </aside>
+
+        <!-- Produkte -->
+        <div class="products"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       RECHTER BEREICH – LAB (PLATZHALTER)
+       ====================================================== -->
+  <div class="lab modern-lab">
+
+    <div class="lab-header">
+      <div class="dev-info">
+        <div class="avatar">👩‍💻</div>
+        <div>
+          <div class="dev-name" id="studentName"></div>
+          <div class="dev-role">Frontend / SQL Developer</div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-label">1 / 16 Aufgaben</div>
+        <div class="progress-bar">
+          <div id="progressFill" style="width: 6%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-body">
+      <div class="empty-state">
+        <h3>🧪 Entwicklungsbereich</h3>
+        <p>Dieser Bereich wird später für SQL-Aufgaben genutzt.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Skripte -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
+

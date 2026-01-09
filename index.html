@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Schulazon – Einstieg</title>
+  <link rel="stylesheet" href="style/schulazon-style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: #f3f4f6;
+      color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(to bottom, #ffffff, #e5e7eb);
+    }
+
+    .start-container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 100%;
+      max-width: 460px;
+      border-top: 8px solid #f08804;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 14px;
+    }
+
+    p {
+      font-size: 15px;
+      color: #444;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #f08804;
+      box-shadow: 0 0 0 2px rgba(240,136,4,0.3);
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      background-color: #febd69;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #f3a847;
+    }
+
+    .tagline {
+      font-size: 14px;
+      margin-top: 18px;
+      color: #666;
+    }
+
+    .footer-note {
+      margin-top: 30px;
+      font-size: 13px;
+      color: #999;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="start-container">
+    <h1>Willkommen bei <span style="color:#f08804">schulazon</span></h1>
+    <p>Hier wirst du Teil des Entwicklerteams – dein Job: Unsere Datenbank steuern!</p>
+
+    <input type="text" id="username" placeholder="Dein Name (z. B. Anna Müller)" />
+
+    <button onclick="startGame()">🧠 Jetzt starten</button>
+
+    <div class="tagline">Du übernimmst die SQL-Steuerung im Hintergrund unseres Shops.</div>
+    <div class="footer-note">Schulprojekt zur SQL‑Einführung · Schuljahr 2026</div>
+  </div>
+
+  <script>
+    function startGame() {
+      const name = document.getElementById("username").value.trim();
+      if (name.length < 2) {
+        alert("Bitte gib einen gültigen Namen ein.");
+        return;
+      }
+
+      // Name speichern – kann später in localStorage genutzt werden
+      localStorage.setItem("schulazon_user", name);
+
+      // Weiterleitung
+      window.location.href = "shop.html";
+    }
+
+    // Auch Enter-Taste aktiviert Start
+    document.getElementById("username").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") startGame();
+    });
+  </script>
+</body>
+</html>
