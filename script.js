@@ -18,6 +18,7 @@ const state = {
   priceMin: null,
   availableOnly: false, // boolean
   expressDelivery: false,  // boolean
+  showProducts: false,
   
 
   // Rating Filter (aggregiert)
@@ -137,13 +138,16 @@ async function onAction(actionId) {
     /* ===== SHOP BAR ===== */
     case "all":
       resetFilters();
-      clearAllActiveButtons()
+      clearAllActiveButtons();
+      state.showProducts = true; 
       setActiveButton("shop", "all");
       break;
+
 
     case "express":
     resetFilters();
     clearAllActiveButtons()
+    state.showProducts = true;
     state.expressDelivery = true; // ✅ RICHTIG
     setActiveButton("shop", "express");
     break;
@@ -151,6 +155,7 @@ async function onAction(actionId) {
     case "bestseller":
       resetFilters();
       clearAllActiveButtons()
+      state.showProducts = true;
       state.bestsellerOnly = true; 
       setActiveButton("shop", "bestseller");
       break;
@@ -159,6 +164,7 @@ async function onAction(actionId) {
     case "available":
       resetFilters();
       clearAllActiveButtons()
+      state.showProducts = true;
       state.availableOnly = true;
       setActiveButton("shop", "available");
       break;
@@ -358,6 +364,21 @@ function buildQuery() {
 async function render() {
   const container = els.products();
   if (!container) return;
+
+  // Beim ersten Laden keine Produkte anzeigen
+
+  if (!state.showProducts) {
+    container.innerHTML = `
+      <div style="
+        padding: 40px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+      ">
+      </div>
+    `;
+    return;
+  }
 
   container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte…</p>`;
 
