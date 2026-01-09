@@ -609,48 +609,28 @@ function closeAccount() {
 
 // ---------- Aufgabe 1: Bestellungen ----------
 function showOrders() {
-  const sql = `
-    SELECT p.name, v.anzahl
-    FROM verkäufe v
-    JOIN produkte p ON p.id = v.produkt_id
-    ORDER BY v.anzahl DESC;
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Für diese Funktion sind aktuell keine Daten verfügbar.
+    </p>
   `;
-
-  const res = db.exec(sql);
-  if (!res.length) {
-    accountResult.innerHTML = `<p class="account-hint">Keine Bestellungen gefunden.</p>`;
-    return;
-  }
-
-  accountResult.innerHTML = res[0].values.map(r => `
-    <div class="account-row">
-      <span>${escapeHtml(r[0])}</span>
-      <strong>× ${r[1]}</strong>
-    </div>
-  `).join("");
 }
+
+function showTopProducts() {
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Diese Funktion wird später implementiert.
+    </p>
+  `;
+}
+
 
 // ---------- Aufgabe 2: Top-Produkte ----------
 function showTopProducts() {
-  const sql = `
-    SELECT p.name, SUM(v.anzahl) AS gesamt
-    FROM verkäufe v
-    JOIN produkte p ON p.id = v.produkt_id
-    GROUP BY p.id
-    ORDER BY gesamt DESC;
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Diese Funktion wird später implementiert.
+    </p>
   `;
-
-  const res = db.exec(sql);
-  if (!res.length) {
-    accountResult.innerHTML = `<p class="account-hint">Keine Daten vorhanden.</p>`;
-    return;
-  }
-
-  accountResult.innerHTML = res[0].values.map(r => `
-    <div class="account-row">
-      <span>${escapeHtml(r[0])}</span>
-      <strong>${r[1]} Käufe</strong>
-    </div>
-  `).join("");
 }
 

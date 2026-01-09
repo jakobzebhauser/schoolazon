@@ -4,99 +4,219 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Schulazon – Einstieg</title>
-  <link rel="stylesheet" href="style/schulazon-style.css">
+
+  <!-- Schrift -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
+    /* ===============================
+       BASIS & HINTERGRUND
+       =============================== */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background: #f3f4f6;
-      color: #111;
+      height: 100vh;
+      font-family: "Roboto", sans-serif;
+      background: radial-gradient(
+        circle at top,
+        #1f2937 0%,
+        #0f172a 55%,
+        #020617 100%
+      );
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: linear-gradient(to bottom, #ffffff, #e5e7eb);
+      color: #e5e7eb;
+      overflow: hidden;
     }
 
+    /* dezente animierte Lichtakzente */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(240,136,4,0.18), transparent 40%),
+        radial-gradient(circle at 70% 80%, rgba(34,197,94,0.12), transparent 45%);
+      animation: floatGlow 14s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes floatGlow {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-60px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* ===============================
+       CONTAINER
+       =============================== */
     .start-container {
-      background: #fff;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      text-align: center;
+      position: relative;
+      z-index: 2;
       width: 100%;
-      max-width: 460px;
-      border-top: 8px solid #f08804;
+      max-width: 480px;
+      padding: 42px 40px 38px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #020617, #020617) padding-box,
+                  linear-gradient(135deg, #f08804, #22c55e) border-box;
+      border: 1.5px solid transparent;
+      box-shadow:
+        0 30px 80px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      text-align: center;
+      animation: fadeInUp 0.8s ease;
     }
 
-    h1 {
-      font-size: 26px;
-      margin-bottom: 14px;
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    p {
+    /* ===============================
+       LOGO
+       =============================== */
+    .logo {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 10px;
+    }
+
+    .logo span {
+      color: #f08804;
+    }
+
+    .subtitle {
       font-size: 15px;
-      color: #444;
+      color: #94a3b8;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ===============================
+       INPUT
+       =============================== */
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 22px;
     }
 
     input[type="text"] {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-top: 20px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 15px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: #e5e7eb;
+      outline: none;
       transition: all 0.2s ease;
     }
 
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #f08804;
-      box-shadow: 0 0 0 2px rgba(240,136,4,0.3);
+    input::placeholder {
+      color: #64748b;
     }
 
+    input:focus {
+      border-color: #f08804;
+      box-shadow: 0 0 0 3px rgba(240,136,4,0.25);
+    }
+
+    /* ===============================
+       BUTTON
+       =============================== */
     button {
-      margin-top: 20px;
-      padding: 12px 24px;
+      width: 100%;
+      padding: 14px 18px;
       font-size: 15px;
-      font-weight: 700;
-      background-color: #febd69;
+      font-weight: 600;
+      border-radius: 14px;
       border: none;
-      border-radius: 8px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      background: linear-gradient(135deg, #f08804, #f3a847);
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        filter 0.15s ease;
     }
 
     button:hover {
-      background-color: #f3a847;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(240,136,4,0.45);
+      filter: brightness(1.05);
     }
 
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 18px rgba(240,136,4,0.35);
+    }
+
+    /* ===============================
+       TEXTE UNTEN
+       =============================== */
     .tagline {
-      font-size: 14px;
-      margin-top: 18px;
-      color: #666;
+      margin-top: 22px;
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.5;
     }
 
     .footer-note {
-      margin-top: 30px;
-      font-size: 13px;
-      color: #999;
+      margin-top: 28px;
+      font-size: 12px;
+      color: #64748b;
     }
 
   </style>
 </head>
 
 <body>
+
   <div class="start-container">
-    <h1>Willkommen bei <span style="color:#f08804">schulazon</span></h1>
-    <p>Hier wirst du Teil des Entwicklerteams – dein Job: Unsere Datenbank steuern!</p>
+    <div class="logo">schul<span>azon</span></div>
 
-    <input type="text" id="username" placeholder="Dein Name (z. B. Anna Müller)" />
+    <div class="subtitle">
+      Willkommen im Entwicklerteam.<br>
+      Du steuerst die SQL-Logik unseres Shops.
+    </div>
 
-    <button onclick="startGame()">🧠 Jetzt starten</button>
+    <div class="input-wrapper">
+      <input
+        type="text"
+        id="username"
+        placeholder="Dein Name (z. B. Anna Müller)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
 
-    <div class="tagline">Du übernimmst die SQL-Steuerung im Hintergrund unseres Shops.</div>
-    <div class="footer-note">Schulprojekt zur SQL‑Einführung · Schuljahr 2026</div>
+    
+    <button onclick="startGame()">
+      🧠 Entwicklungsumgebung starten
+    </button>
+
+    <div class="tagline">
+      Schreibe SQL-Abfragen, teste Features und schalte Shop-Funktionen frei.
+    </div>
+
+    <div class="footer-note">
+      Schulprojekt · SQL-Einführung · Schulazon 2026
+    </div>
   </div>
 
   <script>
@@ -107,17 +227,14 @@
         return;
       }
 
-      // Name speichern – kann später in localStorage genutzt werden
       localStorage.setItem("schulazon_user", name);
-
-      // Weiterleitung
       window.location.href = "shop.html";
     }
 
-    // Auch Enter-Taste aktiviert Start
-    document.getElementById("username").addEventListener("keypress", function(e) {
+    document.getElementById("username").addEventListener("keydown", (e) => {
       if (e.key === "Enter") startGame();
     });
   </script>
+
 </body>
 </html>
