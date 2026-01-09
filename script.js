@@ -13,23 +13,26 @@ let db = null;
 // ---------- UI / State ----------
 const state = {
   // Filter
-  categoryId: null,     // number | null
-  priceMax: null,       // number | null
+  categoryId: null,
+  priceMax: null,
   priceMin: null,
-  availableOnly: false, // boolean
-  expressDelivery: false,  // boolean
+  availableOnly: false,
+  expressDelivery: false,
   showProducts: false,
-  
 
-  // Rating Filter (aggregiert)
-  minRating: null,      // number | null (z.B. 4)
-  exactRating: null,    // number | null (z.B. 5)
+  // Suche
+  searchTerm: "",
+
+  // Rating
+  minRating: null,
+  exactRating: null,
 
   // Sort
-  sort: "popularity",    // "popularity" | "priceAsc" | "priceDesc"
+  sort: "popularity",
 
   bestsellerOnly: false
 };
+
 
 
 // ---------- DOM ----------
@@ -98,6 +101,38 @@ function bindUI() {
 
   // Start: Produkte direkt anzeigen (wie Amazon)
   // optional: state.sort = "popularity" ist bereits gesetzt
+
+
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+const searchBox = searchInput?.closest(".search");
+
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    state.searchTerm = searchInput.value.trim();
+    state.showProducts = true;
+
+    if (searchBox) {
+      searchBox.classList.toggle("has-text", state.searchTerm.length > 0);
+    }
+
+    render();
+  });
+}
+
+if (searchClear) {
+  searchClear.addEventListener("click", () => {
+    state.searchTerm = "";
+    searchInput.value = "";
+
+    if (searchBox) {
+      searchBox.classList.remove("has-text");
+    }
+
+    render();
+  });
+}
+
 }
 
 // ---------- Actions ----------
@@ -312,8 +347,15 @@ function buildQuery() {
     LEFT JOIN verkäufe v ON v.produkt_id = p.id
   `.trim();
 
-  /* ---------- WHERE (einfache Filter) ---------- */
   const where = [];
+
+
+  /* ---------- WHERE (einfache Filter) ---------- */
+  if (state.searchTerm && state.searchTerm.length > 0) {
+  const term = state.searchTerm.replace(/'/g, "''");
+  where.push(`p.name LIKE '%${term}%'`);
+}
+
   if (state.categoryId != null) where.push(`p.kategorie_id = ${Number(state.categoryId)}`);
   if (state.priceMin != null) where.push(`p.preis >= ${Number(state.priceMin)}`);
   if (state.priceMax != null) where.push(`p.preis <= ${Number(state.priceMax)}`);
