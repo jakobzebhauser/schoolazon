@@ -30,6 +30,7 @@ const state = {
   bestsellerOnly: false
 };
 
+
 // ---------- DOM ----------
 const els = {
   products: () => document.querySelector(".products"),
@@ -136,17 +137,20 @@ async function onAction(actionId) {
     /* ===== SHOP BAR ===== */
     case "all":
       resetFilters();
+      clearAllActiveButtons()
       setActiveButton("shop", "all");
       break;
 
     case "express":
-     resetFilters();
+    resetFilters();
+    clearAllActiveButtons()
     state.expressDelivery = true; // ✅ RICHTIG
     setActiveButton("shop", "express");
     break;
 
     case "bestseller":
       resetFilters();
+      clearAllActiveButtons()
       state.bestsellerOnly = true; 
       setActiveButton("shop", "bestseller");
       break;
@@ -154,6 +158,7 @@ async function onAction(actionId) {
 
     case "available":
       resetFilters();
+      clearAllActiveButtons()
       state.availableOnly = true;
       setActiveButton("shop", "available");
       break;
@@ -248,7 +253,9 @@ function resetFilters() {
   state.expressDelivery = false;
   state.minRating = null;
   state.exactRating = null;
+  state.bestsellerOnly = false;
 }
+
 
 
 function closeSort() {
@@ -382,14 +389,17 @@ async function render() {
 
     const isFast = Number(p.liefertage) === 1;
     const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei wählbar
+    const isLowStock = Number(p.lagerbestand) > 0 && Number(p.lagerbestand) <= 5;
 
     container.insertAdjacentHTML("beforeend", `
       <div class="product">
         
       <div class="product-badges">
         ${isBestseller ? `<div class="badge bestseller">Bestseller</div>` : ""}
-        ${isFast ? `<div class="badge express-delivery">Lieferung heute</div>` : ""}
+        ${isFast ? `<div class="badge fast-delivery">Lieferung morgen</div>` : ""}
+        ${isLowStock ? `<div class="badge low-stock">Nur noch wenige auf Lager</div>` : ""}
       </div>
+
 
 
         <div class="product-img"></div>

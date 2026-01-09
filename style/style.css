@@ -379,6 +379,13 @@ body {
   overflow: hidden;
 }
 
+
+
+
+/* ======================================================
+   MODERNE PRODUKT-BADGES (EINHEITLICH)
+   ====================================================== */
+
 .product-badges {
   position: absolute;
   top: 8px;
@@ -389,38 +396,34 @@ body {
   z-index: 5;
 }
 
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;           /* 🔥 modern pill-style */
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Bestseller */
 .badge.bestseller {
   background: linear-gradient(135deg, #111827, #374151);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
+  color: #ffffff;
 }
 
-.badge.express-delivery {
+/* Lieferung morgen (Express) */
+.badge.fast-delivery {
   background: #e6f4ea;
   color: #137333;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
 }
 
-
-
-
-
-.badge.bestseller {
-  background: #c45500;
-  color: white;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  display: inline-block;
+/* Nur noch wenige auf Lager */
+.badge.low-stock {
+  background: #fff7ed;
+  color: #9a3412;
 }
+
 
 
 .delivery {
