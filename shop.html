@@ -10,6 +10,9 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="style/style.css" />
+
+
+
 </head>
 
 
@@ -120,7 +123,7 @@
         <!-- Aktionen -->
         <div class="shop-actions left">
           <button class="shop-btn" data-task="all">Alle Produkte</button>
-          <button class="shop-btn" data-task="express">Expresslieferung</button>
+          <button class="shop-btn" data-task="express" data-locked="true">Expresslieferung</button>
           <button class="shop-btn" data-task="bestseller">Bestseller</button>
           <button class="shop-btn" data-task="available">Nur noch wenige auf Lager</button>
         </div>
@@ -190,32 +193,94 @@
        ====================================================== -->
   <div class="lab modern-lab">
 
-    <div class="lab-header">
-      <div class="dev-info">
-        <div class="avatar">👩‍💻</div>
-        <div>
-          <div class="dev-name" id="studentName"></div>
-          <div class="dev-role">Frontend / SQL Developer</div>
+  <div class="lab-body">
+
+    <section class="sql-lab" id="sqlLab">
+      <div class="sql-lab-top">
+        <div class="sql-lab-title" id="sqlLabTitle">
+          Expresslieferung freischalten <span class="sql-difficulty">●○○</span>
+        </div>
+        <button class="sql-lab-close" id="sqlLabClose">✕</button>
+      </div>
+
+      <div class="sql-lab-sub" id="sqlLabGoal"></div>
+
+      <div class="sql-editor-shell">
+        <div class="sql-editor-header">
+          <span class="sql-pill">SQL</span>
+          <span class="sql-hint-pill" id="sqlTipBtn">💡 Tipp</span>
+        </div>
+
+        <textarea class="sql-editor" id="sqlInput"></textarea>
+
+        <div class="sql-actions">
+          <button class="sql-run" id="sqlRunBtn">▶ Ausführen</button>
         </div>
       </div>
 
-      <div class="progress-container">
-        <div class="progress-label">1 / 16 Aufgaben</div>
-        <div class="progress-bar">
-          <div id="progressFill" style="width: 6%"></div>
+      <div class="sql-tip" id="sqlTipBox"></div>
+
+      <div class="sql-output">
+        <div class="sql-output-title">Output</div>
+        <pre class="sql-output-pre" id="sqlOutput"></pre>
+
+        <div class="sql-success" id="sqlSuccess">
+          <button class="unlock-btn" id="unlockBtn">
+            🔓 Feature freischalten
+          </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="lab-body">
-      <div class="empty-state">
-        <h3>🧪 Entwicklungsbereich</h3>
-        <p>Dieser Bereich wird später für SQL-Aufgaben genutzt.</p>
-      </div>
+    <div class="empty-state" id="labEmpty">
+      <h3>🧪 Entwicklungsbereich</h3>
+      <p>Klicke im Shop auf ein 🔒 Feature, um es per SQL freizuschalten.</p>
     </div>
 
   </div>
 </div>
+
+
+
+  <!-- geschlossen = hidden; geöffnet = Klasse .open per JS -->
+  <section class="sql-lab" id="sqlLab">
+    <div class="sql-lab-top">
+      <div class="sql-lab-title" id="sqlLabTitle"> Expresslieferung freischalten <span class="sql-difficulty">●○○</span> </div>
+      <button class="sql-lab-close" id="sqlLabClose" title="Schließen">✕</button>
+    </div>
+
+    <div class="sql-lab-sub" id="sqlLabGoal">
+      Ziel: —
+    </div>
+
+    <div class="sql-editor-shell">
+      <div class="sql-editor-header">
+        <span class="sql-pill">SQL</span>
+        <span class="sql-hint-pill" id="sqlTipBtn">💡 Tipp</span>
+      </div>
+
+      <!-- Für den Start: textarea (später kannst du Monaco/CodeMirror austauschen) -->
+      <textarea class="sql-editor" id="sqlInput" spellcheck="false"></textarea>
+
+      <div class="sql-actions">
+        <button class="sql-run" id="sqlRunBtn">▶ Ausführen</button>
+      </div>
+    </div>
+
+    <div class="sql-tip" id="sqlTipBox"></div>
+
+    <div class="sql-output">
+      <div class="sql-output-title">Output</div>
+      <pre class="sql-output-pre" id="sqlOutput"></pre>
+      <div class="sql-table" id="sqlTable"></div>
+      <div class="sql-success" id="sqlSuccess"> <button class="unlock-btn" id="unlockBtn"> 🔓 Feature freischalten </button> </div>
+
+    </div>
+  </section>
+
+ 
+</div>
+
 
 
 

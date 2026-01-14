@@ -10,6 +10,9 @@
 
 let db = null;
 
+
+
+
 // ---------- UI / State ----------
 const state = {
   // Filter
@@ -32,6 +35,38 @@ const state = {
 
   bestsellerOnly: false
 };
+
+// ================= TASK SYSTEM (erweiterbar) =================
+const TASKS = {
+  express: {
+    taskId: "express",
+    title: "Expresslieferung freischalten",
+    goal: "Zeige nur Produkte, die morgen geliefert werden (liefertage = 1).",
+    tip: "Tipp: Die relevante Spalte heißt `liefertage` in der Tabelle `produkte`.",
+    starterSql: `SELECT * FROM produkte WHERE liefertage = 1;`,
+
+    // ✅ Validation: Ergebnis muss (ID-Menge) exakt matchen
+    validate: (studentRes, db) => {
+      const idsStudent = extractIdsFromResult(studentRes);
+      const ref = db.exec(`SELECT id FROM produkte WHERE liefertage = 1;`);
+      const idsRef = extractIdsFromResult(ref);
+      return sameSet(idsStudent, idsRef);
+    },
+
+    onUnlock: () => {
+      // Feature-Effekt im Shop: einfach Flag setzen
+      state.expressDelivery = true;
+      state.showProducts = true;
+      render(); // Shop aktualisieren
+    }
+  }
+};
+
+// Locks: Startzustand (später per localStorage speicherbar)
+const LOCKS = {
+  express: true
+};
+
 
 
 
@@ -149,6 +184,8 @@ if (searchClear) {
   document.getElementById("btnShowCart")?.addEventListener("click", showCart);
   document.getElementById("btnTotal")?.addEventListener("click", showTotal);
 
+
+   bindSqlLab();
 }
 
 // ---------- Actions ----------
@@ -184,6 +221,13 @@ function clearAllActiveButtons() {
 
 
 async function onAction(actionId) {
+
+    // Wenn es eine Aufgabe ist und noch gesperrt: Lab öffnen und NICHT normal ausführen
+  if (TASKS[actionId] && LOCKS[actionId]) {
+    openSqlLab(TASKS[actionId]);
+    return;
+  }
+
   switch (actionId) {
 
     /* ===== SHOP BAR ===== */
@@ -502,12 +546,167 @@ async function render() {
   }
 }
 
+// ================= SQL LAB (UI + Execution) =================
+const labEls = {
+  panel: () => document.getElementById("sqlLab"),
+  empty: () => document.getElementById("labEmpty"),
+  title: () => document.getElementById("sqlLabTitle"),
+  goal: () => document.getElementById("sqlLabGoal"),
+  close: () => document.getElementById("sqlLabClose"),
+  input: () => document.getElementById("sqlInput"),
+  run: () => document.getElementById("sqlRunBtn"),
+  out: () => document.getElementById("sqlOutput"),
+  table: () => document.getElementById("sqlTable"),
+  tipBtn: () => document.getElementById("sqlTipBtn"),
+  tipBox: () => document.getElementById("sqlTipBox")
+};
+
+let currentTask = null;
+
+
+function bindSqlLab() {
+  labEls.close()?.addEventListener("click", closeSqlLab);
+  labEls.run()?.addEventListener("click", runStudentSql);
+  labEls.tipBtn()?.addEventListener("click", () => {
+    const box = labEls.tipBox();
+    if (!box) return;
+    box.style.display = box.style.display === "block" ? "none" : "block";
+  });
+}
+
+
+function openSqlLab(task) {
+  currentTask = task;
+
+  labEls.title().textContent = `🔒 ${task.title}`;
+  labEls.goal().textContent = `Ziel: ${task.goal}`;
+
+  labEls.tipBox().textContent = task.tip || "";
+  labEls.tipBox().style.display = "none";
+
+  labEls.input().value = task.starterSql || "";
+
+
+
+
+  labEls.out().textContent = "";
+  labEls.table().innerHTML = "";
+
+  labEls.empty().style.display = "none";
+  labEls.panel().classList.add("open");
+}
+
+function closeSqlLab() {
+  currentTask = null;
+  labEls.panel().classList.remove("open");
+  labEls.empty().style.display = "block";
+}
+
+function runStudentSql() {
+  const out = labEls.out();
+  const successBox = document.getElementById("sqlSuccess");
+  const unlockBtn = document.getElementById("unlockBtn");
+
+  out.textContent = "";
+  successBox.style.display = "none";
+  unlockBtn.classList.remove("enabled");
+
+  try {
+    const sql = labEls.input().value;
+    const res = db.exec(sql);
+
+
+    out.textContent = "Query executed successfully.";
+
+    const ok = currentTask.validate(res, db);
+    if (ok) {
+      successBox.style.display = "block";
+      unlockBtn.classList.add("enabled");
+
+      unlockBtn.onclick = () => {
+        unlockTask(currentTask.taskId);
+        closeSqlLab();
+      };
+    }
+
+  } catch (err) {
+    out.textContent = err.message;
+  }
+}
+
+
+function renderResultTable(execResult) {
+  const target = labEls.table();
+  target.innerHTML = "";
+
+  if (!execResult || !execResult.length) return;
+
+  const { columns, values } = execResult[0];
+  const maxRows = Math.min(values.length, 30);
+
+  let html = `<table><thead><tr>`;
+  for (const c of columns) html += `<th>${escapeHtml(c)}</th>`;
+  html += `</tr></thead><tbody>`;
+
+  for (let i = 0; i < maxRows; i++) {
+    html += `<tr>`;
+    for (const cell of values[i]) html += `<td>${escapeHtml(cell)}</td>`;
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>`;
+  target.innerHTML = html;
+}
+
+function unlockTask(taskId) {
+  LOCKS[taskId] = false;
+
+  // Button entsperren + Effekt
+  document.querySelectorAll(`[data-task="${taskId}"]`).forEach(btn => {
+    btn.removeAttribute("data-locked");
+    btn.classList.add("active"); // kurzer visueller Kick
+    setTimeout(() => btn.classList.remove("active"), 350);
+  });
+
+  // Task-spezifische Aktion
+  TASKS[taskId]?.onUnlock?.();
+}
+
+
 // ---------- Utils ----------
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[m]));
 }
+
+function extractIdsFromResult(execResult) {
+  // execResult ist das Array aus db.exec(...)
+  if (!execResult || !execResult.length) return new Set();
+  const { columns, values } = execResult[0];
+  const idIndex = columns.findIndex(c => String(c).toLowerCase() === "id");
+  if (idIndex === -1) {
+    // Falls kein id dabei: leeres Set => wird failen
+    return new Set();
+  }
+  return new Set(values.map(v => Number(v[idIndex])));
+}
+
+function sameSet(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
+function isSelectOnly(sql) {
+  const s = String(sql || "").trim().toLowerCase();
+  if (!s.startsWith("select")) return false;
+
+  // harte Blockliste (sicher, read-only)
+  const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
+  return !forbidden.some(k => s.includes(k));
+}
+
 
 // ================= WARENKORB LOGIK =================
 
