@@ -1116,6 +1116,91 @@ body {
   box-shadow: 0 20px 40px rgba(34,197,94,0.35);
 }
 
+.sql-difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.difficulty-label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.difficulty-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.difficulty-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+}
+
+.difficulty-dots .dot.active {
+  background: linear-gradient(90deg,#fbbf24,#f59e0b);
+}
+
+.lab-progress {
+  margin-bottom: 20px;
+}
+
+.lab-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.lab-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+.lab-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,#22c55e,#4ade80);
+  transition: width 0.4s ease;
+}
+
+.sql-difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #fbbf24;
+}
+
+.difficulty-label {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.difficulty-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+}
+
+.difficulty-dots .dot.active {
+  background: linear-gradient(90deg,#fbbf24,#f59e0b);
+}
+
+
 
 
 

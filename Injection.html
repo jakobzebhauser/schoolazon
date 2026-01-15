@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Schulazon – Secure Login Lab 🔐</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+
+<style>
+:root {
+  --bg: #0b1020;
+  --panel: #151a33;
+  --accent: #6ae3ff;
+  --danger: #ff6a8a;
+  --ok: #7dffb3;
+  --text: #f2f4ff;
+  --muted: #9aa0ff;
+}
+
+* { box-sizing: border-box; font-family: Inter, system-ui, sans-serif; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #141b44, var(--bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.card {
+  width: 380px;
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  animation: floatIn .8s ease;
+}
+
+@keyframes floatIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+h1 {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+  letter-spacing: .4px;
+}
+
+p.sub {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #0f1430;
+  color: var(--text);
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(106,227,255,.15);
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), #8f8cff);
+  color: #081018;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(106,227,255,.35);
+}
+
+#result {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: .9rem;
+  display: none;
+}
+
+.ok    { background: rgba(125,255,179,.15); color: var(--ok); }
+.fail  { background: rgba(255,106,138,.15); color: var(--danger); }
+
+details {
+  margin-top: 18px;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+code {
+  background: #0f1430;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Schulazon Login 🔐</h1>
+  <p class="sub">Bonus-Level: SQL-Injection (Experten)</p>
+
+  <input id="user" placeholder="Benutzername">
+  <input id="pass" placeholder="Passwort">
+
+  <button onclick="login()">Einloggen</button>
+
+  <div id="result"></div>
+
+  <details>
+    <summary><strong>ℹ️ Was ist SQL-Injection?</strong></summary>
+    <p>
+      SQL-Injection bedeutet, dass Benutzereingaben <em>ungeprüft</em> direkt
+      in eine SQL-Abfrage eingebaut werden.
+      <br><br>
+      Die Datenbank führt dann <strong>mehr SQL aus als gedacht</strong>.
+    </p>
+    <p><strong>Tipp:</strong> Achte darauf, wie <code>WHERE</code>, <code>AND</code> und
+      <code>OR</code> ausgewertet werden.</p>
+  </details>
+</div>
+
+<script>
+let db;
+
+initSqlJs({
+  locateFile: file =>
+    `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${file}`
+}).then(SQL => {
+
+  db = new SQL.Database();
+
+  // Tabelle + Testdaten
+  db.run(`
+    CREATE TABLE nutzer (
+      id INTEGER PRIMARY KEY,
+      name TEXT,
+      passwort TEXT
+    );
+
+    INSERT INTO nutzer (name, passwort) VALUES
+      ('alice', '1234'),
+      ('bob', 'geheim'),
+      ('admin', 'admin');
+  `);
+});
+
+function login() {
+  const name = document.getElementById("user").value;
+  const pass = document.getElementById("pass").value;
+  const result = document.getElementById("result");
+
+  // ❌ ABSICHTLICH UNSICHER (Kern der Aufgabe!)
+  const sql = `
+    SELECT *
+    FROM nutzer
+    WHERE name = '${name}'
+      AND passwort = '${pass}';
+  `;
+
+  try {
+    const res = db.exec(sql);
+
+    if (res.length > 0 && res[0].values.length > 0) {
+      result.className = "ok";
+      result.textContent = "✅ Login erfolgreich!";
+    } else {
+      result.className = "fail";
+      result.textContent = "❌ Login fehlgeschlagen.";
+    }
+  } catch (e) {
+    result.className = "fail";
+    result.textContent = "SQL-Fehler: " + e.message;
+  }
+
+  result.style.display = "block";
+}
+</script>
+
+</body>
+</html>

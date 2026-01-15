@@ -5,289 +5,168 @@
   <title>Schulazon – Lernplattform</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Schrift -->
+  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
   <link rel="stylesheet" href="style/style.css" />
-
-
-
 </head>
 
-
-
 <body>
+  <div class="app">
 
-<div class="app">
+    <!-- ======================================================
+         LINKER BEREICH – SHOP (UNVERÄNDERT)
+         ====================================================== -->
+    <div class="browser">
 
-  <!-- ======================================================
-       LINKER BEREICH – SHOP
-       ====================================================== -->
-  <div class="browser">
+      <!-- ================= WARENKORB ================= -->
+      <div class="cart-overlay" id="cartOverlay"></div>
 
-    <!-- ================= WARENKORB SLIDE-IN ================= -->
-<div class="cart-overlay" id="cartOverlay"></div>
-
-
-
-
-<aside class="cart-panel" id="cartPanel">
-  <div class="cart-header">
-    <h3>🛒 Warenkorb</h3>
-    <button class="cart-close" id="cartClose">✕</button>
-  </div>
-
-  <div class="cart-body" id="cartContent">
-    <p class="cart-hint">Warenkorb laden…</p>
-  </div>
-
-  <div class="cart-footer">
-    <button class="cart-btn primary" id="btnShowCart">
-      Warenkorb anzeigen
-    </button>
-    <button class="cart-btn secondary" id="btnTotal">
-      Gesamtpreis anzeigen
-    </button>
-
-    <div class="cart-total" id="cartTotal"></div>
-  </div>
-</aside>
-
-<!-- ================= KONTO & LISTEN PANEL ================= -->
-<div class="account-overlay" id="accountOverlay"></div>
-
-<aside class="account-panel" id="accountPanel">
-  <div class="account-header">
-    <div>
-      <div class="account-title">👤 Konto & Listen</div>
-      <div class="account-user">Anna Müller</div>
-    </div>
-    <button class="account-close" id="accountClose">✕</button>
-  </div>
-
-  <div class="account-body">
-    <button class="account-btn" id="btnOrders">
-      🧾 Meine Bestellungen anzeigen
-    </button>
-
-    <button class="account-btn secondary" id="btnTopProducts">
-      ⭐ Meine Top-Produkte
-    </button>
-
-    <div class="account-result" id="accountResult">
-      <p class="account-hint">Wähle eine Aktion aus.</p>
-    </div>
-  </div>
-</aside>
-
-
-    <!-- Fake-Browser-Leiste -->
-    <div class="browser-bar">
-      <div class="dot red"></div>
-      <div class="dot yellow"></div>
-      <div class="dot green"></div>
-      <div class="url">https://www.schulazon.de</div>
-    </div>
-
-    <div class="shop">
-
-      <!-- ================= HEADER ================= -->
-      <div class="shop-header">
-        <div class="logo">schul<span>azon</span></div>
-
-        <div class="search">
-         <input
-         id="searchInput"
-          type="search"
-          placeholder="Produkte suchen…"
-          autocomplete="off"
-          spellcheck="false"
-       />
-         <button id="searchClear" title="Suche löschen">✕</button>
+      <aside class="cart-panel" id="cartPanel">
+        <div class="cart-header">
+          <h3>🛒 Warenkorb</h3>
+          <button class="cart-close" id="cartClose">✕</button>
         </div>
 
-
-        <div class="profile">
-          Hallo, Anna<br><strong>Konto & Listen</strong>
+        <div class="cart-body" id="cartContent">
+          <p class="cart-hint">Warenkorb laden…</p>
         </div>
 
-        <div class="profile">
-          🛒<br><strong>Warenkorb</strong>
+        <div class="cart-footer">
+          <button class="cart-btn primary" id="btnShowCart">Warenkorb anzeigen</button>
+          <button class="cart-btn secondary" id="btnTotal">Gesamtpreis anzeigen</button>
+          <div class="cart-total" id="cartTotal"></div>
         </div>
+      </aside>
+
+      <!-- ================= KONTO ================= -->
+      <div class="account-overlay" id="accountOverlay"></div>
+
+      <aside class="account-panel" id="accountPanel">
+        <div class="account-header">
+          <div>
+            <div class="account-title">👤 Konto & Listen</div>
+            <div class="account-user">Anna Müller</div>
+          </div>
+          <button class="account-close" id="accountClose">✕</button>
+        </div>
+
+        <div class="account-body">
+          <button class="account-btn" id="btnOrders">🧾 Meine Bestellungen anzeigen</button>
+          <button class="account-btn secondary" id="btnTopProducts">⭐ Meine Top-Produkte</button>
+
+          <div class="account-result" id="accountResult">
+            <p class="account-hint">Wähle eine Aktion aus.</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================= Fake-Browser-Leiste ================= -->
+      <div class="browser-bar">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+        <div class="url">https://www.schulazon.de</div>
       </div>
 
-      <!-- ================= SHOP-BAR ================= -->
-      <div class="shop-bar">
+      <!-- ================= SHOP ================= -->
+      <div class="shop">
 
-        <!-- Aktionen -->
-        <div class="shop-actions left">
-          <button class="shop-btn" data-task="all">Alle Produkte</button>
-          <button class="shop-btn" data-task="express" data-locked="true">Expresslieferung</button>
-          <button class="shop-btn" data-task="bestseller">Bestseller</button>
-          <button class="shop-btn" data-task="available">Nur noch wenige auf Lager</button>
+        <!-- HEADER -->
+        <div class="shop-header">
+          <div class="logo">schul<span>azon</span></div>
+
+          <div class="search">
+            <input id="searchInput" type="search" placeholder="Produkte suchen…" />
+            <button id="searchClear">✕</button>
+          </div>
+
+          <div class="profile">
+            Hallo, Anna<br><strong>Konto & Listen</strong>
+          </div>
+
+          <div class="profile">
+            🛒<br><strong>Warenkorb</strong>
+          </div>
         </div>
 
-        <!-- Sortieren -->
-        <div class="shop-actions right">
-          <div class="sort-dropdown" id="sortDropdown">
+        <!-- SHOP-BAR -->
+        <div class="shop-bar">
+          <div class="shop-actions left">
+            <button class="shop-btn" data-task="all">Alle Produkte</button>
 
-            <div class="sort-selected" data-task="sort">
-              ⇅ Sortieren
-              <span class="sort-arrow">▾</span>
+            <!-- Expresslieferung jetzt NORMAL -->
+            <button class="shop-btn" data-task="express">Expresslieferung</button>
+
+            <button class="shop-btn" data-task="bestseller">Bestseller</button>
+            <button class="shop-btn" data-task="available">Nur noch wenige auf Lager</button>
+          </div>
+
+          <div class="shop-actions right">
+            <div class="sort-dropdown" id="sortDropdown">
+              <div class="sort-selected">⇅ Sortieren ▾</div>
+              <div class="sort-options">
+                <div class="sort-option" data-task="priceAsc">Preis ↑</div>
+                <div class="sort-option" data-task="priceDesc">Preis ↓</div>
+                <div class="sort-option" data-task="popularity">Beliebtheit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INHALT -->
+        <div class="shop-content">
+          <aside class="filters">
+
+            <div class="filter-section">
+              <div class="filter-title">Kategorie</div>
+              <button class="filter-btn" data-task="cat-electronics">Elektronik</button>
+              <button class="filter-btn" data-task="cat-household">Haushalt</button>
+              <button class="filter-btn" data-task="cat-sport">Sport</button>
             </div>
 
-            <div class="sort-options">
-              <div class="sort-option" data-task="priceAsc">Preis ↑</div>
-              <div class="sort-option" data-task="priceDesc">Preis ↓</div>
-              <div class="sort-option" data-task="popularity">Beliebtheit</div>
+            <div class="filter-section">
+              <div class="filter-title">Preis</div>
+              <button class="filter-btn" data-task="price-25">Unter 25 €</button>
+              <button class="filter-btn" data-task="price-50">25–50 €</button>
+              <button class="filter-btn" data-task="price-100">50–100 €</button>
             </div>
 
-          </div>
+            <div class="filter-section">
+              <div class="filter-title">Bewertung</div>
+              <button class="filter-btn" data-task="rating-5">★★★★★</button>
+              <button class="filter-btn" data-task="rating-4">★★★★☆+</button>
+            </div>
+
+            <button class="filter-btn reset" data-task="reset-filters">
+              Filter zurücksetzen
+            </button>
+          </aside>
+
+          <div class="products"></div>
         </div>
-      </div>
-
-      <!-- ================= INHALT ================= -->
-      <div class="shop-content">
-
-        <!-- Filter -->
-        <aside class="filters">
-
-          <div class="filter-section">
-            <div class="filter-title">Kategorie</div>
-            <button class="filter-btn" data-task="cat-electronics">Elektronik</button>
-            <button class="filter-btn" data-task="cat-household">Haushalt</button>
-            <button class="filter-btn" data-task="cat-sport">Sport</button>
-          </div>
-
-          <div class="filter-section">
-            <div class="filter-title">Preis</div>
-            <button class="filter-btn" data-task="price-25">Unter 25 €</button>
-            <button class="filter-btn" data-task="price-50">25–50 €</button>
-            <button class="filter-btn" data-task="price-100">50–100 €</button>
-          </div>
-
-          <div class="filter-section">
-            <div class="filter-title">Bewertung</div>
-            <button class="filter-btn" data-task="rating-5">★★★★★</button>
-            <button class="filter-btn" data-task="rating-4">★★★★☆+</button>
-          </div>
-
-          <button class="filter-btn reset" data-task="reset-filters">
-             Filter zurücksetzen
-          </button>
-
-
-
-        </aside>
-
-        <!-- Produkte -->
-        <div class="products"></div>
-
       </div>
     </div>
-  </div>
 
-  <!-- ======================================================
-       RECHTER BEREICH – LAB (PLATZHALTER)
-       ====================================================== -->
-  <div class="lab modern-lab">
+    <!-- ======================================================
+         RECHTER BEREICH – MODE CONTAINER
+         ====================================================== -->
+    <div class="lab modern-lab">
+      <div class="lab-body" id="modeContainer">
 
-  <div class="lab-body">
-
-    <section class="sql-lab" id="sqlLab">
-      <div class="sql-lab-top">
-        <div class="sql-lab-title" id="sqlLabTitle">
-          Expresslieferung freischalten <span class="sql-difficulty">●○○</span>
+        <div class="empty-state">
+          <h3>🎓 Schulazon Lernbereich</h3>
+          <p>Wähle einen Modus oder beginne mit einer Aufgabe.</p>
         </div>
-        <button class="sql-lab-close" id="sqlLabClose">✕</button>
+
       </div>
-
-      <div class="sql-lab-sub" id="sqlLabGoal"></div>
-
-      <div class="sql-editor-shell">
-        <div class="sql-editor-header">
-          <span class="sql-pill">SQL</span>
-          <span class="sql-hint-pill" id="sqlTipBtn">💡 Tipp</span>
-        </div>
-
-        <textarea class="sql-editor" id="sqlInput"></textarea>
-
-        <div class="sql-actions">
-          <button class="sql-run" id="sqlRunBtn">▶ Ausführen</button>
-        </div>
-      </div>
-
-      <div class="sql-tip" id="sqlTipBox"></div>
-
-      <div class="sql-output">
-        <div class="sql-output-title">Output</div>
-        <pre class="sql-output-pre" id="sqlOutput"></pre>
-
-        <div class="sql-success" id="sqlSuccess">
-          <button class="unlock-btn" id="unlockBtn">
-            🔓 Feature freischalten
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <div class="empty-state" id="labEmpty">
-      <h3>🧪 Entwicklungsbereich</h3>
-      <p>Klicke im Shop auf ein 🔒 Feature, um es per SQL freizuschalten.</p>
     </div>
 
   </div>
-</div>
 
-
-
-  <!-- geschlossen = hidden; geöffnet = Klasse .open per JS -->
-  <section class="sql-lab" id="sqlLab">
-    <div class="sql-lab-top">
-      <div class="sql-lab-title" id="sqlLabTitle"> Expresslieferung freischalten <span class="sql-difficulty">●○○</span> </div>
-      <button class="sql-lab-close" id="sqlLabClose" title="Schließen">✕</button>
-    </div>
-
-    <div class="sql-lab-sub" id="sqlLabGoal">
-      Ziel: —
-    </div>
-
-    <div class="sql-editor-shell">
-      <div class="sql-editor-header">
-        <span class="sql-pill">SQL</span>
-        <span class="sql-hint-pill" id="sqlTipBtn">💡 Tipp</span>
-      </div>
-
-      <!-- Für den Start: textarea (später kannst du Monaco/CodeMirror austauschen) -->
-      <textarea class="sql-editor" id="sqlInput" spellcheck="false"></textarea>
-
-      <div class="sql-actions">
-        <button class="sql-run" id="sqlRunBtn">▶ Ausführen</button>
-      </div>
-    </div>
-
-    <div class="sql-tip" id="sqlTipBox"></div>
-
-    <div class="sql-output">
-      <div class="sql-output-title">Output</div>
-      <pre class="sql-output-pre" id="sqlOutput"></pre>
-      <div class="sql-table" id="sqlTable"></div>
-      <div class="sql-success" id="sqlSuccess"> <button class="unlock-btn" id="unlockBtn"> 🔓 Feature freischalten </button> </div>
-
-    </div>
-  </section>
-
- 
-</div>
-
-
-
-
-<!-- Skripte -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<script src="script.js"></script
-
+  <!-- Skripte -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
-
