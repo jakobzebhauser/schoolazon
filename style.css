@@ -617,7 +617,8 @@ body {
 }
 
 
-.cart-panel {
+
+.cart-panel{
   position: absolute;
   top: 0;
   right: 0;
@@ -625,27 +626,39 @@ body {
   width: 360px;
   height: 100%;
 
+  display: flex;
+  flex-direction: column;
+
   background: #ffffff;
-  box-shadow: -12px 0 30px rgba(0,0,0,0.25);
   border-left: 1px solid #e5e7eb;
+  box-shadow: -12px 0 30px rgba(0,0,0,0.25);
 
   transform: translateX(100%);
   transition: transform 0.35s cubic-bezier(.4,0,.2,1);
-
-  z-index: 2100; 
+  z-index: 2100;
 }
+
+.cart-panel.open{
+  transform: translateX(0);
+}
+
 
 .cart-panel.open {
   transform: translateX(0);
 }
 
 
-.cart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e5e7eb;
+
+
+.cart-header{
+  flex-shrink: 0;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:18px 20px;
+  border-bottom:1px solid #e5e7eb;
 }
 
 .cart-header h3 {
@@ -666,37 +679,94 @@ body {
   opacity: 1;
 }
 
-.cart-body {
-  flex: 1;
-  padding: 16px 20px;
-  overflow-y: auto;
+.cart-body{
+  flex: 1;                 /* nimmt allen freien Platz */
+  overflow-y: auto;        /* NUR hier scrollen */
+  padding: 8px 20px 12px;
+
+  background: #ffffff;
 }
+
+/* dezente Scrollbar (optional, modern) */
+.cart-body::-webkit-scrollbar{
+  width: 8px;
+}
+.cart-body::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.18);
+  border-radius: 999px;
+}
+
+.cart-footer{
+  flex-shrink: 0;           /* DARF NIE schrumpfen */
+
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cart-total{
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  color: #0f1111;
+}
+
 
 .cart-hint {
   color: #6b7280;
   font-size: 14px;
 }
 
-.cart-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 14px;
+/* ===============================
+   CART ROW – Amazon Style (1 Zeile)
+================================ */
+.cart-row{
+  display:grid;
+  grid-template-columns: 1fr auto auto auto; /* Name | Preis | Menge | Remove */
+  align-items:center;
+  gap:12px;
+
+  padding:12px 0;
+  border-bottom:1px solid #e5e7eb;
+
+  background: transparent;
 }
 
-.cart-row strong {
+.cart-row:last-child{
+  border-bottom:none;
+}
+
+.cart-row strong{
+  font-size:14px;
+  font-weight:500;
+  color:#0f1111;
+}
+
+.cart-row .muted{
+  font-size:12px;
+  color:#6b7280;
+}
+t-row strong {
   font-weight: 500;
 }
 
-.cart-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.cart-footer{
+  flex-shrink:0;         
+  padding:14px 20px;
+
+  border-top:1px solid #e5e7eb;
+  background:#ffffff;
+
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
+
 
 .cart-btn {
   border-radius: 10px;
@@ -1199,6 +1269,268 @@ body {
 .difficulty-dots .dot.active {
   background: linear-gradient(90deg,#fbbf24,#f59e0b);
 }
+
+
+/* ===============================
+   CART: Badge + Icon
+================================ */
+.cart-icon{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.cart-badge{
+  position:absolute;
+  top:-7px;
+  right:-10px;
+  min-width:18px;
+  height:18px;
+  padding:0 6px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(135deg, #ff5c7a, #ffb86b);
+  color:#0a0c18;
+  box-shadow: 0 8px 20px rgba(255,92,122,.25);
+}
+
+/* ===============================
+   PRODUCT: Add-to-cart button
+   (bottom placement, clean & modern)
+================================ */
+
+.product{
+  position: relative;
+  padding-bottom: 44px; /* Platz für Button unten */
+}
+
+/* Button – Grundzustand */
+.add-cart-btn{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:12px;
+
+  height:26px;
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+
+  background:#111827;          /* ruhig, nicht grell */
+  color:#ffffff;
+
+  font-size:11px;              /* wie Bestseller-Badge */
+  font-weight:600;
+  letter-spacing:.01em;
+
+  cursor:pointer;
+  z-index:10;
+
+  /* Browser-Defaults killen */
+  appearance:none;
+  -webkit-appearance:none;
+  border:none;
+  outline:none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* nur bei Hover sichtbar */
+  opacity:0;
+  pointer-events:none;
+  transform: translateY(6px) scale(.96);
+
+  transition:
+    opacity .18s ease,
+    transform .18s cubic-bezier(.2,.8,.2,1),
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+/* Sichtbar bei Hover auf Produkt */
+.product:hover .add-cart-btn{
+  opacity:1;
+  pointer-events:auto;
+  transform: translateY(0) scale(1);
+}
+
+/* Icon */
+.add-cart-btn svg{
+  width:12px;
+  height:12px;
+  opacity:.9;
+}
+
+/* Hover – subtil & hochwertig (kein Orange) */
+.add-cart-btn:hover{
+  background:#1f2937;
+  box-shadow: 0 6px 18px rgba(0,0,0,.28);
+}
+
+/* Click – Micro-Feedback */
+.add-cart-btn:active{
+  transform: scale(.94);
+}
+
+/* Fokus neutral */
+.add-cart-btn:focus,
+.add-cart-btn:focus-visible{
+  outline:none;
+  box-shadow:none;
+}
+
+/* Subtiler Pulse beim Klick */
+.add-cart-btn::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  opacity:0;
+  transform: scale(.9);
+  background: radial-gradient(
+    circle at center,
+    rgba(255,255,255,.35),
+    transparent 65%
+  );
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+.add-cart-btn.ripple::after{
+  opacity:1;
+  transform: scale(1.15);
+}
+
+
+/* ===============================
+   Toast
+================================ */
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%) translateY(30px);
+  opacity: 0;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(20,24,51,.85);
+  border: 1px solid rgba(255,255,255,.10);
+  color: #f2f4ff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  transition: opacity .18s ease, transform .18s ease;
+  font-size: 13px;
+}
+
+.toast.show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===============================
+   CART: Modern Remove Button
+================================ */
+
+.cart-remove{
+  border:none;
+  background:none;
+
+  padding:0;
+  margin-left:6px;
+
+  font-size:12px;
+  color:#007185;              /* Amazon-Blau */
+  cursor:pointer;
+
+  text-decoration:none;
+  white-space:nowrap;
+
+  transition: color .12s ease;
+}
+
+.cart-remove:hover{
+  color:#c7511f;              /* Amazon-Hover-Orange */
+  text-decoration:underline;
+}
+
+.cart-remove:active{
+  color:#a23c12;
+}
+
+/* Fokus sauber */
+.cart-remove:focus,
+.cart-remove:focus-visible{
+  outline:none;
+}
+
+
+
+/* ===============================
+   Add-to-cart: STRONG click feedback
+================================ */
+
+/* Deutliches Press-Gefühl */
+.add-cart-btn:active{
+  transform: translateY(2px) scale(.90);
+}
+
+/* Klick-Glow (stärker, aber dunkel) */
+.add-cart-btn.click{
+  box-shadow:
+    0 0 0 3px rgba(17,24,39,.25),
+    0 14px 36px rgba(0,0,0,.35);
+}
+
+/* INNERER Pulse */
+.add-cart-btn::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  opacity:0;
+  transform: scale(.85);
+  background: radial-gradient(
+    circle at center,
+    rgba(255,255,255,.55),
+    transparent 60%
+  );
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.add-cart-btn.ripple::after{
+  opacity:1;
+  transform: scale(1.25);
+}
+
+/* ÄUSSERER Shockwave-Ring */
+.add-cart-btn::before{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:999px;
+  opacity:0;
+  transform: scale(.8);
+  border:2px solid rgba(17,24,39,.35);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events:none;
+}
+
+.add-cart-btn.shock::before{
+  opacity:1;
+  transform: scale(1.15);
+}
+
+
+
+
+
+
 
 
 

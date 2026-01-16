@@ -34,8 +34,8 @@
         </div>
 
         <div class="cart-footer">
-          <button class="cart-btn primary" id="btnShowCart">Warenkorb anzeigen</button>
-          <button class="cart-btn secondary" id="btnTotal">Gesamtpreis anzeigen</button>
+          <button class="cart-btn primary" id="btnShowCart">Warenkorb aktualisieren</button>
+          <button class="cart-btn secondary" id="btnTotal">Gesamtpreis aktualisieren</button>
           <div class="cart-total" id="cartTotal"></div>
         </div>
       </aside>
@@ -86,10 +86,15 @@
             Hallo, Anna<br><strong>Konto & Listen</strong>
           </div>
 
-          <div class="profile">
-            🛒<br><strong>Warenkorb</strong>
+          <div class="profile cart-trigger">
+      <span class="cart-icon">
+    🛒
+    <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+  </span>
+  <br><strong>Warenkorb</strong>
           </div>
-        </div>
+</div>
+
 
         <!-- SHOP-BAR -->
         <div class="shop-bar">
@@ -168,5 +173,9 @@
   <!-- Skripte -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <script src="script.js"></script>
+
+  
+  <div id="flyLayer" class="fly-layer"></div>
+
 </body>
 </html>

@@ -9,6 +9,8 @@
  ************************************************************/
 
 let db = null;
+const MEINE_ID = 1; // Demo-Nutzer
+
 
 
 
@@ -102,6 +104,8 @@ async function init() {
 
     bindUI();
     await render();
+    updateCartBadge();
+
 
   } catch (err) {
     const c = els.products();
@@ -188,6 +192,30 @@ if (searchClear) {
 
 
    bindSqlLab();
+
+   // Add-to-cart Delegation
+document.querySelector(".products")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-add-cart]");
+  if(!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  /* ALLE Effekte neu triggern */
+  btn.classList.remove("ripple", "click", "shock");
+  void btn.offsetWidth; // Reflow erzwingen
+
+  btn.classList.add("ripple", "click", "shock");
+
+  setTimeout(() => {
+    btn.classList.remove("click", "shock");
+  }, 220);
+
+  addToCart(btn.dataset.addCart);
+  flyToCart(btn);
+});
+
+
 }
 
 // ---------- Actions ----------
@@ -516,16 +544,26 @@ async function render() {
     const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei wählbar
     const isLowStock = Number(p.lagerbestand) > 0 && Number(p.lagerbestand) <= 5;
 
-    container.insertAdjacentHTML("beforeend", `
-      <div class="product">
+   container.insertAdjacentHTML("beforeend", `
+      <div class="product" data-product-id="${p.id}">
         
-      <div class="product-badges">
-        ${isBestseller ? `<div class="badge bestseller">Bestseller</div>` : ""}
-        ${isFast ? `<div class="badge fast-delivery">Lieferung morgen</div>` : ""}
-        ${isLowStock ? `<div class="badge low-stock">Nur noch wenige auf Lager</div>` : ""}
-      </div>
+        <button class="add-cart-btn" data-add-cart="${p.id}">
+  <svg class="cart-icon" viewBox="0 0 24 24" fill="none">
+    <path d="M6 6h15l-1.5 8.5a2 2 0 0 1-2 1.5H9a2 2 0 0 1-2-1.6L5 3H2"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="9" cy="20" r="1" fill="currentColor"/>
+    <circle cx="17" cy="20" r="1" fill="currentColor"/>
+  </svg>
+  <span>In den Warenkorb</span>
+</button>
 
 
+        <div class="product-badges">
+          ${isBestseller ? `<div class="badge bestseller">Bestseller</div>` : ""}
+          ${isFast ? `<div class="badge fast-delivery">Lieferung morgen</div>` : ""}
+          ${isLowStock ? `<div class="badge low-stock">Nur noch wenige auf Lager</div>` : ""}
+        </div>
 
         <div class="product-img"></div>
 
@@ -720,6 +758,106 @@ function sameSet(a, b) {
   return true;
 }
 
+function toast(msg){
+  const el = document.getElementById("toast");
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> el.classList.remove("show"), 1200);
+}
+
+function updateCartBadge(){
+  const badge = document.getElementById("cartBadge");
+  if(!badge || !db) return;
+
+  const res = db.exec(`
+    SELECT COALESCE(SUM(menge), 0)
+    FROM warenkorb;
+
+  `);
+
+  const cnt = (res[0]?.values?.[0]?.[0] ?? 0);
+  if(cnt > 0){
+    badge.style.display = "flex";
+    badge.textContent = String(cnt);
+  } else {
+    badge.style.display = "none";
+    badge.textContent = "0";
+  }
+}
+
+/** Fly-to-cart mini animation */
+function flyToCart(fromEl){
+  const cartEl = document.querySelector(".cart-trigger .cart-icon");
+  const layer = document.getElementById("flyLayer");
+  if(!fromEl || !cartEl || !layer) return;
+
+  const a = fromEl.getBoundingClientRect();
+  const b = cartEl.getBoundingClientRect();
+
+  const dot = document.createElement("div");
+  dot.className = "fly-dot";
+  dot.style.left = (a.left + a.width/2) + "px";
+  dot.style.top  = (a.top + a.height/2) + "px";
+  layer.appendChild(dot);
+
+  const x = (b.left + b.width/2) - (a.left + a.width/2);
+  const y = (b.top + b.height/2) - (a.top + a.height/2);
+
+  dot.animate([
+    { transform: "translate(0px, 0px) scale(1)", opacity: 1 },
+    { transform: `translate(${x}px, ${y}px) scale(.7)`, opacity: 0.2 }
+  ], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+
+  setTimeout(()=> dot.remove(), 540);
+}
+
+/** Upsert: add product into cart */
+function addToCart(productId){
+  if(!db) return;
+
+  const pid = Number(productId);
+
+  const check = db.exec(`
+    SELECT menge
+    FROM warenkorb
+    WHERE produkt_id = ${pid};
+  `);
+
+  if(check.length && check[0].values.length){
+    db.run(`
+      UPDATE warenkorb
+      SET menge = menge + 1
+      WHERE produkt_id = ${pid};
+    `);
+  } else {
+    db.run(`
+      INSERT INTO warenkorb (produkt_id, menge)
+      VALUES (${pid}, 1);
+    `);
+  }
+
+  updateCartBadge();
+}
+
+
+/** Remove: delete item from cart completely */
+function removeFromCart(productId){
+  if(!db) return;
+
+  const pid = Number(productId);
+
+  db.run(`
+    DELETE FROM warenkorb
+    WHERE produkt_id = ${pid};
+  `);
+
+  updateCartBadge();
+}
+
+
+
 function isSelectOnly(sql) {
   const s = String(sql || "").trim().toLowerCase();
   if (!s.startsWith("select")) return false;
@@ -736,6 +874,32 @@ const cartPanel = document.getElementById("cartPanel");
 const cartOverlay = document.getElementById("cartOverlay");
 const cartContent = document.getElementById("cartContent");
 const cartTotal = document.getElementById("cartTotal");
+
+cartContent?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-remove-cart]");
+  if(!btn) return;
+
+  const productId = btn.dataset.removeCart;
+
+  // Entfernen
+  removeFromCart(productId);
+
+  // UI: Zeile entfernen (smooth)
+  const row = btn.closest(".cart-row");
+  if(row){
+    row.animate([{opacity:1, transform:"translateY(0)"},{opacity:0, transform:"translateY(6px)"}],
+      {duration:180, easing:"ease-out"});
+    setTimeout(()=> row.remove(), 170);
+  }
+
+  // Wenn leer -> Hinweis
+  if(!cartContent.querySelector(".cart-row")){
+    cartContent.innerHTML = `<p class="cart-hint">Warenkorb ist leer.</p>`;
+  }
+
+  toast("🗑️ Entfernt");
+});
+
 
 
 document.getElementById("cartClose").addEventListener("click", closeCart);
@@ -756,9 +920,15 @@ function closeCart() {
 
 function showCart() {
   const sql = `
-    SELECT p.name, p.preis, w.menge
-    FROM warenkorb w
-    JOIN produkte p ON p.id = w.produkt_id;
+    SELECT 
+      p.id,
+      p.name,
+      p.preis,
+      w.menge,
+      ROUND(p.preis * w.menge, 2) AS zeilensumme
+    FROM produkte p, warenkorb w
+    WHERE p.id = w.produkt_id
+    ORDER BY p.name ASC;
   `;
 
   const res = db.exec(sql);
@@ -770,31 +940,34 @@ function showCart() {
   }
 
   const rows = res[0].values;
+
   cartContent.innerHTML = rows.map(r => `
-    <div class="cart-row">
-      <strong>${escapeHtml(r[0])}</strong>
-      <span>${Number(r[1]).toFixed(2)} €</span>
-      <span>× ${r[2]}</span>
+    <div class="cart-row" data-cart-product="${r[0]}">
+      <strong>${escapeHtml(r[1])}<div class="muted">${Number(r[2]).toFixed(2)} €</div></strong>
+      <span>× ${r[3]}</span>
+      <span><strong>${Number(r[4]).toFixed(2)} €</strong></span>
+      <button class="cart-remove" data-remove-cart="${r[0]}" title="Entfernen">✕</button>
     </div>
   `).join("");
+
+  // Placeholder sicher weg
+  updateCartBadge();
 }
+
 
 function showTotal() {
   const sql = `
-    SELECT ROUND(SUM(p.preis * w.menge), 2) AS gesamtpreis
-    FROM warenkorb w
-    JOIN produkte p ON p.id = w.produkt_id;
+    SELECT ROUND(COALESCE(SUM(p.preis * w.menge), 0), 2) AS gesamtpreis
+    FROM produkte p, warenkorb w
+    WHERE p.id = w.produkt_id
   `;
 
   const res = db.exec(sql);
+  const total = (res[0]?.values?.[0]?.[0] ?? 0);
 
-  if (!res.length || !res[0].values.length || res[0].values[0][0] == null) {
-    cartTotal.textContent = "Gesamtpreis: 0,00 €";
-    return;
-  }
-
-  cartTotal.textContent = `Gesamtpreis: ${res[0].values[0][0].toFixed(2)} €`;
+  cartTotal.textContent = `Gesamtpreis: ${Number(total).toFixed(2)} €`;
 }
+
 
 // ================= KONTO & LISTEN LOGIK =================
 
