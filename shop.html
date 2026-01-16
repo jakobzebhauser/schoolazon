@@ -61,7 +61,7 @@
   <input class="account-input" id="loginUser" placeholder="Benutzername" />
   <input class="account-input" id="loginPass" placeholder="Passwort" type="password" />
 
-  <button class="account-btn" id="btnLogin">Einloggen</button>
+  <button type="button" class="account-btn" id="btnLogin">Einloggen</button>
 
   <!-- Statusanzeige -->
   <div class="login-status" id="loginStatus">
@@ -72,21 +72,22 @@
 
   <!-- Bestellungen -->
   <section class="account-block">
-    <div class="account-block-header">
-      <h4>📦 Meine Bestellungen</h4>
-      <button class="account-link" id="btnOrders">anzeigen</button>
-    </div>
-    <div id="ordersResult"></div>
-  </section>
+  <button type="button" class="account-btn primary" id="btnOrders">
+    📦 Meine Bestellungen anzeigen
+  </button>
+
+  <div class="account-list" id="ordersResult"></div>
+</section>
+
 
   <!-- Top-Produkte -->
   <section class="account-block">
-    <div class="account-block-header">
-      <h4>⭐ Meine Top-Produkte</h4>
-      <button class="account-link" id="btnTopProducts">anzeigen</button>
-    </div>
-    <div id="topProductsResult"></div>
-  </section>
+  <button type="button" class="account-btn secondary" id="btnTopProducts">
+    ⭐ Meine Top-Produkte anzeigen
+  </button>
+
+  <div class="account-list" id="topProductsResult"></div>
+</section>
 
 
  

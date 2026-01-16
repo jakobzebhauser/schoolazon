@@ -1703,6 +1703,76 @@ t-row strong {
   margin-top: 0;
 }
 
+/* ================================
+   Konto & Listen – kompakter Look
+   ================================ */
+
+.account-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Produktname */
+.account-row strong {
+  font-size: 13px;        /* vorher ~16px */
+  font-weight: 500;
+}
+
+/* Menge (5×) */
+.account-row .muted {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Preis rechts */
+.account-row > div:last-child strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ================================
+   Konto & Listen – Scroll fix
+   ================================ */
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;        /* niemals höher als Bildschirm */
+}
+
+/* Header bleibt fix sichtbar */
+.account-header {
+  flex-shrink: 0;
+}
+
+/* NUR der Inhalt scrollt */
+.account-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;      /* Platz für Scrollbar */
+}
+
+/* Schöne, dezente Scrollbar (optional, sehr Amazon-like) */
+.account-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.account-body::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.25);
+  border-radius: 6px;
+}
+
+.account-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
 
 
 
