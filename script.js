@@ -1,12 +1,5 @@
 /************************************************************
- * Schulazon – Shop-Logik (stabile Basis)
- * Fokus:
- * - Filtern
- * - Sortieren
- * - Suche
- * - Warenkorb
- * - Konto & Listen
- *
+ * Schulazon Shop – stabile Basis (ohne Sperren/Rechtsklick)
  * DB-Schema:
  * produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)
  * kategorien(id, name)
@@ -17,42 +10,79 @@
 
 let db = null;
 
-/* =========================================================
-   1. GLOBALER STATE (UI-Zustand)
-   ========================================================= */
-const state = {
-  // Anzeige
-  showProducts: false,
 
+
+
+// ---------- UI / State ----------
+const state = {
   // Filter
   categoryId: null,
-  priceMin: null,
   priceMax: null,
+  priceMin: null,
   availableOnly: false,
   expressDelivery: false,
-  bestsellerOnly: false,
+  showProducts: false,
 
-  // Bewertung
+  // Suche
+  searchTerm: "",
+
+  // Rating
   minRating: null,
   exactRating: null,
 
-  // Suche & Sortierung
-  searchTerm: "",
-  sort: "popularity" // default
+  // Sort
+  sort: "popularity",
+
+  bestsellerOnly: false
 };
 
-/* =========================================================
-   2. DOM-HELPER
-   ========================================================= */
+// ================= TASK SYSTEM (erweiterbar) =================
+const TASKS = {
+  express: {
+    taskId: "express",
+    title: "Expresslieferung freischalten",
+      difficulty: 1,
+    difficultyMax: 3,
+    goal: "Zeige nur Produkte, die morgen geliefert werden (liefertage = 1).",
+    tip: "Tipp: Die relevante Spalte heißt `liefertage` in der Tabelle `produkte`.",
+    starterSql: `SELECT * FROM produkte WHERE liefertage = 1;`,
+
+    // ✅ Validation: Ergebnis muss (ID-Menge) exakt matchen
+    validate: (studentRes, db) => {
+      const idsStudent = extractIdsFromResult(studentRes);
+      const ref = db.exec(`SELECT id FROM produkte WHERE liefertage = 1;`);
+      const idsRef = extractIdsFromResult(ref);
+      return sameSet(idsStudent, idsRef);
+    },
+
+    onUnlock: () => {
+      // Feature-Effekt im Shop: einfach Flag setzen
+      state.expressDelivery = true;
+      state.showProducts = true;
+      render(); // Shop aktualisieren
+    }
+  }
+};
+
+// Locks: Startzustand (später per localStorage speicherbar)
+const LOCKS = {
+  express: false
+};
+
+
+
+
+// ---------- DOM ----------
 const els = {
   products: () => document.querySelector(".products"),
+  studentName: () => document.getElementById("studentName"),
+
   sortDropdown: () => document.getElementById("sortDropdown"),
-  sortSelected: () => document.querySelector("#sortDropdown .sort-selected")
+  sortSelected: () => document.querySelector("#sortDropdown .sort-selected"),
+  sortOptions: () => document.querySelector("#sortDropdown .sort-options"),
 };
 
-/* =========================================================
-   3. INITIALISIERUNG
-   ========================================================= */
+// ---------- Init ----------
 window.addEventListener("DOMContentLoaded", init);
 
 async function init() {
@@ -62,227 +92,408 @@ async function init() {
     });
 
     const res = await fetch("produkte.sqlite");
-    if (!res.ok) throw new Error("produkte.sqlite nicht gefunden");
+    if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im selben Ordner wie index.html?)");
 
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
 
+    // rechter Bereich: Name beibehalten (nur Anzeige)
+    const nameEl = els.studentName();
+    if (nameEl) nameEl.textContent = "Anna Müller";
+
     bindUI();
-    render();
+    await render();
 
   } catch (err) {
     const c = els.products();
-    if (c) {
-      c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">
-        ❌ ${escapeHtml(err.message)}
-      </p>`;
-    }
+    if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">❌ ${escapeHtml(err.message)}</p>`;
     console.error(err);
   }
 }
 
-/* =========================================================
-   4. UI-BINDINGS
-   ========================================================= */
+// ---------- UI Binding ----------
 function bindUI() {
-
-  /* ---- Alle Buttons über data-task ---- */
-  document.querySelectorAll("[data-task]").forEach(btn => {
-    btn.addEventListener("click", e => {
+  // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten über data-task
+  document.querySelectorAll("[data-task]").forEach(el => {
+    const id = el.dataset.task;
+    el.addEventListener("click", (e) => {
       e.preventDefault();
-      onAction(btn.dataset.task);
+      onAction(id);
     });
   });
 
-  /* ---- Sort-Dropdown ---- */
+  // Sort Dropdown open/close
   const dd = els.sortDropdown();
   const selected = els.sortSelected();
 
   if (dd && selected) {
-    selected.addEventListener("click", e => {
+    selected.addEventListener("click", (e) => {
       e.stopPropagation();
       dd.classList.toggle("open");
     });
 
-    document.addEventListener("click", () => dd.classList.remove("open"));
-  }
-
-  /* ---- Suche ---- */
-  const searchInput = document.getElementById("searchInput");
-  const searchClear = document.getElementById("searchClear");
-  const searchBox = searchInput?.closest(".search");
-
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      state.searchTerm = searchInput.value.trim();
-      state.showProducts = true;
-
-      searchBox?.classList.toggle("has-text", state.searchTerm.length > 0);
-      render();
+    document.addEventListener("click", () => {
+      dd.classList.remove("open");
     });
   }
 
-  if (searchClear) {
-    searchClear.addEventListener("click", () => {
-      state.searchTerm = "";
-      searchInput.value = "";
-      searchBox?.classList.remove("has-text");
-      render();
-    });
+  // Start: Produkte direkt anzeigen (wie Amazon)
+  // optional: state.sort = "popularity" ist bereits gesetzt
+
+
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+const searchBox = searchInput?.closest(".search");
+
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    state.searchTerm = searchInput.value.trim();
+    state.showProducts = true;
+
+    if (searchBox) {
+      searchBox.classList.toggle("has-text", state.searchTerm.length > 0);
+    }
+
+    render();
+  });
+}
+
+if (searchClear) {
+  searchClear.addEventListener("click", () => {
+    state.searchTerm = "";
+    searchInput.value = "";
+
+    if (searchBox) {
+      searchBox.classList.remove("has-text");
+    }
+
+    render();
+  });
+}
+
+  /* ================= WARENKORB INITIALISIERUNG ================= */
+
+  const cartTrigger = Array.from(document.querySelectorAll(".profile"))
+    .find(p => p.textContent.includes("Warenkorb"));
+
+  if (cartTrigger) {
+    cartTrigger.style.cursor = "pointer";
+    cartTrigger.addEventListener("click", openCart);
   }
 
-  /* ---- Warenkorb ---- */
   document.getElementById("cartClose")?.addEventListener("click", closeCart);
   document.getElementById("cartOverlay")?.addEventListener("click", closeCart);
+
   document.getElementById("btnShowCart")?.addEventListener("click", showCart);
   document.getElementById("btnTotal")?.addEventListener("click", showTotal);
 
-  const cartTrigger = [...document.querySelectorAll(".profile")]
-    .find(p => p.textContent.includes("Warenkorb"));
-  cartTrigger?.addEventListener("click", openCart);
 
-  /* ---- Konto ---- */
-  document.getElementById("accountClose")?.addEventListener("click", closeAccount);
-  document.getElementById("accountOverlay")?.addEventListener("click", closeAccount);
-  document.getElementById("btnOrders")?.addEventListener("click", showOrders);
-  document.getElementById("btnTopProducts")?.addEventListener("click", showTopProducts);
-
-  const accountTrigger = [...document.querySelectorAll(".profile")]
-    .find(p => p.textContent.includes("Konto"));
-  accountTrigger?.addEventListener("click", openAccount);
+   bindSqlLab();
 }
 
-/* =========================================================
-   5. BUTTON-AKTIONEN
-   ========================================================= */
-function onAction(id) {
+// ---------- Actions ----------
 
-  resetFilters();
+const buttonGroups = {
+  shop: ["all", "today", "bestseller", "available"],
+  category: ["cat-electronics", "cat-household", "cat-sport"],
+  price: ["price-25", "price-50", "price-100"],
+  rating: ["rating-5", "rating-4"]
+};
 
-  switch (id) {
-    /* ---- Shop ---- */
+
+function setActiveButton(groupName, taskId) {
+  const group = buttonGroups[groupName];
+  if (!group) return;
+
+  group.forEach(id => {
+    document
+      .querySelectorAll(`[data-task="${id}"]`)
+      .forEach(btn => btn.classList.remove("active"));
+  });
+
+  document
+    .querySelectorAll(`[data-task="${taskId}"]`)
+    .forEach(btn => btn.classList.add("active"));
+}
+
+function clearAllActiveButtons() {
+  document
+    .querySelectorAll(".shop-btn.active, .filter-btn.active")
+    .forEach(btn => btn.classList.remove("active"));
+}
+
+
+async function onAction(actionId) {
+
+    // Wenn es eine Aufgabe ist und noch gesperrt: Lab öffnen und NICHT normal ausführen
+  if (TASKS[actionId] && LOCKS[actionId]) {
+    openSqlLab(TASKS[actionId]);
+    return;
+  }
+
+  switch (actionId) {
+
+    /* ===== SHOP BAR ===== */
     case "all":
-      state.showProducts = true;
+      resetFilters();
+      clearAllActiveButtons();
+      state.showProducts = true; 
+      setActiveButton("shop", "all");
       break;
+
 
     case "express":
-      state.expressDelivery = true;
-      state.showProducts = true;
-      break;
+    resetFilters();
+    clearAllActiveButtons()
+    state.showProducts = true;
+    state.expressDelivery = true; // ✅ RICHTIG
+    setActiveButton("shop", "express");
+    break;
 
     case "bestseller":
-      state.bestsellerOnly = true;
+      resetFilters();
+      clearAllActiveButtons()
       state.showProducts = true;
+      state.bestsellerOnly = true; 
+      setActiveButton("shop", "bestseller");
       break;
+
 
     case "available":
-      state.availableOnly = true;
+      resetFilters();
+      clearAllActiveButtons()
       state.showProducts = true;
+      state.availableOnly = true;
+      setActiveButton("shop", "available");
       break;
 
-    /* ---- Sortieren ---- */
+    /* ===== SORT ===== */
     case "priceAsc":
       state.sort = "priceAsc";
       setSortLabel("Preis ↑");
+      closeSort();
       break;
 
     case "priceDesc":
       state.sort = "priceDesc";
       setSortLabel("Preis ↓");
+      closeSort();
       break;
 
     case "popularity":
       state.sort = "popularity";
       setSortLabel("Beliebtheit");
+      closeSort();
       break;
 
-    /* ---- Kategorien ---- */
-    case "cat-electronics": state.categoryId = 1; break;
-    case "cat-household":   state.categoryId = 2; break;
-    case "cat-sport":       state.categoryId = 3; break;
+    /* ===== KATEGORIE ===== */
+    case "cat-electronics":
+      state.categoryId = 1;
+      setActiveButton("category", actionId);
+      break;
 
-    /* ---- Preis ---- */
-    case "price-25":  state.priceMin = 0;  state.priceMax = 25;  break;
-    case "price-50":  state.priceMin = 25; state.priceMax = 50;  break;
-    case "price-100": state.priceMin = 50; state.priceMax = 100; break;
+    case "cat-household":
+      state.categoryId = 2;
+      setActiveButton("category", actionId);
+      break;
 
-    /* ---- Bewertung ---- */
-    case "rating-5": state.exactRating = 5; break;
-    case "rating-4": state.minRating = 4;   break;
+    case "cat-sport":
+      state.categoryId = 3;
+      setActiveButton("category", actionId);
+      break;
 
-    /* ---- Reset ---- */
+    /* ===== PREIS ===== */
+    case "price-25":
+      state.priceMin = 0;
+      state.priceMax = 25;
+      setActiveButton("price", actionId);
+      break;
+
+    case "price-50":
+      state.priceMin = 25;
+      state.priceMax = 50;
+      setActiveButton("price", actionId);
+      break;
+
+    case "price-100":
+      state.priceMin = 50;
+      state.priceMax = 100;
+      setActiveButton("price", actionId);
+      break;
+
+
+    /* ===== BEWERTUNG ===== */
+    case "rating-5":
+      state.exactRating = 5;
+      state.minRating = null;
+      setActiveButton("rating", actionId);
+      break;
+
+    case "rating-4":
+      state.minRating = 4;
+      state.exactRating = null;
+      setActiveButton("rating", actionId);
+      break;
+
+    /* ===== RESET ===== */
     case "reset-filters":
+      resetFilters();
+      clearAllActiveButtons();
       break;
 
     default:
       return;
   }
 
-  render();
+  await render();
 }
 
-/* =========================================================
-   6. QUERY BUILDER
-   ========================================================= */
+
+function resetFilters() {
+  state.categoryId = null;
+  state.priceMax = null;
+  state.priceMin = null;
+  state.availableOnly = false;
+  state.expressDelivery = false;
+  state.minRating = null;
+  state.exactRating = null;
+  state.bestsellerOnly = false;
+}
+
+
+
+function closeSort() {
+  const dd = els.sortDropdown();
+  if (dd) dd.classList.remove("open");
+}
+
+function setSortLabel(text) {
+  const selected = els.sortSelected();
+  if (!selected) return;
+  // Text + Pfeil beibehalten
+  selected.innerHTML = `⇅ Sortieren: ${escapeHtml(text)} <span class="sort-arrow">▾</span>`;
+}
+
+// ---------- Query Builder (JOINs nach Schema) ----------
 function buildQuery() {
+
+  // ======================================================
+  // SCHÜLER-AUFGABE (SQL):
+  // Ein Produkt ist ein BESTSELLER, wenn es mindestens
+  // 300 Verkäufe hat.
+  //
+  // SELECT *
+  // FROM produkte p
+  // JOIN verkäufe v ON v.produkt_id = p.id
+  // WHERE v.anzahl >= 300
+  // ORDER BY v.anzahl DESC;
+  //
+  // Umsetzung hier:
+  // - Verkäufe werden summiert (SUM)
+  // - Bestseller werden über HAVING gefiltert
+  // ======================================================
 
   let sql = `
     SELECT
-      p.id, p.name, p.preis, p.lagerbestand, p.liefertage,
+      p.id,
+      p.name,
+      p.preis,
+      p.kategorie_id,
       k.name AS kategorie_name,
-      COALESCE(ROUND(AVG(b.sterne),1),0) AS bewertung_avg,
-      COALESCE(SUM(v.anzahl),0) AS verkauft
+      p.lagerbestand,
+      p.liefertage,
+      COALESCE(ROUND(AVG(b.sterne), 1), 0) AS bewertung_avg,
+      COALESCE(SUM(v.anzahl), 0) AS verkauft
     FROM produkte p
     LEFT JOIN kategorien k ON k.id = p.kategorie_id
     LEFT JOIN bewertungen b ON b.produkt_id = p.id
     LEFT JOIN verkäufe v ON v.produkt_id = p.id
-  `;
+  `.trim();
 
   const where = [];
 
-  if (state.searchTerm)
-    where.push(`p.name LIKE '%${state.searchTerm.replace(/'/g, "''")}%'`);
 
-  if (state.categoryId) where.push(`p.kategorie_id = ${state.categoryId}`);
-  if (state.priceMin != null) where.push(`p.preis >= ${state.priceMin}`);
-  if (state.priceMax != null) where.push(`p.preis <= ${state.priceMax}`);
+  /* ---------- WHERE (einfache Filter) ---------- */
+  if (state.searchTerm && state.searchTerm.length > 0) {
+  const term = state.searchTerm.replace(/'/g, "''");
+  where.push(`p.name LIKE '%${term}%'`);
+}
+
+  if (state.categoryId != null) where.push(`p.kategorie_id = ${Number(state.categoryId)}`);
+  if (state.priceMin != null) where.push(`p.preis >= ${Number(state.priceMin)}`);
+  if (state.priceMax != null) where.push(`p.preis <= ${Number(state.priceMax)}`);
   if (state.availableOnly) where.push(`p.lagerbestand BETWEEN 1 AND 5`);
-  if (state.expressDelivery) where.push(`p.liefertage = 1`);
+  if (state.expressDelivery) { where.push(`p.liefertage = 1`);}
 
-  if (where.length) sql += ` WHERE ${where.join(" AND ")}`;
+  if (where.length) {
+    sql += ` WHERE ${where.join(" AND ")}`;
+  }
 
+  /* ---------- GROUP BY (Produkt-Ebene) ---------- */
   sql += ` GROUP BY p.id`;
 
+  /* ---------- HAVING (Aggregation) ---------- */
   const having = [];
-  if (state.exactRating != null) having.push(`AVG(b.sterne) = ${state.exactRating}`);
-  if (state.minRating != null)   having.push(`AVG(b.sterne) >= ${state.minRating}`);
-  if (state.bestsellerOnly)      having.push(`SUM(v.anzahl) >= 300`);
 
-  if (having.length) sql += ` HAVING ${having.join(" AND ")}`;
+  // Bewertungsfilter
+  if (state.exactRating != null) having.push(`AVG(b.sterne) = ${Number(state.exactRating)}`);
+  if (state.minRating != null) having.push(`AVG(b.sterne) >= ${Number(state.minRating)}`);
 
-  if (state.sort === "priceAsc")       sql += ` ORDER BY p.preis ASC`;
-  else if (state.sort === "priceDesc") sql += ` ORDER BY p.preis DESC`;
-  else                                 sql += ` ORDER BY verkauft DESC`;
+  // ======================================================
+  // SCHÜLER-AUFGABE:
+  // Bestseller nur ab 300 Verkäufen anzeigen
+  // ======================================================
+  if (state.bestsellerOnly) {
+    having.push(`SUM(v.anzahl) >= 300`);
+  }
+
+  if (having.length) {
+    sql += ` HAVING ${having.join(" AND ")}`;
+  }
+
+  /* ---------- SORTIERUNG ---------- */
+  if (state.sort === "priceAsc") {
+    sql += ` ORDER BY p.preis ASC`;
+  } else if (state.sort === "priceDesc") {
+    sql += ` ORDER BY p.preis DESC`;
+  } else {
+    // Standard: Beliebtheit = Verkaufszahlen
+    sql += ` ORDER BY verkauft DESC`;
+  }
 
   return sql + ";";
 }
 
-/* =========================================================
-   7. RENDER
-   ========================================================= */
-function render() {
+
+// ---------- Render ----------
+async function render() {
   const container = els.products();
   if (!container) return;
 
+  // Beim ersten Laden keine Produkte anzeigen
+
   if (!state.showProducts) {
-    container.innerHTML = "";
+    container.innerHTML = `
+      <div style="
+        padding: 40px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+      ">
+      </div>
+    `;
     return;
   }
 
+  container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte…</p>`;
+
+  const sql = buildQuery();
+
   let result;
   try {
-    result = db.exec(buildQuery());
+    result = db.exec(sql);
   } catch (err) {
-    container.innerHTML = `<p style="padding:20px;color:#b12704">SQL-Fehler</p>`;
+    container.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">SQL-Fehler: ${escapeHtml(err.message)}</p>`;
+    console.error("SQL:", sql);
     return;
   }
 
@@ -292,83 +503,355 @@ function render() {
   }
 
   const { columns, values } = result[0];
-  container.innerHTML = "";
 
-  values.forEach(row => {
+  container.innerHTML = "";
+  for (const row of values) {
     const p = Object.fromEntries(columns.map((c, i) => [c, row[i]]));
-    const isFast = p.liefertage === 1;
-    const isLow = p.lagerbestand > 0 && p.lagerbestand <= 5;
-    const isBest = p.verkauft >= 300;
+
+    const rating = Number(p.bewertung_avg || 0);
+    const starsFull = Math.round(rating); // simple rendering
+    const stars = "★".repeat(Math.max(0, Math.min(5, starsFull))) + "☆".repeat(Math.max(0, 5 - Math.min(5, starsFull)));
+
+    const isFast = Number(p.liefertage) === 1;
+    const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei wählbar
+    const isLowStock = Number(p.lagerbestand) > 0 && Number(p.lagerbestand) <= 5;
 
     container.insertAdjacentHTML("beforeend", `
       <div class="product">
-        <div class="product-badges">
-          ${isBest ? `<div class="badge bestseller">Bestseller</div>` : ""}
-          ${isFast ? `<div class="badge fast-delivery">Lieferung morgen</div>` : ""}
-          ${isLow ? `<div class="badge low-stock">Nur noch wenige</div>` : ""}
-        </div>
+        
+      <div class="product-badges">
+        ${isBestseller ? `<div class="badge bestseller">Bestseller</div>` : ""}
+        ${isFast ? `<div class="badge fast-delivery">Lieferung morgen</div>` : ""}
+        ${isLowStock ? `<div class="badge low-stock">Nur noch wenige auf Lager</div>` : ""}
+      </div>
+
+
+
         <div class="product-img"></div>
-        <h4>${escapeHtml(p.name)}</h4>
-        <div class="price">${p.preis.toFixed(2)} €</div>
-        <div class="delivery">Lieferung in ${p.liefertage} Tagen</div>
+
+        <h4 class="product-title">${escapeHtml(String(p.name))}</h4>
+
+        <div class="rating" title="${rating.toFixed(1)} / 5">${stars}</div>
+
+        <div class="price">${Number(p.preis).toFixed(2)} €</div>
+
+        <div class="delivery ${isFast ? "fast" : ""}">
+          Lieferung in ${Number(p.liefertage)} Tagen
+        </div>
+
+        <div class="meta">
+          <span class="meta-chip">${escapeHtml(String(p.kategorie_name || "—"))}</span>
+          <span class="meta-chip">${Number(p.lagerbestand) > 0 ? "Auf Lager" : "Nicht verfügbar"}</span>
+        </div>
       </div>
     `);
+  }
+}
+
+// ================= SQL LAB (UI + Execution) =================
+const labEls = {
+  panel: () => document.getElementById("sqlLab"),
+  empty: () => document.getElementById("labEmpty"),
+  title: () => document.getElementById("sqlLabTitle"),
+  goal: () => document.getElementById("sqlLabGoal"),
+  close: () => document.getElementById("sqlLabClose"),
+  input: () => document.getElementById("sqlInput"),
+  run: () => document.getElementById("sqlRunBtn"),
+  out: () => document.getElementById("sqlOutput"),
+  table: () => document.getElementById("sqlTable"),
+  tipBtn: () => document.getElementById("sqlTipBtn"),
+  tipBox: () => document.getElementById("sqlTipBox")
+};
+
+let currentTask = null;
+
+
+function bindSqlLab() {
+  labEls.close()?.addEventListener("click", closeSqlLab);
+  labEls.run()?.addEventListener("click", runStudentSql);
+  labEls.tipBtn()?.addEventListener("click", () => {
+    const box = labEls.tipBox();
+    if (!box) return;
+    box.style.display = box.style.display === "block" ? "none" : "block";
   });
 }
 
-/* =========================================================
-   8. WARENKORB & KONTO
-   ========================================================= */
+
+function openSqlLab(task) {
+  currentTask = task;
+
+  labEls.title().textContent = task.title;
+  labEls.goal().textContent = `Ziel: ${task.goal}`;
+
+  renderDifficulty(task.difficulty, task.difficultyMax);
+
+  labEls.title().textContent = `🔒 ${task.title}`;
+  labEls.goal().textContent = `Ziel: ${task.goal}`;
+
+  labEls.tipBox().textContent = task.tip || "";
+  labEls.tipBox().style.display = "none";
+
+  labEls.input().value = task.starterSql || "";
+
+
+
+
+  labEls.out().textContent = "";
+  labEls.table().innerHTML = "";
+
+  labEls.empty().style.display = "none";
+  labEls.panel().classList.add("open");
+}
+
+function renderDifficulty(level, max) {
+  const box = document.getElementById("sqlDifficulty");
+  if (!box) return;
+
+  const label = box.querySelector(".difficulty-label");
+  const dots = box.querySelectorAll(".difficulty-dots .dot");
+
+  label.textContent = `Level ${level} / ${max}`;
+
+  dots.forEach((d, i) => {
+    d.classList.toggle("active", i < level);
+  });
+}
+
+
+function closeSqlLab() {
+  currentTask = null;
+  labEls.panel().classList.remove("open");
+  labEls.empty().style.display = "block";
+}
+
+function runStudentSql() {
+  const out = labEls.out();
+  const successBox = document.getElementById("sqlSuccess");
+  const unlockBtn = document.getElementById("unlockBtn");
+
+  out.textContent = "";
+  successBox.style.display = "none";
+  unlockBtn.classList.remove("enabled");
+
+  try {
+    const sql = labEls.input().value;
+    const res = db.exec(sql);
+
+
+    out.textContent = "Query executed successfully.";
+
+    const ok = currentTask.validate(res, db);
+    if (ok) {
+      successBox.style.display = "block";
+      unlockBtn.classList.add("enabled");
+
+      unlockBtn.onclick = () => {
+        unlockTask(currentTask.taskId);
+        closeSqlLab();
+      };
+    }
+
+  } catch (err) {
+    out.textContent = err.message;
+  }
+}
+
+
+function renderResultTable(execResult) {
+  const target = labEls.table();
+  target.innerHTML = "";
+
+  if (!execResult || !execResult.length) return;
+
+  const { columns, values } = execResult[0];
+  const maxRows = Math.min(values.length, 30);
+
+  let html = `<table><thead><tr>`;
+  for (const c of columns) html += `<th>${escapeHtml(c)}</th>`;
+  html += `</tr></thead><tbody>`;
+
+  for (let i = 0; i < maxRows; i++) {
+    html += `<tr>`;
+    for (const cell of values[i]) html += `<td>${escapeHtml(cell)}</td>`;
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>`;
+  target.innerHTML = html;
+}
+
+function unlockTask(taskId) {
+  LOCKS[taskId] = false;
+
+  // Button entsperren + Effekt
+  document.querySelectorAll(`[data-task="${taskId}"]`).forEach(btn => {
+    btn.removeAttribute("data-locked");
+    btn.classList.add("active"); // kurzer visueller Kick
+    setTimeout(() => btn.classList.remove("active"), 350);
+  });
+
+  // Task-spezifische Aktion
+  TASKS[taskId]?.onUnlock?.();
+}
+
+
+// ---------- Utils ----------
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[m]));
+}
+
+function extractIdsFromResult(execResult) {
+  // execResult ist das Array aus db.exec(...)
+  if (!execResult || !execResult.length) return new Set();
+  const { columns, values } = execResult[0];
+  const idIndex = columns.findIndex(c => String(c).toLowerCase() === "id");
+  if (idIndex === -1) {
+    // Falls kein id dabei: leeres Set => wird failen
+    return new Set();
+  }
+  return new Set(values.map(v => Number(v[idIndex])));
+}
+
+function sameSet(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
+function isSelectOnly(sql) {
+  const s = String(sql || "").trim().toLowerCase();
+  if (!s.startsWith("select")) return false;
+
+  // harte Blockliste (sicher, read-only)
+  const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
+  return !forbidden.some(k => s.includes(k));
+}
+
+
+// ================= WARENKORB LOGIK =================
+
+const cartPanel = document.getElementById("cartPanel");
+const cartOverlay = document.getElementById("cartOverlay");
+const cartContent = document.getElementById("cartContent");
+const cartTotal = document.getElementById("cartTotal");
+
+
+document.getElementById("cartClose").addEventListener("click", closeCart);
+cartOverlay.addEventListener("click", closeCart);
+
+document.getElementById("btnShowCart").addEventListener("click", showCart);
+document.getElementById("btnTotal").addEventListener("click", showTotal);
+
 function openCart() {
-  document.getElementById("cartPanel")?.classList.add("open");
-  document.getElementById("cartOverlay")?.classList.add("open");
+  cartPanel.classList.add("open");
+  cartOverlay.classList.add("open");
 }
+
 function closeCart() {
-  document.getElementById("cartPanel")?.classList.remove("open");
-  document.getElementById("cartOverlay")?.classList.remove("open");
+  cartPanel.classList.remove("open");
+  cartOverlay.classList.remove("open");
 }
-function showCart() { /* unverändert – DB-Abfrage wie zuvor */ }
-function showTotal() { /* unverändert */ }
+
+function showCart() {
+  const sql = `
+    SELECT p.name, p.preis, w.menge
+    FROM warenkorb w
+    JOIN produkte p ON p.id = w.produkt_id;
+  `;
+
+  const res = db.exec(sql);
+  cartTotal.textContent = "";
+
+  if (!res.length || !res[0].values.length) {
+    cartContent.innerHTML = `<p class="cart-hint">Warenkorb ist leer.</p>`;
+    return;
+  }
+
+  const rows = res[0].values;
+  cartContent.innerHTML = rows.map(r => `
+    <div class="cart-row">
+      <strong>${escapeHtml(r[0])}</strong>
+      <span>${Number(r[1]).toFixed(2)} €</span>
+      <span>× ${r[2]}</span>
+    </div>
+  `).join("");
+}
+
+function showTotal() {
+  const sql = `
+    SELECT ROUND(SUM(p.preis * w.menge), 2) AS gesamtpreis
+    FROM warenkorb w
+    JOIN produkte p ON p.id = w.produkt_id;
+  `;
+
+  const res = db.exec(sql);
+
+  if (!res.length || !res[0].values.length || res[0].values[0][0] == null) {
+    cartTotal.textContent = "Gesamtpreis: 0,00 €";
+    return;
+  }
+
+  cartTotal.textContent = `Gesamtpreis: ${res[0].values[0][0].toFixed(2)} €`;
+}
+
+// ================= KONTO & LISTEN LOGIK =================
+
+const accountPanel = document.getElementById("accountPanel");
+const accountOverlay = document.getElementById("accountOverlay");
+const accountResult = document.getElementById("accountResult");
+
+// Trigger: Klick auf "Hallo, Anna – Konto & Listen"
+const accountTrigger = Array.from(document.querySelectorAll(".profile"))
+  .find(p => p.textContent.includes("Konto"));
+
+if (accountTrigger) {
+  accountTrigger.style.cursor = "pointer";
+  accountTrigger.addEventListener("click", openAccount);
+}
+
+document.getElementById("accountClose")?.addEventListener("click", closeAccount);
+accountOverlay?.addEventListener("click", closeAccount);
+
+document.getElementById("btnOrders")?.addEventListener("click", showOrders);
+document.getElementById("btnTopProducts")?.addEventListener("click", showTopProducts);
 
 function openAccount() {
-  closeCart();
-  document.getElementById("accountPanel")?.classList.add("open");
-  document.getElementById("accountOverlay")?.classList.add("open");
+  closeCart(); // 🔥 wichtig: nie beide Panels gleichzeitig
+  accountPanel.classList.add("open");
+  accountOverlay.classList.add("open");
 }
+
 function closeAccount() {
-  document.getElementById("accountPanel")?.classList.remove("open");
-  document.getElementById("accountOverlay")?.classList.remove("open");
+  accountPanel.classList.remove("open");
+  accountOverlay.classList.remove("open");
 }
+
+// ---------- Aufgabe 1: Bestellungen ----------
 function showOrders() {
-  document.getElementById("accountResult").innerHTML =
-    `<p class="account-hint">Keine Daten verfügbar.</p>`;
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Für diese Funktion sind aktuell keine Daten verfügbar.
+    </p>
+  `;
 }
+
 function showTopProducts() {
-  document.getElementById("accountResult").innerHTML =
-    `<p class="account-hint">Noch nicht implementiert.</p>`;
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Diese Funktion wird später implementiert.
+    </p>
+  `;
 }
 
-/* =========================================================
-   9. HILFSFUNKTIONEN
-   ========================================================= */
-function resetFilters() {
-  state.categoryId = null;
-  state.priceMin = null;
-  state.priceMax = null;
-  state.availableOnly = false;
-  state.expressDelivery = false;
-  state.bestsellerOnly = false;
-  state.minRating = null;
-  state.exactRating = null;
+
+// ---------- Aufgabe 2: Top-Produkte ----------
+function showTopProducts() {
+  accountResult.innerHTML = `
+    <p class="account-hint">
+      Diese Funktion wird später implementiert.
+    </p>
+  `;
 }
 
-function setSortLabel(text) {
-  els.sortSelected().innerHTML =
-    `⇅ Sortieren: ${escapeHtml(text)} <span class="sort-arrow">▾</span>`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, m =>
-    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])
-  );
-}

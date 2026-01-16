@@ -1,240 +1,294 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Schulazon – Einstieg</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Schulazon – Einstieg</title>
 
-  <!-- Schrift -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    /* ===============================
-       BASIS & HINTERGRUND
-       =============================== */
-    * {
-      box-sizing: border-box;
-    }
+<style>
+/* =======================
+   BASIS
+   ======================= */
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      height: 100vh;
-      font-family: "Roboto", sans-serif;
-      background: radial-gradient(
-        circle at top,
-        #1f2937 0%,
-        #0f172a 55%,
-        #020617 100%
-      );
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #e5e7eb;
-      overflow: hidden;
-    }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1f2937, #020617 75%);
+  color: #e5e7eb;
+  overflow-y: auto;
+}
 
-    /* dezente animierte Lichtakzente */
-    body::before {
-      content: "";
-      position: absolute;
-      inset: -40%;
-      background:
-        radial-gradient(circle at 30% 20%, rgba(240,136,4,0.18), transparent 40%),
-        radial-gradient(circle at 70% 80%, rgba(34,197,94,0.12), transparent 45%);
-      animation: floatGlow 14s linear infinite;
-      pointer-events: none;
-    }
+.wrapper {
+  max-width: 920px;
+  margin: 40px auto 80px;
+  padding: 0 20px;
+}
 
-    @keyframes floatGlow {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-60px); }
-      100% { transform: translateY(0); }
-    }
+/* =======================
+   HEADER
+   ======================= */
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
 
-    /* ===============================
-       CONTAINER
-       =============================== */
-    .start-container {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      max-width: 480px;
-      padding: 42px 40px 38px;
-      border-radius: 20px;
-      background: linear-gradient(180deg, #020617, #020617) padding-box,
-                  linear-gradient(135deg, #f08804, #22c55e) border-box;
-      border: 1.5px solid transparent;
-      box-shadow:
-        0 30px 80px rgba(0,0,0,0.55),
-        inset 0 1px 0 rgba(255,255,255,0.04);
-      text-align: center;
-      animation: fadeInUp 0.8s ease;
-    }
+.logo {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+.logo span { color: #f08804; }
 
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+.subtitle {
+  margin-top: 12px;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1.6;
+}
 
-    /* ===============================
-       LOGO
-       =============================== */
-    .logo {
-      font-size: 30px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      margin-bottom: 10px;
-    }
+/* =======================
+   CARD LAYOUT
+   ======================= */
+.card {
+  background: linear-gradient(180deg, #020617, #020617) padding-box,
+              linear-gradient(135deg, #f08804, #22c55e) border-box;
+  border: 1.5px solid transparent;
+  border-radius: 20px;
+  padding: 28px 26px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  margin-bottom: 28px;
+}
 
-    .logo span {
-      color: #f08804;
-    }
+.card h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
 
-    .subtitle {
-      font-size: 15px;
-      color: #94a3b8;
-      margin-bottom: 28px;
-      line-height: 1.5;
-    }
+.card p {
+  margin: 0 0 18px;
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1.6;
+}
 
-    /* ===============================
-       INPUT
-       =============================== */
-    .input-wrapper {
-      position: relative;
-      margin-bottom: 22px;
-    }
+/* =======================
+   INPUT
+   ======================= */
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 15px;
+}
+.input:focus {
+  outline: none;
+  border-color: #f08804;
+  box-shadow: 0 0 0 3px rgba(240,136,4,.25);
+}
 
-    input[type="text"] {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 15px;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      background: #020617;
-      color: #e5e7eb;
-      outline: none;
-      transition: all 0.2s ease;
-    }
+/* =======================
+   BUTTONS
+   ======================= */
+.btn {
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
 
-    input::placeholder {
-      color: #64748b;
-    }
+.btn.primary {
+  background: linear-gradient(135deg, #f08804, #f3a847);
+  color: #111827;
+}
+.btn.secondary {
+  background: #111827;
+  color: #e5e7eb;
+}
+.btn.ghost {
+  background: transparent;
+  border: 1px dashed #64748b;
+  color: #cbd5e1;
+}
 
-    input:focus {
-      border-color: #f08804;
-      box-shadow: 0 0 0 3px rgba(240,136,4,0.25);
-    }
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(0,0,0,.35);
+}
 
-    /* ===============================
-       BUTTON
-       =============================== */
-    button {
-      width: 100%;
-      padding: 14px 18px;
-      font-size: 15px;
-      font-weight: 600;
-      border-radius: 14px;
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(135deg, #f08804, #f3a847);
-      color: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease,
-        filter 0.15s ease;
-    }
+/* =======================
+   GRID
+   ======================= */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap: 16px;
+}
 
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 30px rgba(240,136,4,0.45);
-      filter: brightness(1.05);
-    }
+/* =======================
+   TEST
+   ======================= */
+.question {
+  margin-bottom: 22px;
+}
 
-    button:active {
-      transform: translateY(0);
-      box-shadow: 0 6px 18px rgba(240,136,4,0.35);
-    }
+.answers label {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.answers label:hover {
+  background: rgba(255,255,255,.04);
+}
 
-    /* ===============================
-       TEXTE UNTEN
-       =============================== */
-    .tagline {
-      margin-top: 22px;
-      font-size: 13px;
-      color: #9ca3af;
-      line-height: 1.5;
-    }
+.result {
+  margin-top: 18px;
+  font-weight: 600;
+}
 
-    .footer-note {
-      margin-top: 28px;
-      font-size: 12px;
-      color: #64748b;
-    }
-
-  </style>
+/* =======================
+   HIDDEN
+   ======================= */
+.hidden { display: none; }
+</style>
 </head>
 
 <body>
 
-  <div class="start-container">
+<div class="wrapper">
+
+  <div class="header">
     <div class="logo">schul<span>azon</span></div>
-
     <div class="subtitle">
-      Willkommen im Entwicklerteam.<br>
-      Du steuerst die SQL-Logik unseres Shops.
-    </div>
-
-    <div class="input-wrapper">
-      <input
-        type="text"
-        id="username"
-        placeholder="Dein Name (z. B. Anna Müller)"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </div>
-
-    
-    <button onclick="startGame()">
-      🧠 Entwicklungsumgebung starten
-    </button>
-
-    <div class="tagline">
-      Schreibe SQL-Abfragen, teste Features und schalte Shop-Funktionen frei.
-    </div>
-
-    <div class="footer-note">
-      Schulprojekt · SQL-Einführung · Schulazon 2026
+      Du bist Teil des Entwicklerteams.<br>
+      Deine Aufgabe: SQL-Logik verstehen, umsetzen und verbessern.
     </div>
   </div>
 
-  <script>
-    function startGame() {
-      const name = document.getElementById("username").value.trim();
-      if (name.length < 2) {
-        alert("Bitte gib einen gültigen Namen ein.");
-        return;
-      }
+  <!-- NAME -->
+  <div class="card">
+    <h2>👤 Dein Name</h2>
+    <input class="input" id="username" placeholder="z. B. Anna Müller">
+  </div>
 
-      localStorage.setItem("schulazon_user", name);
-      window.location.href = "shop.html";
-    }
+  <!-- MODUS DIREKT -->
+  <div class="card">
+    <h2>🚀 Direkt starten</h2>
+    <p>Du weißt, was du kannst? Wähle direkt einen Lernmodus.</p>
 
-    document.getElementById("username").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") startGame();
-    });
-  </script>
+    <div class="grid">
+      <button class="btn primary" onclick="start('guided')">Angeleiteter Modus</button>
+      <button class="btn primary" onclick="start('semi')">Halb angeleitet</button>
+      <button class="btn primary" onclick="start('free')">Freier Modus</button>
+    </div>
+  </div>
+
+  <!-- TEST -->
+  <div class="card">
+    <h2>🧠 Einstufungstest (optional)</h2>
+    <p>Vier kurze Multiple-Choice-Fragen. Keine Bewertung, nur eine Empfehlung.</p>
+
+    <div id="test">
+
+      <div class="question">
+        <strong>1. Welche Abfrage filtert korrekt?</strong>
+        <div class="answers">
+          <label><input type="radio" name="q1"> SELECT * FROM t WHERE preis > 10;</label>
+          <label><input type="radio" name="q1"> SELECT WHERE preis > 10 FROM t;</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <strong>2. Was bewirkt DISTINCT?</strong>
+        <div class="answers">
+          <label><input type="radio" name="q2"> Entfernt doppelte Zeilen</label>
+          <label><input type="radio" name="q2"> Sortiert Ergebnisse</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <strong>3. ORDER BY ohne Zusatz sortiert …</strong>
+        <div class="answers">
+          <label><input type="radio" name="q3"> aufsteigend</label>
+          <label><input type="radio" name="q3"> zufällig</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <strong>4. Welche Funktion zählt Zeilen?</strong>
+        <div class="answers">
+          <label><input type="radio" name="q4"> COUNT(*)</label>
+          <label><input type="radio" name="q4"> SUM(*)</label>
+        </div>
+      </div>
+
+      <button class="btn secondary" onclick="evaluate()">Test auswerten</button>
+      <div id="result" class="result"></div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function getName() {
+  const n = document.getElementById("username").value.trim();
+  if (n.length < 2) {
+    alert("Bitte gib deinen Namen ein.");
+    return null;
+  }
+  localStorage.setItem("schulazon_user", n);
+  return n;
+}
+
+function start(mode) {
+  if (!getName()) return;
+  localStorage.setItem("schulazon_mode", mode);
+  window.location.href = "shop.html";
+}
+
+function evaluate() {
+  const correct = { q1:0, q2:0, q3:0, q4:0 };
+  let score = 0;
+
+  Object.keys(correct).forEach(q => {
+    const radios = document.querySelectorAll(`input[name="${q}"]`);
+    if (radios[correct[q]]?.checked) score++;
+  });
+
+  let mode = "guided";
+  if (score >= 4) mode = "free";
+  else if (score >= 2) mode = "semi";
+
+  const text = {
+    guided: "Empfehlung: angeleiteter Modus",
+    semi: "Empfehlung: halb angeleiteter Modus",
+    free: "Empfehlung: freier Modus"
+  };
+
+  document.getElementById("result").textContent =
+    `Ergebnis: ${score}/4 – ${text[mode]}`;
+
+  localStorage.setItem("schulazon_mode", mode);
+}
+</script>
 
 </body>
 </html>
