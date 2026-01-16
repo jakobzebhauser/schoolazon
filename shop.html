@@ -53,13 +53,46 @@
         </div>
 
         <div class="account-body">
-          <button class="account-btn" id="btnOrders">🧾 Meine Bestellungen anzeigen</button>
-          <button class="account-btn secondary" id="btnTopProducts">⭐ Meine Top-Produkte</button>
 
-          <div class="account-result" id="accountResult">
-            <p class="account-hint">Wähle eine Aktion aus.</p>
-          </div>
-        </div>
+<!-- Login (für spätere SQLi-Aufgabe) -->
+<section class="account-block">
+  <h4>🔐 Mit anderem Konto anmelden</h4>
+
+  <input class="account-input" id="loginUser" placeholder="Benutzername" />
+  <input class="account-input" id="loginPass" placeholder="Passwort" type="password" />
+
+  <button class="account-btn" id="btnLogin">Einloggen</button>
+
+  <!-- Statusanzeige -->
+  <div class="login-status" id="loginStatus">
+    Nicht angemeldet
+  </div>
+</section>
+
+
+  <!-- Bestellungen -->
+  <section class="account-block">
+    <div class="account-block-header">
+      <h4>📦 Meine Bestellungen</h4>
+      <button class="account-link" id="btnOrders">anzeigen</button>
+    </div>
+    <div id="ordersResult"></div>
+  </section>
+
+  <!-- Top-Produkte -->
+  <section class="account-block">
+    <div class="account-block-header">
+      <h4>⭐ Meine Top-Produkte</h4>
+      <button class="account-link" id="btnTopProducts">anzeigen</button>
+    </div>
+    <div id="topProductsResult"></div>
+  </section>
+
+
+ 
+
+</div>
+
       </aside>
 
       <!-- ================= Fake-Browser-Leiste ================= -->

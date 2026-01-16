@@ -1526,6 +1526,186 @@ t-row strong {
   transform: scale(1.15);
 }
 
+/* ===============================
+   ACCOUNT – Amazon Style
+================================ */
+
+.account-body{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+/* Ergebnisbereich */
+.account-result{
+  margin-top:6px;
+  padding:10px 0;
+}
+
+.account-result h4{
+  margin:6px 0 10px;
+  font-size:15px;
+  font-weight:600;
+}
+
+/* Bestell-/Produkt-Zeile */
+.order-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:10px 0;
+  border-bottom:1px solid #e5e7eb;
+  font-size:14px;
+}
+
+.order-item:last-child{
+  border-bottom:none;
+}
+
+.order-item .muted{
+  font-size:12px;
+  color:#6b7280;
+}
+
+/* Login-Bereich */
+.account-login{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid #e5e7eb;
+}
+
+.account-login h4{
+  margin-bottom:10px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.account-login input{
+  width:100%;
+  padding:8px 10px;
+  margin-bottom:8px;
+
+  border:1px solid #d5d9d9;
+  border-radius:6px;
+  font-size:13px;
+}
+
+.login-status{
+  margin-top:6px;
+  font-size:13px;
+}
+
+.login-status.error{
+  color:#b12704;
+}
+
+.login-status.success{
+  color:#007600;
+}
+
+.account-block{
+  border-top:1px solid #e5e7eb;
+  padding-top:14px;
+  margin-top:14px;
+}
+
+.account-block h4{
+  margin:0 0 8px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.account-block-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.account-link{
+  background:none;
+  border:none;
+  color:#007185;
+  font-size:13px;
+  cursor:pointer;
+}
+.account-link:hover{
+  text-decoration:underline;
+}
+
+.account-input{
+  width:100%;
+  margin-bottom:8px;
+  padding:8px 10px;
+  border:1px solid #d5d9d9;
+  border-radius:8px;
+  font-size:13px;
+}
+
+.account-login-result{
+  font-size:12px;
+  margin-top:6px;
+}
+
+.order-row,
+.top-product-row{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid #f1f5f9;
+  font-size:13px;
+}
+
+.order-row strong,
+.top-product-row strong{
+  font-weight:500;
+}
+
+.muted{
+  color:#6b7280;
+}
+
+/* ===============================
+   LOGIN STATUS
+================================ */
+.login-status{
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+/* Erfolg */
+.login-status.success{
+  color: #007600; /* Amazon-Grün */
+}
+
+/* Fehler */
+.login-status.error{
+  color: #b12704; /* Amazon-Rot */
+}
+
+/* ===============================
+   ACCOUNT BLOCKS – Login ohne Balken
+================================ */
+
+/* Standard: Trennlinie für Blocks */
+.account-block{
+  border-top: 1px solid rgba(0,0,0,.08);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+/* Login-Block: KEINE Trennlinie */
+.account-block:first-child{
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+
+
+
 
 
 

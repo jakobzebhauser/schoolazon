@@ -987,8 +987,92 @@ if (accountTrigger) {
 document.getElementById("accountClose")?.addEventListener("click", closeAccount);
 accountOverlay?.addEventListener("click", closeAccount);
 
+// ================= KONTO & LISTEN =================
+
 document.getElementById("btnOrders")?.addEventListener("click", showOrders);
 document.getElementById("btnTopProducts")?.addEventListener("click", showTopProducts);
+document.getElementById("btnLogin")?.addEventListener("click", fakeLogin);
+
+
+function showOrders(){
+  const target = document.getElementById("ordersResult");
+
+  const sql = `
+    SELECT
+      p.name,
+      v.anzahl,
+      ROUND(p.preis * v.anzahl, 2) AS summe
+    FROM verkäufe v
+    JOIN produkte p ON p.id = v.produkt_id
+    WHERE v.nutzer_id = ${MEINE_ID}
+    ORDER BY v.id DESC
+    LIMIT 3;
+  `;
+
+  const res = db.exec(sql);
+
+  if(!res.length || !res[0].values.length){
+    target.innerHTML = `<div class="muted">Keine Bestellungen vorhanden.</div>`;
+    return;
+  }
+
+  target.innerHTML = res[0].values.map(r => `
+    <div class="order-row">
+      <strong>${escapeHtml(r[0])}</strong>
+      <span>${r[1]}× – ${Number(r[2]).toFixed(2)} €</span>
+    </div>
+  `).join("");
+}
+
+
+// --- Meine Top-Produkte (2 Stück) --- 
+function showTopProducts(){
+  const target = document.getElementById("topProductsResult");
+
+  const sql = `
+    SELECT
+      p.name,
+      SUM(v.anzahl) AS gesamt
+    FROM verkäufe v
+    JOIN produkte p ON p.id = v.produkt_id
+    WHERE v.nutzer_id = ${MEINE_ID}
+    GROUP BY p.id
+    ORDER BY gesamt DESC
+    LIMIT 2;
+  `;
+
+  const res = db.exec(sql);
+
+  if(!res.length || !res[0].values.length){
+    target.innerHTML = `<div class="muted">Noch keine Top-Produkte.</div>`;
+    return;
+  }
+
+  target.innerHTML = res[0].values.map(r => `
+    <div class="top-product-row">
+      <strong>${escapeHtml(r[0])}</strong>
+      <span>${r[1]}× gekauft</span>
+    </div>
+  `).join("");
+}
+
+
+document.getElementById("btnLogin")?.addEventListener("click", fakeLogin);
+
+function fakeLogin(){
+  const status = document.getElementById("loginStatus");
+  if(!status) return;
+
+  // ❗ absichtlich KEINE echte Prüfung (für SQLi-Aufgabe später)
+  status.textContent = "❌ Login fehlgeschlagen";
+  status.className = "login-status error";
+
+  // Optional: später leicht austauschbar gegen Erfolg
+  // status.textContent = "✅ Login erfolgreich";
+  // status.className = "login-status success";
+}
+
+
 
 function openAccount() {
   closeCart(); // 🔥 wichtig: nie beide Panels gleichzeitig
@@ -1001,30 +1085,6 @@ function closeAccount() {
   accountOverlay.classList.remove("open");
 }
 
-// ---------- Aufgabe 1: Bestellungen ----------
-function showOrders() {
-  accountResult.innerHTML = `
-    <p class="account-hint">
-      Für diese Funktion sind aktuell keine Daten verfügbar.
-    </p>
-  `;
-}
-
-function showTopProducts() {
-  accountResult.innerHTML = `
-    <p class="account-hint">
-      Diese Funktion wird später implementiert.
-    </p>
-  `;
-}
 
 
-// ---------- Aufgabe 2: Top-Produkte ----------
-function showTopProducts() {
-  accountResult.innerHTML = `
-    <p class="account-hint">
-      Diese Funktion wird später implementiert.
-    </p>
-  `;
-}
 
