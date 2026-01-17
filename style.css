@@ -1794,6 +1794,12 @@ html.embed .app{
   padding: 0 !important;
 }
 
+/* HARD LOCK: wirklich nicht klickbar */
+[data-locked="true"] {
+  pointer-events: none !important;
+  opacity: 0.55 !important;
+}
+
 
 
 

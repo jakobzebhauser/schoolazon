@@ -252,6 +252,15 @@ function clearAllActiveButtons() {
 
 async function onAction(actionId) {
 
+    // HARD LOCK: wenn der Button gelockt ist, darf nichts passieren
+  const lockedEl = document.querySelector(`[data-task="${actionId}"][data-locked="true"]`);
+  if (lockedEl) {
+    // optional: kleines Feedback (kannst du auch weglassen)
+    console.log("Locked:", actionId);
+    return;
+  }
+
+
     // Wenn es eine Aufgabe ist und noch gesperrt: Lab öffnen und NICHT normal ausführen
   if (TASKS[actionId] && LOCKS[actionId]) {
     openSqlLab(TASKS[actionId]);
@@ -1134,6 +1143,68 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
     return;
   }
 });
+
+// ======================================================
+// SHOP <-> MODE BRIDGE (iframe postMessage, minimal)
+// ======================================================
+(function () {
+  // Mode -> Shop empfangen
+  window.addEventListener("message", (e) => {
+    // nur gleiche Origin + unser Marker
+    if (e.origin !== window.location.origin) return;
+    const msg = e.data;
+    if (!msg || msg.__SCHULAZON__ !== true) return;
+
+    // a) Button sperren/entsperren
+    if (msg.type === "SET_LOCK") {
+      const { taskId, locked } = msg;
+
+      document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
+        el.setAttribute("data-locked", locked ? "true" : "false");
+
+        // wirklich blockieren (auch bei divs wie .sort-option)
+        el.style.pointerEvents = locked ? "none" : "";
+        el.style.opacity = locked ? "0.55" : "";
+
+        // echte Buttons zusätzlich disabled setzen
+        if (el.tagName === "BUTTON") el.disabled = !!locked;
+      });
+
+      return;
+    }
+
+    // b) Shop-Aktion auslösen (wie Klick)
+    if (msg.type === "RUN_ACTION") {
+      const { actionId } = msg;
+      if (typeof onAction === "function") onAction(actionId);
+      return;
+    }
+  });
+
+  // Shop -> Mode melden, wenn im Shop etwas geklickt wurde
+  function shopEmit(type, payload = {}) {
+    try {
+      window.parent?.postMessage(
+        { __SCHULAZON__: true, type, ...payload },
+        window.location.origin
+      );
+    } catch (_) {}
+  }
+
+  // Hook: onAction wrapper (ändert Logik nicht)
+  const _onAction = (typeof onAction === "function") ? onAction : null;
+  if (_onAction) {
+    onAction = async function(actionId) {
+      shopEmit("SHOP_ACTION", { actionId });
+      return _onAction(actionId);
+    };
+  }
+
+    // Shop meldet: Listener ist aktiv und Shop ist bereit
+  shopEmit("SHOP_READY", {});
+
+})();
+
 
 
 
