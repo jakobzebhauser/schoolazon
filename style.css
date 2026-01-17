@@ -1773,6 +1773,26 @@ t-row strong {
 }
 
 
+/* =========================
+   Shop im iframe: volle Breite nutzen
+   (ändert NICHTS außerhalb des iframes)
+   ========================= */
+html.embed .app,
+html.embed .browser,
+html.embed .shop {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+html.embed body {
+  margin: 0;
+}
+
+html.embed .app{
+  grid-template-columns: 1fr !important; /* nur 1 Spalte */
+  gap: 0 !important;
+  padding: 0 !important;
+}
 
 
 

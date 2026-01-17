@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
+<script>
+  // Nur wenn shop.html im iframe läuft
+  if (window.self !== window.top) {
+    document.documentElement.classList.add("embed");
+  }
+</script>
+
+
 <body>
   <div class="app">
 
@@ -188,19 +196,7 @@
       </div>
     </div>
 
-    <!-- ======================================================
-         RECHTER BEREICH – MODE CONTAINER
-         ====================================================== -->
-    <div class="lab modern-lab">
-      <div class="lab-body" id="modeContainer">
-
-        <div class="empty-state">
-          <h3>🎓 Schulazon Lernbereich</h3>
-          <p>Wähle einen Modus oder beginne mit einer Aufgabe.</p>
-        </div>
-
-      </div>
-    </div>
+   
 
   </div>
 
