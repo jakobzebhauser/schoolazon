@@ -30,23 +30,14 @@ function lockShop(taskId, locked){
   );
 }
 const ALL_TASK_IDS = [
-  "all",
-  "express",
-  "bestseller",
-  "available",
-  "cat-electronics",
-  "cat-household",
-  "cat-sport",
-  "price-25",
-  "price-50",
-  "price-100",
-  "rating-5",
-  "rating-4",
+  "all","express","bestseller","available",
+  "cat-electronics","cat-household","cat-sport",
+  "price-25","price-50","price-100",
+  "rating-5","rating-4",
   "reset-filters",
-  "priceAsc",
-  "priceDesc",
-  "popularity",
+  "priceAsc","priceDesc","popularity",
   "search",
+  "open-cart",
   "orders",
   "topProducts",
   "cart-refresh",
@@ -128,9 +119,6 @@ class FreeMode {
     // unlocked state (nur RAM, v1)
     this.unlocked = {};
     Object.keys(this.TASKS).forEach(id => this.unlocked[id] = false);
-
-    // Progress UI (initial)
-    // (DOM nodes exist after renderShell, but safe to call later as well)
 
     // Shop-Klicks -> Aufgabe auswählen
     this.shop.onShopAction((actionId) => this.onShopSelect(actionId));
@@ -269,48 +257,6 @@ class FreeMode {
         refSql: "SELECT id FROM produkte;",
         mode: "set"
       }
-,
-
-      "search": {
-        title: "Suche freischalten",
-        goal: "Gib Produkt-IDs und Namen aus, um die Suchleiste freizuschalten.",
-        starter: "SELECT id, name FROM produkte;",
-        refSql: "SELECT id, name FROM produkte;",
-        mode: "set"
-      },
-
-      "orders": {
-        title: "Meine Bestellungen anzeigen",
-        goal: "Gib die Produkt-IDs der letzten Bestellungen des Nutzers (nutzer_id = 1) aus.",
-        starter: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 ORDER BY id DESC LIMIT 3;",
-        refSql: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 ORDER BY id DESC LIMIT 3;",
-        mode: "set"
-      },
-
-      "topProducts": {
-        title: "Meine Top-Produkte anzeigen",
-        goal: "Gib die Produkt-IDs der meistgekauften Produkte des Nutzers (nutzer_id = 1) aus (Sortierung: SUM(anzahl) DESC, produkt_id ASC).",
-        starter: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 GROUP BY produkt_id ORDER BY SUM(anzahl) DESC, produkt_id ASC LIMIT 3;",
-        refSql: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 GROUP BY produkt_id ORDER BY SUM(anzahl) DESC, produkt_id ASC LIMIT 3;",
-        mode: "order"
-      },
-
-      "cart-refresh": {
-        title: "Warenkorb aktualisieren",
-        goal: "Gib die Produkt-IDs aus dem Warenkorb aus.",
-        starter: "SELECT produkt_id FROM warenkorb;",
-        refSql: "SELECT produkt_id FROM warenkorb;",
-        mode: "set"
-      },
-
-      "cart-total": {
-        title: "Gesamtpreis aktualisieren",
-        goal: "Berechne den Gesamtpreis des Warenkorbs als einzelne Zahl (SUM(preis * menge)).",
-        starter: "SELECT COALESCE(SUM(p.preis * w.menge), 0) AS total FROM warenkorb w JOIN produkte p ON p.id = w.produkt_id;",
-        refSql: "SELECT COALESCE(SUM(p.preis * w.menge), 0) AS total FROM warenkorb w JOIN produkte p ON p.id = w.produkt_id;",
-        mode: "scalar"
-      }
-
     };
   }
 
@@ -326,36 +272,12 @@ class FreeMode {
 
     // 3) Initialer Zustand (keine Aufgabe ausgewählt)
     this.setEmptyState(true);
-
-    this.updateProgress();
   }
 
   renderShell() {
     this.root.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
         <h2 style="margin:0;">Freier Modus</h2>
-        <div id="progressWidget" style="
-          margin-top:10px;
-          padding:10px 12px;
-          border-radius:14px;
-          background: rgba(255,255,255,.06);
-          border: 1px solid rgba(255,255,255,.10);
-          box-shadow: 0 10px 30px rgba(0,0,0,.20);
-          backdrop-filter: blur(10px);
-        ">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <div style="font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#cbd5e1;">
-              Fortschritt
-            </div>
-            <div id="progressCount" style="font-size:12px; font-weight:800; color:#e8eefc;">
-              0/0 freigeschaltet
-            </div>
-          </div>
-          <div style="margin-top:8px; height:10px; border-radius:999px; background:#1e293b; overflow:hidden;">
-            <div id="progressFill" style="height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#4ade80); transition: width .35s ease;"></div>
-          </div>
-        </div>
-
         <div style="opacity:.85;font-size:13px;">
           Wähle links im Shop einen <strong>gesperrten</strong> Button. Rechts öffnet sich dann die Programmierumgebung.
           <br>Wichtig: Gib immer Produkt-IDs aus (Spalte <code>id</code> oder nur 1 numerische Spalte).
@@ -408,8 +330,6 @@ class FreeMode {
     `;
 
     this.statusEl = this.root.querySelector("#freeStatus");
-    this.progressCountEl = this.root.querySelector("#progressCount");
-    this.progressFillEl = this.root.querySelector("#progressFill");
     this.emptyEl = this.root.querySelector("#emptyState");
     this.editorEl = this.root.querySelector("#editor");
 
@@ -422,8 +342,6 @@ class FreeMode {
 
     this.runBtn.addEventListener("click", () => this.checkCurrent());
     this.unlockBtn.addEventListener("click", () => this.unlockCurrent());
-
-    this.updateProgress();
   }
 
   setEmptyState(isEmpty) {
@@ -469,7 +387,9 @@ class FreeMode {
       });
 
       const res = await fetch("produkte.sqlite");
-      if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im Projektordner?)");
+      if (!res.ok) {
+        throw new Error("produkte.sqlite nicht gefunden oder nicht erreichbar. Tipp: Seite ueber einen lokalen Webserver (z.B. VSCode Live Server) oeffnen und Datei im gleichen Ordner bereitstellen.");
+      }
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
       this.statusEl.textContent = "✅ DB geladen. Klicke im Shop einen gesperrten Button, dann löse die Aufgabe rechts.";
@@ -568,7 +488,6 @@ class FreeMode {
     if (!id) return;
 
     this.unlocked[id] = true;
-    this.updateProgress();
     await this.shop.lock(id, false);
 
     // UI aktualisieren
@@ -580,24 +499,6 @@ class FreeMode {
     // Editor schließen: nach Freischaltung keine erneute Bearbeitung
     this.currentId = null;
     this.setEmptyState(true);
-  }
-
-
-  updateProgress() {
-    try {
-      const total = Object.keys(this.TASKS || {}).length;
-      const done = Object.values(this.unlocked || {}).filter(Boolean).length;
-
-      if (this.progressCountEl) {
-        this.progressCountEl.textContent = `${done}/${total} freigeschaltet`;
-      }
-      if (this.progressFillEl) {
-        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-        this.progressFillEl.style.width = `${pct}%`;
-      }
-    } catch (_) {
-      // no-op
-    }
   }
 
   // ---------- Validation ----------
@@ -678,10 +579,554 @@ class FreeMode {
 /* ===========================
    Guided/Test Platzhalter
    =========================== */
+
+/* ===========================
+   GuidedMode (v1) - Linear Flow
+   =========================== */
 class GuidedMode {
-  constructor(root){ this.root = root; }
-  mount(){ this.root.innerHTML = `<h2>Angeleiteter Modus</h2><p>Platzhalter.</p>`; }
+  constructor(root) {
+    this.root = root;
+    this.shop = new ShopBridge("shopFrame");
+    this.db = null;
+
+    // linear steps: theory blocks + occasional gated SQL tasks
+    this.steps = this.buildSteps();
+    this.stepIndex = 0;
+
+    // unlock state (RAM v1)
+    this.unlocked = {};
+
+    // IMPORTANT: Guided mode ignores shop clicks (no free selection).
+    this._ignoreShop = true;
+  }
+
+  buildSteps() {
+    // v1 demo flow: 4 theory blocks -> 1 task (unlock search) -> 1 theory recap
+    return [
+      {
+        type: "theory",
+        title: "Willkommen im Guided Mode",
+        body: `
+          <p>Du arbeitest dich hier Schritt für Schritt durch kurze Theorie‑Blöcke und kleine Missionen.</p>
+          <ul>
+            <li>Links ist der Shop: <strong>alles ist zunächst gesperrt</strong>.</li>
+            <li>Rechts bekommst du Theorie und genau definierte Aufgaben.</li>
+            <li>Nur wenn du eine Mission löst, wird ein Feature im Shop freigeschaltet.</li>
+          </ul>
+        `
+      },
+      {
+        type: "theory",
+        title: "SQL‑Grundform",
+        body: `
+          <p>Wir starten mit <code>SELECT</code>‑Abfragen. In Schulazon gilt: Gib primär <strong>Produkt‑IDs</strong> aus.</p>
+          <div style="margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);">
+            <div style="font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:#cbd5e1;">Merksatz</div>
+            <div style="margin-top:6px; font-size:13px; color:#e8eefc;">
+              <code>SELECT ... FROM ... WHERE ...</code> filtert Daten, <code>ORDER BY</code> sortiert, <code>LIMIT</code> begrenzt.
+            </div>
+          </div>
+        `
+      },
+      {
+        type: "theory",
+        title: "Filtern mit WHERE",
+        body: `
+          <p>Mit <code>WHERE</code> begrenzt du die Ergebnismenge. Typisch: <code>=</code>, <code>BETWEEN</code>, <code>LIKE</code>.</p>
+          <p style="opacity:.9; font-size:13px;">In Schulazon hängt z. B. die Suche an einem Query, der zu einem Suchbegriff passende Produkte findet.</p>
+        `
+      },
+      {
+        type: "theory",
+        title: "Mini‑Mission steht an",
+        body: `
+          <p>Als Nächstes schaltest du die <strong>Suchleiste</strong> frei.</p>
+          <p style="opacity:.9; font-size:13px;">Ziel: Du gibst IDs + Namen aus, damit die Suche im Shop aktiv wird.</p>
+        `
+      },
+      {
+        type: "task",
+        taskId: "search",
+        title: "Mission: Suche freischalten",
+        goal: "Gib Produkt-IDs und Namen aus (2 Spalten), damit die Suchleiste freigeschaltet wird.",
+        starter: "SELECT id, name FROM produkte;",
+        refSql: "SELECT id, name FROM produkte;",
+        mode: "set",
+        unlockLabel: "Suchleiste freischalten"
+      },
+      {
+        type: "theory",
+        title: "Freigeschaltet",
+        body: `
+          <p>Du hast ein Feature im Shop freigeschaltet. In Guided Mode kommt als Nächstes wieder Theorie und später weitere Missionen.</p>
+          <p style="opacity:.9; font-size:13px;">Nächster Ausbau: weitere Theorie‑Kapitel + Missionen (JOIN/GROUP BY) für Bestellungen, Top‑Produkte, Warenkorb‑Buttons.</p>
+        `
+      }
+    ];
+  }
+
+  async mount() {
+    this.renderShell();
+
+    // lock everything in the shop for guided mode
+    await this.shop.ready;
+    await this.lockAllShopTasks(true);
+
+    // load db for tasks
+    await this.loadDb();
+
+    // render first step
+    this.renderStep();
+  }
+
+  async lockAllShopTasks(locked) {
+    const ids = typeof ALL_TASK_IDS !== "undefined" ? ALL_TASK_IDS : [];
+    for (const id of ids) await this.shop.lock(id, locked);
+  }
+
+  async loadDb() {
+    try {
+      this.setStatus("DB wird geladen…");
+
+      await this.ensureSqlJsLoaded();
+
+      const SQL = await initSqlJs({
+        locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+      });
+
+      const res = await fetch("produkte.sqlite");
+      if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im Projektordner?)");
+
+      this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+      this.setStatus("Bereit.");
+    } catch (e) {
+      this.db = null;
+      this.setStatus("DB-Fehler: " + e.message, true);
+    }
+  }
+
+
+  async ensureSqlJsLoaded() {
+    if (typeof window.initSqlJs === "function") return;
+
+    // Load sql.js from CDN (same version as FreeMode)
+    await this.loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js", "__sqljs_wasm_loaded__");
+
+    if (typeof window.initSqlJs !== "function") {
+      throw new Error("sql.js konnte nicht geladen werden (initSqlJs fehlt). Prüfe Internetzugang oder Content-Security-Policy.");
+    }
+  }
+
+  loadScriptOnce(src, flagName) {
+    return new Promise((resolve, reject) => {
+      if (window[flagName]) return resolve();
+
+      const existing = Array.from(document.scripts).some(s => s.src === src);
+      if (existing) {
+        window[flagName] = true;
+        return resolve();
+      }
+
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = () => { window[flagName] = true; resolve(); };
+      s.onerror = () => reject(new Error("Script konnte nicht geladen werden: " + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ---------- UI ---------- */
+
+  renderShell() {
+    this.root.innerHTML = `
+      <style>
+        .g-shell{ display:flex; flex-direction:column; gap:14px; min-height:0; height:100%; }
+        .g-head{ display:flex; flex-direction:column; gap:10px; }
+        .g-title{ margin:0; font-size:22px; font-weight:900; letter-spacing:.01em; }
+        .g-status{ font-size:12px; opacity:.85; }
+        .g-card{
+          position: relative;
+          border-radius: 18px;
+          padding: 16px;
+          background: rgba(255,255,255,.06);
+          border: 1px solid rgba(255,255,255,.10);
+          box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+          backdrop-filter: blur(10px);
+          overflow:hidden;
+        }
+        .g-card::before{
+          content:"";
+          position:absolute;
+          inset:-40% -30%;
+          background: radial-gradient(circle at 30% 20%, rgba(34,197,94,.20), transparent 45%),
+                      radial-gradient(circle at 70% 70%, rgba(240,136,4,.18), transparent 55%);
+          filter: blur(18px);
+          pointer-events:none;
+        }
+        .g-card-inner{ position:relative; z-index:1; }
+        .g-step-title{ margin:0 0 10px 0; font-size:18px; font-weight:800; }
+        .g-body{ font-size:14px; line-height:1.55; color:#e8eefc; }
+        .g-body p{ margin:0 0 10px 0; }
+        .g-body ul{ margin:8px 0 0 18px; }
+        .g-body li{ margin:6px 0; opacity:.95; }
+        .g-nav{
+          margin-top:auto;
+          display:flex;
+          flex-direction:column;
+          gap:10px;
+          padding-top: 6px;
+        }
+        .g-progress-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:#cbd5e1; }
+        .g-progress-bar{ height:10px; border-radius:999px; background:#1e293b; overflow:hidden; }
+        .g-progress-fill{ height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#4ade80); transition: width .35s ease; }
+        .g-buttons{ display:flex; gap:10px; justify-content:space-between; }
+        .g-btn{
+          border:none;
+          border-radius: 14px;
+          padding: 12px 14px;
+          font-weight:800;
+          cursor:pointer;
+          transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+          background: rgba(255,255,255,.10);
+          color:#e8eefc;
+        }
+        .g-btn:hover{ transform: translateY(-1px); box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+        .g-btn.primary{
+          background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(74,222,128,0.95));
+          color:#052e16;
+        }
+        .g-btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+        .g-fade{ animation: gfade .22s ease both; }
+        @keyframes gfade { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:none;} }
+
+        /* Task editor */
+        .g-editor{ margin-top:12px; border-radius: 16px; overflow:hidden; border:1px solid rgba(255,255,255,.10); background: rgba(2,6,23,.70); }
+        .g-editor-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background: rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.08); }
+        .g-pill{ font-size:12px; padding:6px 10px; border-radius:999px; background: rgba(240,136,4,.14); color:#fde68a; font-weight:800; }
+        .g-textarea{
+          width:100%;
+          min-height:160px;
+          resize:vertical;
+          border:none;
+          outline:none;
+          padding:14px;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+          font-size:13px;
+          line-height:1.5;
+          color:#e8eefc;
+          background: transparent;
+        }
+        .g-actions{ display:flex; justify-content:flex-end; gap:10px; padding:10px 12px; background: rgba(255,255,255,.04); border-top:1px solid rgba(255,255,255,.08); }
+        .g-run{
+          border:none;
+          border-radius: 12px;
+          padding: 10px 14px;
+          cursor:pointer;
+          font-weight:900;
+          background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(74,222,128,0.95));
+          color:#052e16;
+          transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+        }
+        .g-run:hover{ transform: translateY(-1px); box-shadow: 0 16px 40px rgba(34,197,94,.22); }
+        .g-unlock{
+          border:none;
+          border-radius: 12px;
+          padding: 10px 14px;
+          cursor:not-allowed;
+          font-weight:900;
+          background: rgba(255,255,255,.10);
+          color:#e8eefc;
+          opacity:.55;
+          transition: opacity .15s ease, transform .15s ease, box-shadow .15s ease;
+        }
+        .g-unlock.enabled{
+          cursor:pointer;
+          opacity:1;
+          background: linear-gradient(90deg, rgba(240,136,4,0.92), rgba(251,191,36,0.92));
+          color:#1f2937;
+        }
+        .g-unlock.enabled:hover{ transform: translateY(-1px); box-shadow: 0 18px 46px rgba(240,136,4,.22); }
+        .g-out{
+          margin:0;
+          padding:12px;
+          border-top:1px solid rgba(255,255,255,.08);
+          font-size:12px;
+          white-space:pre-wrap;
+          color:#e8eefc;
+          min-height:70px;
+        }
+      </style>
+
+      <div class="g-shell">
+        <div class="g-head">
+          <h2 class="g-title">Angeleiteter Modus</h2>
+          <div class="g-status" id="gStatus">Initialisiere…</div>
+        </div>
+
+        <div class="g-card">
+          <div class="g-card-inner g-fade" id="gStep"></div>
+        </div>
+
+        <div class="g-nav">
+          <div class="g-progress-row">
+            <div id="gProgressLabel">Kapitel 1/1</div>
+            <div id="gProgressPct">0%</div>
+          </div>
+          <div class="g-progress-bar"><div class="g-progress-fill" id="gProgressFill"></div></div>
+          <div class="g-buttons">
+            <button class="g-btn" id="gPrev">Zurück</button>
+            <button class="g-btn primary" id="gNext">Weiter</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.statusEl = this.root.querySelector("#gStatus");
+    this.stepEl = this.root.querySelector("#gStep");
+    this.prevBtn = this.root.querySelector("#gPrev");
+    this.nextBtn = this.root.querySelector("#gNext");
+    this.progressLabelEl = this.root.querySelector("#gProgressLabel");
+    this.progressPctEl = this.root.querySelector("#gProgressPct");
+    this.progressFillEl = this.root.querySelector("#gProgressFill");
+
+    this.prevBtn.addEventListener("click", () => this.go(-1));
+    this.nextBtn.addEventListener("click", () => this.go(1));
+
+    this.setStatus("Bereit.");
+  }
+
+  setStatus(text, isError = false) {
+    if (!this.statusEl) return;
+    this.statusEl.textContent = text;
+    this.statusEl.style.color = isError ? "#fca5a5" : "";
+  }
+
+  updateProgress() {
+    const total = this.steps.length;
+    const idx = this.stepIndex + 1;
+    const pct = total > 0 ? Math.round((idx / total) * 100) : 0;
+
+    this.progressLabelEl.textContent = `Kapitel ${idx}/${total}`;
+    this.progressPctEl.textContent = `${pct}%`;
+    this.progressFillEl.style.width = `${pct}%`;
+
+    this.prevBtn.disabled = this.stepIndex <= 0;
+  }
+
+  renderStep() {
+    const step = this.steps[this.stepIndex];
+    this.updateProgress();
+
+    // Default: next enabled, but tasks may gate it
+    this.nextBtn.disabled = false;
+
+    if (step.type === "theory") {
+      this.stepEl.innerHTML = `
+        <div class="g-fade">
+          <h3 class="g-step-title">${this.escape(step.title)}</h3>
+          <div class="g-body">${step.body}</div>
+        </div>
+      `;
+      this.nextBtn.textContent = (this.stepIndex === this.steps.length - 1) ? "Fertig" : "Weiter";
+      return;
+    }
+
+    if (step.type === "task") {
+      this.nextBtn.textContent = "Weiter";
+      // gate progression until task unlocked
+      this.nextBtn.disabled = true;
+
+      this.stepEl.innerHTML = `
+        <div class="g-fade">
+          <h3 class="g-step-title">${this.escape(step.title)}</h3>
+          <div class="g-body">
+            <p style="opacity:.9">${this.escape(step.goal)}</p>
+          </div>
+
+          <div class="g-editor" style="margin-top:14px;">
+            <div class="g-editor-top">
+              <div class="g-pill">MISSION</div>
+              <div style="font-size:12px; opacity:.85;">Ziel: korrekt prüfen → freischalten</div>
+            </div>
+
+            <textarea class="g-textarea" id="gSql">${this.escape(step.starter || "")}</textarea>
+
+            <div class="g-actions">
+              <button class="g-run" id="gRun">Prüfen</button>
+              <button class="g-unlock" id="gUnlock" disabled>${this.escape(step.unlockLabel || "Freischalten")}</button>
+            </div>
+
+            <pre class="g-out" id="gOut"></pre>
+          </div>
+        </div>
+      `;
+
+      this.sqlEl = this.root.querySelector("#gSql");
+      this.outEl = this.root.querySelector("#gOut");
+      this.runEl = this.root.querySelector("#gRun");
+      this.unlockEl = this.root.querySelector("#gUnlock");
+
+      this.runEl.addEventListener("click", () => this.checkTask());
+      this.unlockEl.addEventListener("click", () => this.unlockTask());
+
+      // UX
+      try { this.sqlEl?.focus(); } catch (_) {}
+      return;
+    }
+  }
+
+  go(delta) {
+    const next = this.stepIndex + delta;
+    if (next < 0 || next >= this.steps.length) return;
+    this.stepIndex = next;
+    this.renderStep();
+  }
+
+  /* ---------- Task logic ---------- */
+
+  checkTask() {
+    const step = this.steps[this.stepIndex];
+    if (!step || step.type !== "task") return;
+
+    this.outEl.textContent = "";
+    this.unlockEl.disabled = true;
+    this.unlockEl.classList.remove("enabled");
+
+    if (!this.db) {
+      this.outEl.textContent = "DB ist nicht geladen.";
+      return;
+    }
+
+    const sql = this.sqlEl.value || "";
+    if (!this.isSelectOnly(sql)) {
+      this.outEl.textContent = "Nur SELECT-Abfragen sind erlaubt.";
+      return;
+    }
+
+    let studentRes, refRes;
+    try {
+      studentRes = this.db.exec(sql);
+    } catch (e) {
+      this.outEl.textContent = "SQL-Fehler: " + e.message;
+      return;
+    }
+
+    try {
+      refRes = this.db.exec(step.refSql);
+    } catch (e) {
+      this.outEl.textContent = "Interner Referenz-Fehler: " + e.message;
+      return;
+    }
+
+    const ok = this.validate(studentRes, refRes, step.mode);
+
+    if (ok) {
+      this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
+      this.unlockEl.disabled = false;
+      this.unlockEl.classList.add("enabled");
+      return;
+    }
+
+    this.outEl.textContent = "❌ Noch nicht korrekt. Tipp: Achte auf die geforderte Ausgabeform (IDs + ggf. Name).";
+  }
+
+  async unlockTask() {
+    const step = this.steps[this.stepIndex];
+    if (!step || step.type !== "task") return;
+
+    // unlock in shop
+    this.unlocked[step.taskId] = true;
+    await this.shop.lock(step.taskId, false);
+
+    // lock UI: no re-edit in guided
+    this.sqlEl.readOnly = true;
+    this.runEl.disabled = true;
+    this.runEl.style.opacity = ".6";
+    this.runEl.style.cursor = "not-allowed";
+    this.unlockEl.disabled = true;
+    this.unlockEl.classList.remove("enabled");
+
+    this.outEl.textContent = "🎉 Freigeschaltet! Du kannst jetzt weiter.";
+    this.nextBtn.disabled = false;
+
+    // optional micro-delay for feel
+    setTimeout(() => {
+      try { this.nextBtn.focus(); } catch(_) {}
+    }, 120);
+  }
+
+  /* ---------- Validation helpers ---------- */
+
+  validate(studentExec, refExec, mode) {
+    if (mode === "scalar") {
+      const a = this.extractScalar(studentExec);
+      const b = this.extractScalar(refExec);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+      return Math.abs(a - b) < 1e-9;
+    }
+
+    const stu = this.extractIds(studentExec);
+    const ref = this.extractIds(refExec);
+
+    if (!stu.ok || !ref.ok) return false;
+
+    if (mode === "order") {
+      if (stu.ids.length !== ref.ids.length) return false;
+      for (let i = 0; i < stu.ids.length; i++) if (stu.ids[i] !== ref.ids[i]) return false;
+      return true;
+    }
+
+    const A = new Set(stu.ids);
+    const B = new Set(ref.ids);
+    if (A.size !== B.size) return false;
+    for (const x of A) if (!B.has(x)) return false;
+    return true;
+  }
+
+  extractScalar(execResult) {
+    try {
+      if (!execResult || !execResult.length) return NaN;
+      const row = execResult[0]?.values?.[0];
+      if (!row || row.length < 1) return NaN;
+      return Number(row[0]);
+    } catch (_) {
+      return NaN;
+    }
+  }
+
+  extractIds(execResult) {
+    if (!execResult || !execResult.length) return { ok: false, ids: [] };
+    const { columns, values } = execResult[0];
+    if (!columns || !values) return { ok: false, ids: [] };
+
+    const lower = columns.map(c => String(c).toLowerCase());
+    let idx = lower.indexOf("id");
+    if (idx === -1) idx = lower.indexOf("produkt_id");
+    if (idx === -1 && columns.length === 1) idx = 0;
+    if (idx === -1) return { ok: false, ids: [] };
+
+    const ids = values
+      .map(row => Number(row[idx]))
+      .filter(n => Number.isFinite(n));
+
+    return { ok: true, ids };
+  }
+
+  isSelectOnly(sql) {
+    const s = String(sql || "").trim().toLowerCase();
+    if (!s.startsWith("select")) return false;
+    const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
+    return !forbidden.some(k => s.includes(k));
+  }
+
+  escape(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
 }
+
 class TestMode {
   constructor(root){ this.root = root; }
   mount(){ this.root.innerHTML = `<h2>Test-Modus</h2><p>Platzhalter.</p>`; }
