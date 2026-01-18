@@ -129,6 +129,9 @@ class FreeMode {
     this.unlocked = {};
     Object.keys(this.TASKS).forEach(id => this.unlocked[id] = false);
 
+    // Progress UI (initial)
+    // (DOM nodes exist after renderShell, but safe to call later as well)
+
     // Shop-Klicks -> Aufgabe auswählen
     this.shop.onShopAction((actionId) => this.onShopSelect(actionId));
 
@@ -323,12 +326,36 @@ class FreeMode {
 
     // 3) Initialer Zustand (keine Aufgabe ausgewählt)
     this.setEmptyState(true);
+
+    this.updateProgress();
   }
 
   renderShell() {
     this.root.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
         <h2 style="margin:0;">Freier Modus</h2>
+        <div id="progressWidget" style="
+          margin-top:10px;
+          padding:10px 12px;
+          border-radius:14px;
+          background: rgba(255,255,255,.06);
+          border: 1px solid rgba(255,255,255,.10);
+          box-shadow: 0 10px 30px rgba(0,0,0,.20);
+          backdrop-filter: blur(10px);
+        ">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#cbd5e1;">
+              Fortschritt
+            </div>
+            <div id="progressCount" style="font-size:12px; font-weight:800; color:#e8eefc;">
+              0/0 freigeschaltet
+            </div>
+          </div>
+          <div style="margin-top:8px; height:10px; border-radius:999px; background:#1e293b; overflow:hidden;">
+            <div id="progressFill" style="height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#4ade80); transition: width .35s ease;"></div>
+          </div>
+        </div>
+
         <div style="opacity:.85;font-size:13px;">
           Wähle links im Shop einen <strong>gesperrten</strong> Button. Rechts öffnet sich dann die Programmierumgebung.
           <br>Wichtig: Gib immer Produkt-IDs aus (Spalte <code>id</code> oder nur 1 numerische Spalte).
@@ -381,6 +408,8 @@ class FreeMode {
     `;
 
     this.statusEl = this.root.querySelector("#freeStatus");
+    this.progressCountEl = this.root.querySelector("#progressCount");
+    this.progressFillEl = this.root.querySelector("#progressFill");
     this.emptyEl = this.root.querySelector("#emptyState");
     this.editorEl = this.root.querySelector("#editor");
 
@@ -393,6 +422,8 @@ class FreeMode {
 
     this.runBtn.addEventListener("click", () => this.checkCurrent());
     this.unlockBtn.addEventListener("click", () => this.unlockCurrent());
+
+    this.updateProgress();
   }
 
   setEmptyState(isEmpty) {
@@ -537,6 +568,7 @@ class FreeMode {
     if (!id) return;
 
     this.unlocked[id] = true;
+    this.updateProgress();
     await this.shop.lock(id, false);
 
     // UI aktualisieren
@@ -548,6 +580,24 @@ class FreeMode {
     // Editor schließen: nach Freischaltung keine erneute Bearbeitung
     this.currentId = null;
     this.setEmptyState(true);
+  }
+
+
+  updateProgress() {
+    try {
+      const total = Object.keys(this.TASKS || {}).length;
+      const done = Object.values(this.unlocked || {}).filter(Boolean).length;
+
+      if (this.progressCountEl) {
+        this.progressCountEl.textContent = `${done}/${total} freigeschaltet`;
+      }
+      if (this.progressFillEl) {
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        this.progressFillEl.style.width = `${pct}%`;
+      }
+    } catch (_) {
+      // no-op
+    }
   }
 
   // ---------- Validation ----------
