@@ -3,6 +3,23 @@
    =========================== */
 
 
+// ===========================
+// Global message bridge (Shop iframe -> Mode)
+// Shop sends: { type: "SHOP_ACTION", actionId }
+// ===========================
+window.addEventListener("message", (event) => {
+  const msg = event?.data;
+  if (!msg || msg.type !== "SHOP_ACTION") return;
+
+  const actionId = msg.actionId;
+  if (!actionId) return;
+
+  // Route to the active mode (Free/Guided/Test)
+  if (window.currentMode && typeof window.currentMode.onShopSelect === "function") {
+    window.currentMode.onShopSelect(actionId);
+  }
+});
+
 function lockShop(taskId, locked){
   const frame = document.getElementById("shopFrame");
   if (!frame || !frame.contentWindow) return;
@@ -85,21 +102,26 @@ if (msg.type === "SHOP_READY") {
    =========================== */
 class FreeMode {
   constructor(root) {
+    window.currentMode = this; // active mode for iframe messages
     this.root = root;
     this.shop = new ShopBridge("shopFrame");
     this.db = null;
 
-    // welche Shop-Buttons im FreeMode gesperrt sind
+    // Aufgaben-Definitionen (auf data-task IDs gemappt)
     this.TASKS = this.buildTasks();
 
     // unlocked state (nur RAM, v1)
     this.unlocked = {};
     Object.keys(this.TASKS).forEach(id => this.unlocked[id] = false);
+
+    // Shop-Klicks -> Aufgabe auswählen
+    this.shop.onShopAction((actionId) => this.onShopSelect(actionId));
+
+    this.currentId = null;
   }
 
   buildTasks() {
     // Wir validieren immer über Produkt-IDs.
-    // Sort-Tasks prüfen Reihenfolge.
     return {
       "all": {
         title: "Alle Produkte",
@@ -108,30 +130,25 @@ class FreeMode {
         refSql: "SELECT id FROM produkte;",
         mode: "set"
       },
+
       "express": {
         title: "Expresslieferung",
-        goal: "Nur Produkte, die morgen geliefert werden (liefertage = 1). Gib IDs aus.",
+        goal: "Produkte mit Lieferung morgen (liefertage = 1). Gib IDs aus.",
         starter: "SELECT id FROM produkte WHERE liefertage = 1;",
         refSql: "SELECT id FROM produkte WHERE liefertage = 1;",
         mode: "set"
       },
+
       "bestseller": {
         title: "Bestseller",
-        goal: "Produkte mit insgesamt mind. 300 verkauften Einheiten. Gib IDs aus.",
+        goal: "Produkte mit mindestens 300 Verkäufen. Gib IDs aus.",
         starter:
-`SELECT p.id
-FROM produkte p, verkäufe v
-WHERE v.produkt_id = p.id
-GROUP BY p.id
-HAVING SUM(v.anzahl) >= 300;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nHAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
         refSql:
-`SELECT p.id
-FROM produkte p
-LEFT JOIN verkäufe v ON v.produkt_id = p.id
-GROUP BY p.id
-HAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nHAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
         mode: "set"
       },
+
       "available": {
         title: "Nur noch wenige auf Lager",
         goal: "Produkte mit lagerbestand zwischen 1 und 5. Gib IDs aus.",
@@ -142,21 +159,21 @@ HAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
 
       "cat-electronics": {
         title: "Kategorie: Elektronik",
-        goal: "Produkte mit kategorie_id = 1. Gib IDs aus.",
+        goal: "Produkte in Kategorie 1. Gib IDs aus.",
         starter: "SELECT id FROM produkte WHERE kategorie_id = 1;",
         refSql: "SELECT id FROM produkte WHERE kategorie_id = 1;",
         mode: "set"
       },
       "cat-household": {
         title: "Kategorie: Haushalt",
-        goal: "Produkte mit kategorie_id = 2. Gib IDs aus.",
+        goal: "Produkte in Kategorie 2. Gib IDs aus.",
         starter: "SELECT id FROM produkte WHERE kategorie_id = 2;",
         refSql: "SELECT id FROM produkte WHERE kategorie_id = 2;",
         mode: "set"
       },
       "cat-sport": {
         title: "Kategorie: Sport",
-        goal: "Produkte mit kategorie_id = 3. Gib IDs aus.",
+        goal: "Produkte in Kategorie 3. Gib IDs aus.",
         starter: "SELECT id FROM produkte WHERE kategorie_id = 3;",
         refSql: "SELECT id FROM produkte WHERE kategorie_id = 3;",
         mode: "set"
@@ -188,34 +205,18 @@ HAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
         title: "Bewertung: ★★★★★",
         goal: "Produkte mit durchschnittlicher Bewertung = 5. Gib IDs aus.",
         starter:
-`SELECT p.id
-FROM produkte p, bewertungen b
-WHERE b.produkt_id = p.id
-GROUP BY p.id
-HAVING AVG(b.sterne) = 5;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) = 5;`,
         refSql:
-`SELECT p.id
-FROM produkte p
-LEFT JOIN bewertungen b ON b.produkt_id = p.id
-GROUP BY p.id
-HAVING AVG(b.sterne) = 5;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) = 5;`,
         mode: "set"
       },
       "rating-4": {
         title: "Bewertung: ≥ ★★★★☆",
         goal: "Produkte mit durchschnittlicher Bewertung >= 4. Gib IDs aus.",
         starter:
-`SELECT p.id
-FROM produkte p, bewertungen b
-WHERE b.produkt_id = p.id
-GROUP BY p.id
-HAVING AVG(b.sterne) >= 4;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) >= 4;`,
         refSql:
-`SELECT p.id
-FROM produkte p
-LEFT JOIN bewertungen b ON b.produkt_id = p.id
-GROUP BY p.id
-HAVING AVG(b.sterne) >= 4;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) >= 4;`,
         mode: "set"
       },
 
@@ -237,17 +238,9 @@ HAVING AVG(b.sterne) >= 4;`,
         title: "Sortierung: Beliebtheit",
         goal: "Gib alle Produkt-IDs sortiert nach Verkäufen (SUM(anzahl)) absteigend aus (bei Gleichstand nach id).",
         starter:
-`SELECT p.id
-FROM produkte p
-LEFT JOIN verkäufe v ON v.produkt_id = p.id
-GROUP BY p.id
-ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
         refSql:
-`SELECT p.id
-FROM produkte p
-LEFT JOIN verkäufe v ON v.produkt_id = p.id
-GROUP BY p.id
-ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
+`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
         mode: "order"
       },
 
@@ -264,9 +257,6 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
   async mount() {
     this.renderShell();
 
-    
-
-
     // 1) Shop: ALLES locken
     await this.shop.ready;
     await this.lockAllShopTasks(true);
@@ -274,29 +264,27 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     // 2) DB laden (für Validierung)
     await this.loadDb();
 
-    // UI aktualisieren
-    this.renderTaskList();
-    this.selectTask("all");
+    // 3) Initialer Zustand (keine Aufgabe ausgewählt)
+    this.setEmptyState(true);
   }
 
   renderShell() {
     this.root.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
         <h2 style="margin:0;">Freier Modus</h2>
         <div style="opacity:.85;font-size:13px;">
-          Alle Shop-Buttons sind gesperrt. Löse rechts Aufgaben mit SQL, um Buttons freizuschalten.
+          Wähle links im Shop einen <strong>gesperrten</strong> Button. Rechts öffnet sich dann die Programmierumgebung.
           <br>Wichtig: Gib immer Produkt-IDs aus (Spalte <code>id</code> oder nur 1 numerische Spalte).
         </div>
 
         <div id="freeStatus" style="font-size:13px;opacity:.9;">DB wird geladen…</div>
 
-        <div style="display:grid;grid-template-columns: 1fr 2fr; gap:12px; min-height: 0;">
-          <div style="border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px; overflow:auto; min-height: 0;">
-            <div style="font-weight:700; margin-bottom:8px;">Aufgaben</div>
-            <div id="taskList" style="display:flex;flex-direction:column; gap:8px;"></div>
+        <div style="border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:12px; min-height:0; display:flex; flex-direction:column; gap:10px;">
+          <div id="emptyState" style="opacity:.85; font-size:13px; padding:8px 0;">
+            Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.
           </div>
 
-          <div style="border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:12px; min-height: 0; display:flex; flex-direction:column; gap:10px;">
+          <div id="editor" style="display:none; min-height:0; flex:1; flex-direction:column; gap:10px;">
             <div id="taskTitle" style="font-weight:800;"></div>
             <div id="taskGoal" style="font-size:13px;opacity:.9;"></div>
 
@@ -335,8 +323,10 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
       </div>
     `;
 
-    this.taskListEl = this.root.querySelector("#taskList");
     this.statusEl = this.root.querySelector("#freeStatus");
+    this.emptyEl = this.root.querySelector("#emptyState");
+    this.editorEl = this.root.querySelector("#editor");
+
     this.titleEl = this.root.querySelector("#taskTitle");
     this.goalEl = this.root.querySelector("#taskGoal");
     this.sqlEl = this.root.querySelector("#sqlInput");
@@ -348,13 +338,34 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     this.unlockBtn.addEventListener("click", () => this.unlockCurrent());
   }
 
-  async lockAllShopTasks(locked) {
-  const ids = ALL_TASK_IDS;
-  for (const id of ids) {
-    await this.shop.lock(id, locked);
+  setEmptyState(isEmpty) {
+    if (isEmpty) {
+      this.emptyEl.style.display = "block";
+      this.editorEl.style.display = "none";
+    } else {
+      this.emptyEl.style.display = "none";
+      this.editorEl.style.display = "flex";
+    }
   }
-}
 
+  onShopSelect(actionId) {
+    // Nur Task-Buttons interessieren den Modus
+    if (!this.TASKS[actionId]) return;
+
+    // Wenn bereits freigeschaltet, ist es optional: Editor trotzdem zeigen (z.B. zum Wiederholen)
+    this.selectTask(actionId);
+    this.setEmptyState(false);
+
+    // UX: Fokus direkt in Editor
+    try { this.sqlEl?.focus(); } catch (_) {}
+  }
+
+  async lockAllShopTasks(locked) {
+    const ids = ALL_TASK_IDS;
+    for (const id of ids) {
+      await this.shop.lock(id, locked);
+    }
+  }
 
   async loadDb() {
     try {
@@ -368,50 +379,26 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
       if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im Projektordner?)");
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
-      this.statusEl.textContent = "✅ DB geladen. Wähle links eine Aufgabe und gib SQL ein.";
+      this.statusEl.textContent = "✅ DB geladen. Klicke im Shop einen gesperrten Button, dann löse die Aufgabe rechts.";
     } catch (e) {
       this.statusEl.textContent = "❌ DB-Fehler: " + e.message;
       this.db = null;
     }
   }
 
-  renderTaskList() {
-    const ids = Object.keys(this.TASKS);
-
-    this.taskListEl.innerHTML = ids.map(id => {
-      const t = this.TASKS[id];
-      const ok = !!this.unlocked[id];
-      return `
-        <button data-tid="${id}" style="
-          text-align:left;
-          padding:10px 10px;
-          border-radius:10px;
-          border:1px solid rgba(255,255,255,.12);
-          background: rgba(255,255,255,.04);
-          color:#e8eefc;
-          cursor:pointer;
-          opacity:${ok ? "1" : ".85"};
-        ">
-          ${ok ? "✅" : "🔒"} <strong>${this.escape(t.title)}</strong>
-          <div style="font-size:12px;opacity:.85;margin-top:2px;">${this.escape(id)}</div>
-        </button>
-      `;
-    }).join("");
-
-    this.taskListEl.querySelectorAll("[data-tid]").forEach(btn => {
-      btn.addEventListener("click", () => this.selectTask(btn.dataset.tid));
-    });
-  }
-
   selectTask(taskId) {
     this.currentId = taskId;
     const t = this.TASKS[taskId];
 
-    this.titleEl.textContent = `${this.unlocked[taskId] ? "✅" : "🔒"} ${t.title}`;
+    const isUnlocked = !!this.unlocked[taskId];
+    this.titleEl.textContent = `${isUnlocked ? "✅" : "🔒"} ${t.title}  (${taskId})`;
     this.goalEl.textContent = t.goal;
 
     this.sqlEl.value = t.starter || "";
-    this.outEl.textContent = "";
+    this.outEl.textContent = isUnlocked
+      ? "Bereits freigeschaltet. Du kannst die Abfrage trotzdem erneut prüfen."
+      : "";
+
     this.unlockBtn.disabled = true;
     this.unlockBtn.style.cursor = "not-allowed";
     this.unlockBtn.style.opacity = ".6";
@@ -422,6 +409,11 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     this.unlockBtn.disabled = true;
     this.unlockBtn.style.cursor = "not-allowed";
     this.unlockBtn.style.opacity = ".6";
+
+    if (!this.currentId) {
+      this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
+      return;
+    }
 
     if (!this.db) {
       this.outEl.textContent = "DB ist nicht geladen.";
@@ -453,6 +445,10 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     const ok = this.validate(studentRes, refRes, t.mode);
 
     if (ok) {
+      if (this.unlocked[this.currentId]) {
+        this.outEl.textContent = "✅ Korrekt (bereits freigeschaltet).";
+        return;
+      }
       this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
       this.unlockBtn.disabled = false;
       this.unlockBtn.style.cursor = "pointer";
@@ -472,10 +468,10 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     this.unlocked[id] = true;
     await this.shop.lock(id, false);
 
-    this.renderTaskList();
+    // UI aktualisieren
     this.selectTask(id);
 
-    this.outEl.textContent = "🎉 Freigeschaltet! Der Button funktioniert jetzt im Shop.";
+    this.outEl.textContent = "🎉 Freigeschaltet! Der Button ist jetzt im Shop aktiv.";
   }
 
   // ---------- Validation ----------
@@ -487,15 +483,13 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     if (!ref.ok) return false;
 
     if (mode === "order") {
-      // Reihenfolge exakt
-      if (stu.ids.length !== ref.ids.length) return false;
+      if (stu.ids.length != ref.ids.length) return false;
       for (let i = 0; i < stu.ids.length; i++) {
         if (stu.ids[i] !== ref.ids[i]) return false;
       }
       return true;
     }
 
-    // set comparison
     const a = new Set(stu.ids);
     const b = new Set(ref.ids);
     if (a.size !== b.size) return false;
@@ -508,7 +502,6 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     const { columns, values } = execResult[0];
     if (!columns || !values) return { ok: false, ids: [] };
 
-    // prefer explicit id columns
     const lower = columns.map(c => String(c).toLowerCase());
     let idx = lower.indexOf("id");
     if (idx === -1) idx = lower.indexOf("produkt_id");
@@ -536,6 +529,7 @@ ORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
     }[m]));
   }
 }
+
 
 /* ===========================
    Guided/Test Platzhalter

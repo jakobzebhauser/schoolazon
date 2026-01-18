@@ -1794,10 +1794,12 @@ html.embed .app{
   padding: 0 !important;
 }
 
-/* HARD LOCK: wirklich nicht klickbar */
+/* LOCKED: klickbar für Aufgaben-Auswahl */
 [data-locked="true"] {
-  pointer-events: none !important;
-  opacity: 0.55 !important;
+  pointer-events: auto !important;   /* ENTSCHEIDEND */
+  cursor: pointer;
+  opacity: 0.88;
+  border-style: dashed !important;
 }
 
 

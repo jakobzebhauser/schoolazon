@@ -1161,13 +1161,15 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
 
       document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
         el.setAttribute("data-locked", locked ? "true" : "false");
+        el.setAttribute("aria-disabled", locked ? "true" : "false");
 
-        // wirklich blockieren (auch bei divs wie .sort-option)
-        el.style.pointerEvents = locked ? "none" : "";
-        el.style.opacity = locked ? "0.55" : "";
+        // Locked buttons must remain CLICKABLE so the parent can open the editor.
+        // Do NOT use pointer-events:none and do NOT set disabled=true.
+        el.style.opacity = locked ? "0.88" : "";
+        el.style.cursor = locked ? "pointer" : "";
 
-        // echte Buttons zusätzlich disabled setzen
-        if (el.tagName === "BUTTON") el.disabled = !!locked;
+        if (el.tagName === "BUTTON") el.disabled = false;
+
       });
 
       return;
@@ -1204,8 +1206,3 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
   shopEmit("SHOP_READY", {});
 
 })();
-
-
-
-
-
