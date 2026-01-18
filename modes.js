@@ -30,14 +30,23 @@ function lockShop(taskId, locked){
   );
 }
 const ALL_TASK_IDS = [
-  "all","express","bestseller","available",
-  "cat-electronics","cat-household","cat-sport",
-  "price-25","price-50","price-100",
-  "rating-5","rating-4",
+  "all",
+  "express",
+  "bestseller",
+  "available",
+  "cat-electronics",
+  "cat-household",
+  "cat-sport",
+  "price-25",
+  "price-50",
+  "price-100",
+  "rating-5",
+  "rating-4",
   "reset-filters",
-  "priceAsc","priceDesc","popularity",
+  "priceAsc",
+  "priceDesc",
+  "popularity",
   "search",
-  "open-cart",
   "orders",
   "topProducts",
   "cart-refresh",
@@ -267,14 +276,6 @@ class FreeMode {
         mode: "set"
       },
 
-      "open-cart": {
-        title: "Warenkorb öffnen",
-        goal: "Gib die Produkt-IDs im Warenkorb aus, um den Warenkorb-Button freizuschalten.",
-        starter: "SELECT produkt_id FROM warenkorb;",
-        refSql: "SELECT produkt_id FROM warenkorb;",
-        mode: "set"
-      },
-
       "orders": {
         title: "Meine Bestellungen anzeigen",
         goal: "Gib die Produkt-IDs der letzten Bestellungen des Nutzers (nutzer_id = 1) aus.",
@@ -408,7 +409,12 @@ class FreeMode {
     // Nur Task-Buttons interessieren den Modus
     if (!this.TASKS[actionId]) return;
 
-    // Wenn bereits freigeschaltet, ist es optional: Editor trotzdem zeigen (z.B. zum Wiederholen)
+    // Wenn bereits freigeschaltet: Editor nicht erneut öffnen
+    if (this.unlocked && this.unlocked[actionId]) {
+      return;
+    }
+
+    // Aufgabe auswählen + Editor öffnen
     this.selectTask(actionId);
     this.setEmptyState(false);
 
@@ -447,6 +453,15 @@ class FreeMode {
     const t = this.TASKS[taskId];
 
     const isUnlocked = !!this.unlocked[taskId];
+
+    // Nach Freischaltung keine erneute SQL-Eingabe erlauben
+    this.sqlEl.readOnly = isUnlocked;
+    this.runBtn.disabled = isUnlocked;
+    this.runBtn.style.cursor = isUnlocked ? "not-allowed" : "pointer";
+    this.runBtn.style.opacity = isUnlocked ? ".6" : "1";
+
+    // Unlock-Button bleibt bei unlocked ohnehin deaktiviert
+
     this.titleEl.textContent = `${isUnlocked ? "✅" : "🔒"} ${t.title}  (${taskId})`;
     this.goalEl.textContent = t.goal;
 
@@ -528,6 +543,11 @@ class FreeMode {
     this.selectTask(id);
 
     this.outEl.textContent = "🎉 Freigeschaltet! Der Button ist jetzt im Shop aktiv.";
+  
+
+    // Editor schließen: nach Freischaltung keine erneute Bearbeitung
+    this.currentId = null;
+    this.setEmptyState(true);
   }
 
   // ---------- Validation ----------
