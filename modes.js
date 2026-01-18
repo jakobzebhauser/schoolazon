@@ -35,7 +35,13 @@ const ALL_TASK_IDS = [
   "price-25","price-50","price-100",
   "rating-5","rating-4",
   "reset-filters",
-  "priceAsc","priceDesc","popularity"
+  "priceAsc","priceDesc","popularity",
+  "search",
+  "open-cart",
+  "orders",
+  "topProducts",
+  "cart-refresh",
+  "cart-total"
 ];
 
 
@@ -251,6 +257,56 @@ class FreeMode {
         refSql: "SELECT id FROM produkte;",
         mode: "set"
       }
+,
+
+      "search": {
+        title: "Suche freischalten",
+        goal: "Gib Produkt-IDs und Namen aus, um die Suchleiste freizuschalten.",
+        starter: "SELECT id, name FROM produkte;",
+        refSql: "SELECT id, name FROM produkte;",
+        mode: "set"
+      },
+
+      "open-cart": {
+        title: "Warenkorb öffnen",
+        goal: "Gib die Produkt-IDs im Warenkorb aus, um den Warenkorb-Button freizuschalten.",
+        starter: "SELECT produkt_id FROM warenkorb;",
+        refSql: "SELECT produkt_id FROM warenkorb;",
+        mode: "set"
+      },
+
+      "orders": {
+        title: "Meine Bestellungen anzeigen",
+        goal: "Gib die Produkt-IDs der letzten Bestellungen des Nutzers (nutzer_id = 1) aus.",
+        starter: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 ORDER BY id DESC LIMIT 3;",
+        refSql: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 ORDER BY id DESC LIMIT 3;",
+        mode: "set"
+      },
+
+      "topProducts": {
+        title: "Meine Top-Produkte anzeigen",
+        goal: "Gib die Produkt-IDs der meistgekauften Produkte des Nutzers (nutzer_id = 1) aus (Sortierung: SUM(anzahl) DESC, produkt_id ASC).",
+        starter: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 GROUP BY produkt_id ORDER BY SUM(anzahl) DESC, produkt_id ASC LIMIT 3;",
+        refSql: "SELECT produkt_id FROM verkäufe WHERE nutzer_id = 1 GROUP BY produkt_id ORDER BY SUM(anzahl) DESC, produkt_id ASC LIMIT 3;",
+        mode: "order"
+      },
+
+      "cart-refresh": {
+        title: "Warenkorb aktualisieren",
+        goal: "Gib die Produkt-IDs aus dem Warenkorb aus.",
+        starter: "SELECT produkt_id FROM warenkorb;",
+        refSql: "SELECT produkt_id FROM warenkorb;",
+        mode: "set"
+      },
+
+      "cart-total": {
+        title: "Gesamtpreis aktualisieren",
+        goal: "Berechne den Gesamtpreis des Warenkorbs als einzelne Zahl (SUM(preis * menge)).",
+        starter: "SELECT COALESCE(SUM(p.preis * w.menge), 0) AS total FROM warenkorb w JOIN produkte p ON p.id = w.produkt_id;",
+        refSql: "SELECT COALESCE(SUM(p.preis * w.menge), 0) AS total FROM warenkorb w JOIN produkte p ON p.id = w.produkt_id;",
+        mode: "scalar"
+      }
+
     };
   }
 
@@ -482,6 +538,13 @@ class FreeMode {
     if (!stu.ok) return false;
     if (!ref.ok) return false;
 
+    if (mode === "scalar") {
+      const stuVal = this.extractScalar(studentExec);
+      const refVal = this.extractScalar(refExec);
+      if (!Number.isFinite(stuVal) || !Number.isFinite(refVal)) return false;
+      return Math.abs(stuVal - refVal) < 1e-9;
+    }
+
     if (mode === "order") {
       if (stu.ids.length != ref.ids.length) return false;
       for (let i = 0; i < stu.ids.length; i++) {
@@ -495,6 +558,17 @@ class FreeMode {
     if (a.size !== b.size) return false;
     for (const x of a) if (!b.has(x)) return false;
     return true;
+  }
+
+  extractScalar(execResult) {
+    try {
+      if (!execResult || !execResult.length) return NaN;
+      const row = execResult[0]?.values?.[0];
+      if (!row || row.length < 1) return NaN;
+      return Number(row[0]);
+    } catch (_) {
+      return NaN;
+    }
   }
 
   extractIds(execResult) {

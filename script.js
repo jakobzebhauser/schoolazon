@@ -181,14 +181,26 @@ if (searchClear) {
 
   if (cartTrigger) {
     cartTrigger.style.cursor = "pointer";
-    cartTrigger.addEventListener("click", openCart);
+    cartTrigger.addEventListener("click", (e) => {
+      // if locked, do not open cart; selection handled via capture listener
+      if (cartTrigger.dataset.locked === "true") { e.preventDefault(); return; }
+      openCart();
+    });
   }
 
   document.getElementById("cartClose")?.addEventListener("click", closeCart);
   document.getElementById("cartOverlay")?.addEventListener("click", closeCart);
 
-  document.getElementById("btnShowCart")?.addEventListener("click", showCart);
-  document.getElementById("btnTotal")?.addEventListener("click", showTotal);
+  document.getElementById("btnShowCart")?.addEventListener("click", (e) => {
+    const el = e.currentTarget;
+    if (el?.dataset?.locked === "true") { e.preventDefault(); return; }
+    showCart();
+  });
+  document.getElementById("btnTotal")?.addEventListener("click", (e) => {
+    const el = e.currentTarget;
+    if (el?.dataset?.locked === "true") { e.preventDefault(); return; }
+    showTotal();
+  });
 
 
    bindSqlLab();
@@ -914,8 +926,16 @@ cartContent?.addEventListener("click", (e) => {
 document.getElementById("cartClose").addEventListener("click", closeCart);
 cartOverlay.addEventListener("click", closeCart);
 
-document.getElementById("btnShowCart").addEventListener("click", showCart);
-document.getElementById("btnTotal").addEventListener("click", showTotal);
+document.getElementById("btnShowCart").addEventListener("click", (e) => {
+    const el = e.currentTarget;
+    if (el?.dataset?.locked === "true") { e.preventDefault(); return; }
+    showCart();
+  });
+document.getElementById("btnTotal").addEventListener("click", (e) => {
+    const el = e.currentTarget;
+    if (el?.dataset?.locked === "true") { e.preventDefault(); return; }
+    showTotal();
+  });
 
 function openCart() {
   cartPanel.classList.add("open");
@@ -1133,12 +1153,14 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
 
   if (btnOrders) {
     e.preventDefault();
+    if (btnOrders.dataset.locked === "true") return;
     showOrders();
     return;
   }
 
   if (btnTop) {
     e.preventDefault();
+    if (btnTop.dataset.locked === "true") return;
     showTopProducts();
     return;
   }
@@ -1163,19 +1185,31 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
         el.setAttribute("data-locked", locked ? "true" : "false");
         el.setAttribute("aria-disabled", locked ? "true" : "false");
 
-        // Locked buttons must remain CLICKABLE so the parent can open the editor.
-        // Do NOT use pointer-events:none and do NOT set disabled=true.
+        // Locked must remain clickable (task selection happens via click -> parent editor)
+        // Therefore: NEVER set pointer-events:none and NEVER set disabled=true here.
         el.style.opacity = locked ? "0.88" : "";
-        el.style.cursor = locked ? "pointer" : "";
 
-        if (el.tagName === "BUTTON") el.disabled = false;
+        // Special-case: search bar should not be usable while locked
+        if (taskId === "search") {
+          const input = el.querySelector("#searchInput");
+          const clear = el.querySelector("#searchClear");
 
+          if (input) {
+            input.readOnly = !!locked;
+            // ensure clicks land on the container when locked (so it can be selected as a task)
+            input.style.pointerEvents = locked ? "none" : "";
+            if (locked) { try { input.blur(); } catch(_) {} }
+          }
+          if (clear) {
+            clear.style.pointerEvents = locked ? "none" : "";
+          }
+        }
       });
 
       return;
     }
 
-    // b) Shop-Aktion auslösen (wie Klick)
+// b) Shop-Aktion auslösen (wie Klick)
     if (msg.type === "RUN_ACTION") {
       const { actionId } = msg;
       if (typeof onAction === "function") onAction(actionId);
@@ -1206,3 +1240,23 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
   shopEmit("SHOP_READY", {});
 
 })();
+
+
+// === CAPTURE delegated handler for parent task selection (iframe -> parent) ===
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.__SCHULAZON_PARENT_TASK_CAPTURE__) return;
+  window.__SCHULAZON_PARENT_TASK_CAPTURE__ = true;
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-task]");
+    if (!el) return;
+
+    const actionId = el.dataset.task;
+    if (!actionId) return;
+
+    // Always notify parent first (opens editor)
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "SHOP_ACTION", actionId }, "*");
+    }
+  }, true); // capture
+});

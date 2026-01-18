@@ -43,8 +43,8 @@
         </div>
 
         <div class="cart-footer">
-          <button class="cart-btn primary" id="btnShowCart">Warenkorb aktualisieren</button>
-          <button class="cart-btn secondary" id="btnTotal">Gesamtpreis aktualisieren</button>
+          <button class="cart-btn primary" id="btnShowCart" data-task="cart-refresh">Warenkorb aktualisieren</button>
+          <button class="cart-btn secondary" id="btnTotal" data-task="cart-total">Gesamtpreis aktualisieren</button>
           <div class="cart-total" id="cartTotal"></div>
         </div>
       </aside>
@@ -81,7 +81,7 @@
 
   <!-- Bestellungen -->
   <section class="account-block">
-  <button type="button" class="account-btn primary" id="btnOrders">
+  <button type="button" class="account-btn primary" id="btnOrders" data-task="orders">
     📦 Meine Bestellungen anzeigen
   </button>
 
@@ -91,7 +91,7 @@
 
   <!-- Top-Produkte -->
   <section class="account-block">
-  <button type="button" class="account-btn secondary" id="btnTopProducts">
+  <button type="button" class="account-btn secondary" id="btnTopProducts" data-task="topProducts">
     ⭐ Meine Top-Produkte anzeigen
   </button>
 
@@ -120,7 +120,7 @@
         <div class="shop-header">
           <div class="logo">schul<span>azon</span></div>
 
-          <div class="search">
+          <div class="search" data-task="search">
             <input id="searchInput" type="search" placeholder="Produkte suchen…" />
             <button id="searchClear">✕</button>
           </div>
