@@ -116,6 +116,13 @@ async function init() {
 
 // ---------- UI Binding ----------
 function bindUI() {
+  // Ensure cart action buttons participate in the lock/task system.
+  // In FreeMode, locked controls must stay clickable so the parent can open the editor.
+  const _btnShowCart = document.getElementById("btnShowCart");
+  if (_btnShowCart && !_btnShowCart.dataset.task) _btnShowCart.dataset.task = "cart-refresh";
+  const _btnTotal = document.getElementById("btnTotal");
+  if (_btnTotal && !_btnTotal.dataset.task) _btnTotal.dataset.task = "cart-total";
+
   // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten über data-task
   document.querySelectorAll("[data-task]").forEach(el => {
     const id = el.dataset.task;
@@ -1182,6 +1189,13 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
       const { taskId, locked } = msg;
 
       document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
+        // Locked controls must stay clickable (parent opens editor on click).
+        // If an element was shipped as <button disabled>, remove it here.
+        if (el.hasAttribute("disabled")) el.removeAttribute("disabled");
+        if ("disabled" in el) {
+          try { el.disabled = false; } catch (_) {}
+        }
+
         el.setAttribute("data-locked", locked ? "true" : "false");
         el.setAttribute("aria-disabled", locked ? "true" : "false");
 

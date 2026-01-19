@@ -1,294 +1,731 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Schulazon – Einstieg</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schulazon – Einstiegstest</title>
+  <style>
+    :root{
+      --bg0:#020617;
+      --bg1:#0b1224;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(2,6,23,.55);
+      --border: rgba(255,255,255,.10);
+      --text:#e8eefc;
+      --muted:#cbd5e1;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#fb7185;
+    }
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1100px 700px at 15% 10%, rgba(34,197,94,.22), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(240,136,4,.18), transparent 60%),
+        radial-gradient(900px 600px at 40% 85%, rgba(59,130,246,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
 
-<style>
-/* =======================
-   BASIS
-   ======================= */
-* { box-sizing: border-box; }
+    /* subtle animated grain */
+    .grain{
+      pointer-events:none;
+      position:fixed;
+      inset:-20%;
+      opacity:.09;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      transform: rotate(2deg);
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    @keyframes drift { from{ transform: translate(-1%, -1%) rotate(1deg);} to{ transform: translate(1%, 1%) rotate(2deg);} }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: "Inter", system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1f2937, #020617 75%);
-  color: #e5e7eb;
-  overflow-y: auto;
-}
+    .wrap{
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 18px 36px;
+      min-height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
 
-.wrapper {
-  max-width: 920px;
-  margin: 40px auto 80px;
-  padding: 0 20px;
-}
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+    }
 
-/* =======================
-   HEADER
-   ======================= */
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-}
+    .brand{
+      display:flex; align-items:center; gap:10px;
+    }
+    .logo{
+      width:38px;height:38px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(74,222,128,.95));
+      box-shadow: 0 18px 50px rgba(34,197,94,.20);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:-60%;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.45), transparent 40%);
+      transform: rotate(25deg);
+    }
+    .brand h1{
+      margin:0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing:.01em;
+    }
+    .brand .sub{
+      font-size: 12px;
+      opacity:.78;
+      margin-top:2px;
+    }
 
-.logo {
-  font-size: 36px;
-  font-weight: 700;
-  letter-spacing: .4px;
-}
-.logo span { color: #f08804; }
+    .quick{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:flex-end;
+    }
 
-.subtitle {
-  margin-top: 12px;
-  color: #94a3b8;
-  font-size: 16px;
-  line-height: 1.6;
-}
+    .btn{
+      border:none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 900;
+      color: var(--text);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+      backdrop-filter: blur(10px);
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 16px 40px rgba(0,0,0,.26); }
+    .btn.primary{
+      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(74,222,128,.95));
+      color:#052e16;
+      border: none;
+    }
+    .btn.warn{
+      background: linear-gradient(90deg, rgba(240,136,4,.92), rgba(251,191,36,.92));
+      color:#1f2937;
+      border:none;
+    }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
-/* =======================
-   CARD LAYOUT
-   ======================= */
-.card {
-  background: linear-gradient(180deg, #020617, #020617) padding-box,
-              linear-gradient(135deg, #f08804, #22c55e) border-box;
-  border: 1.5px solid transparent;
-  border-radius: 20px;
-  padding: 28px 26px;
-  box-shadow: 0 30px 80px rgba(0,0,0,.55);
-  margin-bottom: 28px;
-}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:14px;
+      min-height:0;
+      flex:1;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
 
-.card h2 {
-  margin: 0 0 14px;
-  font-size: 20px;
-}
+    .card{
+      border-radius: 20px;
+      background: var(--card);
+      border:1px solid var(--border);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+      min-height:0;
+      position:relative;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-40% -30%;
+      background:
+        radial-gradient(circle at 25% 18%, rgba(34,197,94,.22), transparent 46%),
+        radial-gradient(circle at 70% 70%, rgba(240,136,4,.18), transparent 55%),
+        radial-gradient(circle at 50% 35%, rgba(59,130,246,.16), transparent 52%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > .inner{
+      position:relative; z-index:1;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:0;
+      height:100%;
+    }
 
-.card p {
-  margin: 0 0 18px;
-  color: #9ca3af;
-  font-size: 14px;
-  line-height: 1.6;
-}
+    .sectionTitle{
+      font-weight: 900;
+      letter-spacing:.01em;
+      font-size: 16px;
+      margin:0;
+    }
+    .muted{ color: var(--muted); opacity:.9; font-size:13px; line-height:1.5; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      user-select:none;
+    }
 
-/* =======================
-   INPUT
-   ======================= */
-.input {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid #334155;
-  background: #020617;
-  color: #e5e7eb;
-  font-size: 15px;
-}
-.input:focus {
-  outline: none;
-  border-color: #f08804;
-  box-shadow: 0 0 0 3px rgba(240,136,4,.25);
-}
+    .input{
+      width:100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(2,6,23,.45);
+      padding: 12px 12px;
+      color: var(--text);
+      outline:none;
+      font-weight: 700;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .input:focus{
+      border-color: rgba(34,197,94,.45);
+      box-shadow: 0 0 0 5px rgba(34,197,94,.12);
+    }
 
-/* =======================
-   BUTTONS
-   ======================= */
-.btn {
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
+    .progressWrap{
+      margin-top: 2px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .progressRow{ display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); }
+    .bar{ height:10px; border-radius:999px; background:#1e293b; overflow:hidden; }
+    .fill{ height:100%; width:0%; background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(74,222,128,.95)); transition: width .35s ease; }
 
-.btn.primary {
-  background: linear-gradient(135deg, #f08804, #f3a847);
-  color: #111827;
-}
-.btn.secondary {
-  background: #111827;
-  color: #e5e7eb;
-}
-.btn.ghost {
-  background: transparent;
-  border: 1px dashed #64748b;
-  color: #cbd5e1;
-}
+    .editor{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(2,6,23,.72);
+      overflow:hidden;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .editorTop{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      background: rgba(255,255,255,.06);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      align-items:center;
+    }
+    .tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      background: rgba(240,136,4,.14);
+      color:#fde68a;
+    }
+    textarea{
+      width:100%;
+      border:none;
+      outline:none;
+      resize:vertical;
+      padding:14px;
+      min-height:170px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:13px;
+      line-height:1.5;
+      color:var(--text);
+      background: transparent;
+    }
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding:10px 12px;
+      border-top:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+    pre{
+      margin:0;
+      padding:12px;
+      border-top:1px solid rgba(255,255,255,.08);
+      font-size:12px;
+      color:var(--text);
+      white-space:pre-wrap;
+      min-height:70px;
+    }
 
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(0,0,0,.35);
-}
+    .ok{ color: #86efac; }
+    .bad{ color: #fda4af; }
+    .warnTxt{ color: #fde68a; }
 
-/* =======================
-   GRID
-   ======================= */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap: 16px;
-}
-
-/* =======================
-   TEST
-   ======================= */
-.question {
-  margin-bottom: 22px;
-}
-
-.answers label {
-  display: block;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: background .15s ease;
-}
-.answers label:hover {
-  background: rgba(255,255,255,.04);
-}
-
-.result {
-  margin-top: 18px;
-  font-weight: 600;
-}
-
-/* =======================
-   HIDDEN
-   ======================= */
-.hidden { display: none; }
-</style>
+    .fadeIn{ animation: fadeIn .22s ease both; }
+    @keyframes fadeIn { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:none; } }
+  </style>
 </head>
 
 <body>
+  <div class="grain"></div>
 
-<div class="wrapper">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Schulazon</h1>
+          <div class="sub">Einstiegstest → Modus-Empfehlung</div>
+        </div>
+      </div>
 
-  <div class="header">
-    <div class="logo">schul<span>azon</span></div>
-    <div class="subtitle">
-      Du bist Teil des Entwicklerteams.<br>
-      Deine Aufgabe: SQL-Logik verstehen, umsetzen und verbessern.
+      <div class="quick">
+        <button class="btn" id="btnGuidedJump">Direkt: Guided Mode</button>
+        <button class="btn" id="btnFreeJump">Direkt: Free Mode</button>
+      </div>
     </div>
-  </div>
-
-  <!-- NAME -->
-  <div class="card">
-    <h2>👤 Dein Name</h2>
-    <input class="input" id="username" placeholder="z. B. Anna Müller">
-  </div>
-
-  <!-- MODUS DIREKT -->
-  <div class="card">
-    <h2>🚀 Direkt starten</h2>
-    <p>Du weißt, was du kannst? Wähle direkt einen Lernmodus.</p>
 
     <div class="grid">
-      <button class="btn primary" onclick="start('guided')">Angeleiteter Modus</button>
-      <button class="btn primary" onclick="start('semi')">Halb angeleitet</button>
-      <button class="btn primary" onclick="start('free')">Freier Modus</button>
+      <!-- Left: Test -->
+      <div class="card">
+        <div class="inner">
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <h2 class="sectionTitle">Einstiegstest</h2>
+              <div class="muted" id="statusLine">DB wird geladen…</div>
+            </div>
+            <div class="row">
+              <div class="pill" id="pillDb">DB: …</div>
+              <div class="pill" id="pillScore">Score: 0/4</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div style="flex:1; min-width:240px;">
+              <div class="muted" style="margin-bottom:6px;">Dein Name</div>
+              <input class="input" id="nameInput" placeholder="z. B. Jakob" autocomplete="off" />
+            </div>
+            <div style="align-self:flex-end;">
+              <button class="btn warn" id="btnStart" disabled>Test starten</button>
+            </div>
+          </div>
+
+          <div class="progressWrap">
+            <div class="progressRow">
+              <div id="stepLabel">Aufgabe 1/4</div>
+              <div id="pctLabel">0%</div>
+            </div>
+            <div class="bar"><div class="fill" id="progFill"></div></div>
+          </div>
+
+          <div class="editor fadeIn" id="taskCard" style="display:none;">
+            <div class="editorTop">
+              <div class="tag" id="taskTag">TASK</div>
+              <div class="muted" id="taskTitle" style="text-align:right;">—</div>
+            </div>
+            <div class="muted" id="taskGoal" style="padding: 12px 14px 0;"></div>
+            <textarea id="sqlInput"></textarea>
+            <div class="actions">
+              <button class="btn" id="btnPrev" disabled>Zurück</button>
+              <button class="btn" id="btnRun" disabled>Prüfen</button>
+              <button class="btn primary" id="btnNext" disabled>Weiter</button>
+            </div>
+            <pre id="out"></pre>
+          </div>
+
+          <div class="row" id="resultRow" style="display:none; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="sectionTitle" style="font-size:14px;">Ergebnis</div>
+              <div class="muted" id="resultText">—</div>
+            </div>
+            <div class="row">
+              <button class="btn warn" id="btnGoGuided">Zum Guided Mode</button>
+              <button class="btn primary" id="btnGoFree">Zum Free Mode</button>
+            </div>
+          </div>
+
+          <div class="muted" style="margin-top:auto;">
+            Hinweis: Öffne das Projekt über einen lokalen Webserver (z. B. VS Code Live Server), damit <code>fetch("produkte.sqlite")</code> zuverlässig funktioniert.
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Explanation / Fun -->
+      <div class="card">
+        <div class="inner">
+          <h2 class="sectionTitle">Wie läuft das?</h2>
+          <div class="muted">
+            Du löst 4 kurze SQL-Aufgaben auf der Schulazon-Datenbank. Daraus wird eine Modus-Empfehlung abgeleitet:
+            <ul>
+              <li><strong>0–2 korrekt</strong> → Guided Mode (strukturierter Aufbau)</li>
+              <li><strong>3–4 korrekt</strong> → Free Mode (mehr Freiheit)</li>
+            </ul>
+            Du kannst jederzeit über die Buttons oben direkt in einen Modus springen.
+          </div>
+
+          <div class="editor" style="margin-top:12px;">
+            <div class="editorTop">
+              <div class="tag">TIPPS</div>
+              <div class="muted" style="text-align:right;">Output-Formate</div>
+            </div>
+            <pre style="border-top:none; min-height:auto;">
+1) Gib meist Produkt-IDs aus: SELECT id FROM produkte;
+
+2) Nur SELECT: keine INSERT/UPDATE/DELETE/...
+3) Bei Sortierung: ORDER BY ... (stabil mit id als Tie-Breaker)
+4) Wenn verlangt: 1 Zahl (scalar) in 1. Spalte
+            </pre>
+          </div>
+
+          <div class="row" style="margin-top:auto;">
+            <span class="pill">Modern UI</span>
+            <span class="pill">SQL.js</span>
+            <span class="pill">4 Tasks</span>
+            <span class="pill">Routing</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- TEST -->
-  <div class="card">
-    <h2>🧠 Einstufungstest (optional)</h2>
-    <p>Vier kurze Multiple-Choice-Fragen. Keine Bewertung, nur eine Empfehlung.</p>
+  <script>
+    // ---------- Helpers ----------
+    function esc(s){
+      return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+    }
 
-    <div id="test">
+    function isSelectOnly(sql){
+      const s = String(sql||"").trim().toLowerCase();
+      if (!s.startsWith("select")) return false;
+      const forbidden = ["insert","update","delete","drop","alter","create","pragma","attach","detach"];
+      return !forbidden.some(k => s.includes(k));
+    }
 
-      <div class="question">
-        <strong>1. Welche Abfrage filtert korrekt?</strong>
-        <div class="answers">
-          <label><input type="radio" name="q1"> SELECT * FROM t WHERE preis > 10;</label>
-          <label><input type="radio" name="q1"> SELECT WHERE preis > 10 FROM t;</label>
-        </div>
-      </div>
+    function extractIds(execResult){
+      if (!execResult || !execResult.length) return { ok:false, ids:[] };
+      const { columns, values } = execResult[0];
+      if (!columns || !values) return { ok:false, ids:[] };
 
-      <div class="question">
-        <strong>2. Was bewirkt DISTINCT?</strong>
-        <div class="answers">
-          <label><input type="radio" name="q2"> Entfernt doppelte Zeilen</label>
-          <label><input type="radio" name="q2"> Sortiert Ergebnisse</label>
-        </div>
-      </div>
+      const lower = columns.map(c => String(c).toLowerCase());
+      let idx = lower.indexOf("id");
+      if (idx === -1) idx = lower.indexOf("produkt_id");
+      if (idx === -1 && columns.length === 1) idx = 0;
+      if (idx === -1) return { ok:false, ids:[] };
 
-      <div class="question">
-        <strong>3. ORDER BY ohne Zusatz sortiert …</strong>
-        <div class="answers">
-          <label><input type="radio" name="q3"> aufsteigend</label>
-          <label><input type="radio" name="q3"> zufällig</label>
-        </div>
-      </div>
+      const ids = values.map(r => Number(r[idx])).filter(n => Number.isFinite(n));
+      return { ok:true, ids };
+    }
 
-      <div class="question">
-        <strong>4. Welche Funktion zählt Zeilen?</strong>
-        <div class="answers">
-          <label><input type="radio" name="q4"> COUNT(*)</label>
-          <label><input type="radio" name="q4"> SUM(*)</label>
-        </div>
-      </div>
+    function extractScalar(execResult){
+      try{
+        if (!execResult || !execResult.length) return NaN;
+        const row = execResult[0]?.values?.[0];
+        if (!row || row.length < 1) return NaN;
+        return Number(row[0]);
+      }catch(_){ return NaN; }
+    }
 
-      <button class="btn secondary" onclick="evaluate()">Test auswerten</button>
-      <div id="result" class="result"></div>
+    function validate(studentExec, refExec, mode){
+      if (mode === "scalar"){
+        const a = extractScalar(studentExec);
+        const b = extractScalar(refExec);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+        return Math.abs(a-b) < 1e-9;
+      }
 
-    </div>
-  </div>
+      const stu = extractIds(studentExec);
+      const ref = extractIds(refExec);
+      if (!stu.ok || !ref.ok) return false;
 
-</div>
+      if (mode === "order"){
+        if (stu.ids.length !== ref.ids.length) return false;
+        for (let i=0;i<stu.ids.length;i++) if (stu.ids[i] !== ref.ids[i]) return false;
+        return true;
+      }
 
-<script>
-function getName() {
-  const n = document.getElementById("username").value.trim();
-  if (n.length < 2) {
-    alert("Bitte gib deinen Namen ein.");
-    return null;
-  }
-  localStorage.setItem("schulazon_user", n);
-  return n;
-}
+      const A = new Set(stu.ids);
+      const B = new Set(ref.ids);
+      if (A.size !== B.size) return false;
+      for (const x of A) if (!B.has(x)) return false;
+      return true;
+    }
 
-function start(mode) {
-  if (!getName()) return;
-  localStorage.setItem("schulazon_mode", mode);
-  window.location.href = "shop.html";
-}
+    function go(url){
+      window.location.href = url;
+    }
 
-function evaluate() {
-  const correct = { q1:0, q2:0, q3:0, q4:0 };
-  let score = 0;
+    // ---------- SQL.js loader ----------
+    function loadScriptOnce(src, flag){
+      return new Promise((resolve, reject) => {
+        if (window[flag]) return resolve();
+        const exists = Array.from(document.scripts).some(s => s.src === src);
+        if (exists){ window[flag]=true; return resolve(); }
+        const s = document.createElement("script");
+        s.src = src; s.async = true;
+        s.onload = () => { window[flag]=true; resolve(); };
+        s.onerror = () => reject(new Error("Script konnte nicht geladen werden: " + src));
+        document.head.appendChild(s);
+      });
+    }
 
-  Object.keys(correct).forEach(q => {
-    const radios = document.querySelectorAll(`input[name="${q}"]`);
-    if (radios[correct[q]]?.checked) score++;
-  });
+    async function ensureSqlJs(){
+      if (typeof window.initSqlJs === "function") return;
+      await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js", "__sqljs_loaded__");
+      if (typeof window.initSqlJs !== "function"){
+        throw new Error("sql.js konnte nicht geladen werden (initSqlJs fehlt). Prüfe Internetzugang oder CSP.");
+      }
+    }
 
-  let mode = "guided";
-  if (score >= 4) mode = "free";
-  else if (score >= 2) mode = "semi";
+    // ---------- App state ----------
+    const TASKS = [
+      {
+        title: "Aufgabe 1: Warm-up",
+        goal: "Gib alle Produkt-IDs aus.",
+        starter: "SELECT id FROM produkte;",
+        refSql: "SELECT id FROM produkte;",
+        mode: "set"
+      },
+      {
+        title: "Aufgabe 2: Filtern",
+        goal: "Gib Produkt-IDs aus der Kategorie Elektronik (kategorie_id = 1) aus.",
+        starter: "SELECT id FROM produkte WHERE kategorie_id = 1;",
+        refSql: "SELECT id FROM produkte WHERE kategorie_id = 1;",
+        mode: "set"
+      },
+      {
+        title: "Aufgabe 3: Sortieren",
+        goal: "Gib alle Produkt-IDs nach Preis aufsteigend aus (bei Gleichstand nach id).",
+        starter: "SELECT id FROM produkte ORDER BY preis ASC, id ASC;",
+        refSql: "SELECT id FROM produkte ORDER BY preis ASC, id ASC;",
+        mode: "order"
+      },
+      {
+        title: "Aufgabe 4: Aggregation",
+        goal: "Berechne die Anzahl der Produkte (eine Zahl).",
+        starter: "SELECT COUNT(*) AS total FROM produkte;",
+        refSql: "SELECT COUNT(*) AS total FROM produkte;",
+        mode: "scalar"
+      }
+    ];
 
-  const text = {
-    guided: "Empfehlung: angeleiteter Modus",
-    semi: "Empfehlung: halb angeleiteter Modus",
-    free: "Empfehlung: freier Modus"
-  };
+    let db = null;
+    let SQL = null;
+    let idx = 0;
+    let solved = new Array(TASKS.length).fill(false);
+    let score = 0;
 
-  document.getElementById("result").textContent =
-    `Ergebnis: ${score}/4 – ${text[mode]}`;
+    // ---------- UI refs ----------
+    const statusLine = document.getElementById("statusLine");
+    const pillDb = document.getElementById("pillDb");
+    const pillScore = document.getElementById("pillScore");
 
-  localStorage.setItem("schulazon_mode", mode);
-}
-</script>
+    const nameInput = document.getElementById("nameInput");
+    const btnStart = document.getElementById("btnStart");
 
+    const taskCard = document.getElementById("taskCard");
+    const taskTitle = document.getElementById("taskTitle");
+    const taskGoal = document.getElementById("taskGoal");
+    const sqlInput = document.getElementById("sqlInput");
+    const out = document.getElementById("out");
+
+    const btnPrev = document.getElementById("btnPrev");
+    const btnRun  = document.getElementById("btnRun");
+    const btnNext = document.getElementById("btnNext");
+
+    const stepLabel = document.getElementById("stepLabel");
+    const pctLabel = document.getElementById("pctLabel");
+    const progFill = document.getElementById("progFill");
+
+    const resultRow = document.getElementById("resultRow");
+    const resultText = document.getElementById("resultText");
+    const btnGoGuided = document.getElementById("btnGoGuided");
+    const btnGoFree = document.getElementById("btnGoFree");
+
+    const btnGuidedJump = document.getElementById("btnGuidedJump");
+    const btnFreeJump = document.getElementById("btnFreeJump");
+
+    // ---------- Navigation buttons ----------
+    btnGuidedJump.addEventListener("click", () => go("guided.html"));
+    btnFreeJump.addEventListener("click", () => go("free.html"));
+    btnGoGuided.addEventListener("click", () => go("guided.html"));
+    btnGoFree.addEventListener("click", () => go("free.html"));
+
+    // ---------- Name gating ----------
+    function updateStartEnabled(){
+      const ok = String(nameInput.value||"").trim().length >= 1;
+      btnStart.disabled = !ok || !db;
+    }
+    nameInput.addEventListener("input", updateStartEnabled);
+
+    // ---------- Render ----------
+    function updateProgressUI(){
+      const total = TASKS.length;
+      const pct = total ? Math.round(((idx+1)/total)*100) : 0;
+      stepLabel.textContent = `Aufgabe ${idx+1}/${total}`;
+      pctLabel.textContent = `${pct}%`;
+      progFill.style.width = `${pct}%`;
+
+      btnPrev.disabled = idx <= 0;
+      btnNext.disabled = !solved[idx]; // gate until current is solved
+
+      pillScore.textContent = `Score: ${score}/${total}`;
+    }
+
+    function renderTask(){
+      const t = TASKS[idx];
+      taskTitle.textContent = t.title;
+      taskGoal.textContent = t.goal;
+
+      sqlInput.value = t.starter || "";
+      out.textContent = "";
+      btnRun.disabled = !db;
+
+      taskCard.style.display = "flex";
+      resultRow.style.display = "none";
+      updateProgressUI();
+    }
+
+    function showResult(){
+      taskCard.style.display = "none";
+      resultRow.style.display = "flex";
+
+      const total = TASKS.length;
+      const name = String(nameInput.value||"").trim();
+      const recommendation = (score >= 3) ? "Free Mode" : "Guided Mode";
+      resultText.innerHTML =
+        `Name: <strong>${esc(name)}</strong><br>` +
+        `Ergebnis: <strong>${score}/${total}</strong><br>` +
+        `Empfehlung: <strong>${recommendation}</strong>`;
+
+      // store for later (optional)
+      localStorage.setItem("schulazon_name", name);
+      localStorage.setItem("schulazon_score", String(score));
+      localStorage.setItem("schulazon_reco", recommendation);
+
+      // auto-route button emphasis
+      if (score >= 3){
+        btnGoFree.classList.add("primary");
+        btnGoGuided.classList.remove("primary");
+      } else {
+        btnGoGuided.classList.add("warn");
+      }
+    }
+
+    // ---------- Actions ----------
+    function runCheck(){
+      const t = TASKS[idx];
+      out.textContent = "";
+      if (!db){
+        out.innerHTML = `<span class="bad">DB ist nicht geladen.</span>`;
+        return;
+      }
+      const sql = sqlInput.value || "";
+      if (!isSelectOnly(sql)){
+        out.innerHTML = `<span class="warnTxt">Nur SELECT-Abfragen sind erlaubt.</span>`;
+        return;
+      }
+
+      let stu, ref;
+      try{ stu = db.exec(sql); }
+      catch(e){
+        out.innerHTML = `<span class="bad">SQL-Fehler:</span> ${esc(e.message)}`;
+        return;
+      }
+
+      try{ ref = db.exec(t.refSql); }
+      catch(e){
+        out.innerHTML = `<span class="bad">Interner Referenz-Fehler:</span> ${esc(e.message)}`;
+        return;
+      }
+
+      const ok = validate(stu, ref, t.mode);
+      if (ok){
+        if (!solved[idx]){
+          solved[idx] = true;
+          score += 1;
+        }
+        out.innerHTML = `<span class="ok">✅ Korrekt!</span> Du kannst weiter.`;
+      } else {
+        out.innerHTML = `<span class="bad">❌ Nicht korrekt.</span> Prüfe Output-Format und Bedingungen.`;
+      }
+      updateProgressUI();
+    }
+
+    function next(){
+      if (!solved[idx]) return;
+      if (idx < TASKS.length - 1){
+        idx += 1;
+        renderTask();
+      } else {
+        showResult();
+      }
+    }
+
+    function prev(){
+      if (idx <= 0) return;
+      idx -= 1;
+      renderTask();
+    }
+
+    btnRun.addEventListener("click", runCheck);
+    btnNext.addEventListener("click", next);
+    btnPrev.addEventListener("click", prev);
+
+    btnStart.addEventListener("click", () => {
+      const name = String(nameInput.value||"").trim();
+      if (!name) return;
+      localStorage.setItem("schulazon_name", name);
+
+      idx = 0;
+      solved = new Array(TASKS.length).fill(false);
+      score = 0;
+
+      statusLine.textContent = "Test läuft. Löse die Aufgaben der Reihe nach.";
+      renderTask();
+      updateStartEnabled();
+      try{ sqlInput.focus(); }catch(_){}
+    });
+
+    // ---------- Boot ----------
+    (async function boot(){
+      try{
+        pillDb.textContent = "DB: lädt…";
+        await ensureSqlJs();
+        SQL = await initSqlJs({
+          locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+        });
+
+        const res = await fetch("produkte.sqlite");
+        if (!res.ok){
+          throw new Error("produkte.sqlite nicht gefunden/erreichbar. Öffne das Projekt über einen lokalen Webserver (nicht file://).");
+        }
+        const buf = new Uint8Array(await res.arrayBuffer());
+        db = new SQL.Database(buf);
+
+        pillDb.textContent = "DB: bereit";
+        statusLine.textContent = "Bereit. Name eingeben und Test starten.";
+        btnRun.disabled = false;
+        updateStartEnabled();
+
+        // restore name if available
+        const savedName = localStorage.getItem("schulazon_name");
+        if (savedName && !nameInput.value){
+          nameInput.value = savedName;
+          updateStartEnabled();
+        }
+      } catch(e){
+        db = null;
+        pillDb.textContent = "DB: Fehler";
+        statusLine.textContent = "Fehler: " + e.message;
+        btnStart.disabled = true;
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -1,21 +1,321 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="shell.css" />
-  <title>Schulazon – Test</title>
+<meta charset="UTF-8">
+<title>Schulazon – SQL Tutorial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  background: #f6f7f9;
+  color: #222;
+}
+
+header {
+  background: #1f2937;
+  color: white;
+  padding: 1rem 1.5rem;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.progress {
+  height: 6px;
+  background: #374151;
+  margin-top: 0.75rem;
+}
+
+.progress-bar {
+  height: 6px;
+  width: 0%;
+  background: #3b82f6;
+  transition: width 0.3s;
+}
+
+main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.step {
+  display: none;
+}
+
+.step.active {
+  display: block;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.theory {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.2rem;
+  line-height: 1.5;
+}
+
+.task {
+  margin-top: 1.5rem;
+}
+
+textarea {
+  width: 100%;
+  min-height: 90px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.buttons {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+button {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #6b7280;
+}
+
+.feedback {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.feedback.ok {
+  color: #16a34a;
+}
+
+.feedback.bad {
+  color: #dc2626;
+}
+
+.solution {
+  display: none;
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.nav {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+}
+</style>
 </head>
 
-<body data-mode="test">
-  <div class="mode-shell">
-    <iframe class="shop-frame" src="shop.html" title="Schulazon Shop"></iframe>
+<body>
 
-    <main class="mode-right">
-      <div id="modeRoot"></div>
-    </main>
+<header>
+  <h1>Schulazon – SQL Tutorial</h1>
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
   </div>
+</header>
 
-  <script src="modes.js"></script>
+<main>
+
+<!-- STEP 1 -->
+<div class="step active">
+  <div class="card">
+    <h2>1. SELECT – Grundidee</h2>
+
+    <div class="theory">
+      Mit <strong>SELECT</strong> sagst du der Datenbank, welche Daten du sehen willst.<br>
+      Mit <strong>FROM</strong> sagst du, aus welcher Tabelle die Daten kommen.<br><br>
+      <strong>*</strong> bedeutet: alle Spalten anzeigen.
+    </div>
+
+    <div class="task">
+      <strong>Aufgabe:</strong> Zeige alle Produkte an.
+      <textarea id="q1"></textarea>
+
+      <div class="buttons">
+        <button onclick="check(1)">Überprüfen</button>
+        <button class="secondary" onclick="showSolution(1)">Lösung anzeigen</button>
+      </div>
+
+      <div id="f1" class="feedback"></div>
+      <div id="s1" class="solution">SELECT * FROM produkte;</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <div class="card">
+    <h2>2. WHERE – Filtern</h2>
+
+    <div class="theory">
+      Mit <strong>WHERE</strong> filterst du Zeilen.<br><br>
+      Beispiel: <code>preis &lt; 25</code> bedeutet „billiger als 25 €“.<br>
+      Du kannst vergleichen mit <code>= &lt; &gt; &lt;= &gt;=</code>.
+    </div>
+
+    <div class="task">
+      <strong>Aufgabe:</strong> Zeige alle Produkte, die weniger als 25 € kosten.
+      <textarea id="q2"></textarea>
+
+      <div class="buttons">
+        <button onclick="check(2)">Überprüfen</button>
+        <button class="secondary" onclick="showSolution(2)">Lösung anzeigen</button>
+      </div>
+
+      <div id="f2" class="feedback"></div>
+      <div id="s2" class="solution">SELECT * FROM produkte WHERE preis &lt; 25;</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <div class="card">
+    <h2>3. ORDER BY – Sortieren</h2>
+
+    <div class="theory">
+      Mit <strong>ORDER BY</strong> sortierst du Ergebnisse.<br><br>
+      <strong>ASC</strong> = aufsteigend<br>
+      <strong>DESC</strong> = absteigend
+    </div>
+
+    <div class="task">
+      <strong>Aufgabe:</strong> Sortiere alle Produkte nach Preis (teuer → billig).
+      <textarea id="q3"></textarea>
+
+      <div class="buttons">
+        <button onclick="check(3)">Überprüfen</button>
+        <button class="secondary" onclick="showSolution(3)">Lösung anzeigen</button>
+      </div>
+
+      <div id="f3" class="feedback"></div>
+      <div id="s3" class="solution">SELECT * FROM produkte ORDER BY preis DESC;</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+  <div class="card">
+    <h2>4. GROUP BY &amp; HAVING</h2>
+
+    <div class="theory">
+      <strong>GROUP BY</strong> fasst mehrere Zeilen zusammen.<br>
+      <strong>SUM()</strong> zählt Werte zusammen.<br><br>
+      <strong>HAVING</strong> filtert nach dem Rechnen (nicht wie WHERE).
+    </div>
+
+    <div class="task">
+      <strong>Aufgabe:</strong> Zeige alle Produkte, die mehr als 300-mal verkauft wurden.
+      <textarea id="q4"></textarea>
+
+      <div class="buttons">
+        <button onclick="check(4)">Überprüfen</button>
+        <button class="secondary" onclick="showSolution(4)">Lösung anzeigen</button>
+      </div>
+
+      <div id="f4" class="feedback"></div>
+      <div id="s4" class="solution">
+SELECT produkt_id, SUM(anzahl)
+FROM verkäufe
+GROUP BY produkt_id
+HAVING SUM(anzahl) &gt; 300;
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="secondary" onclick="prev()">Zurück</button>
+  <button onclick="next()">Weiter</button>
+</div>
+
+</main>
+
+<script>
+let step = 0;
+const steps = document.querySelectorAll(".step");
+
+const solutions = {
+  1: "select*fromprodukte",
+  2: "select*fromproduktewherepreis<25",
+  3: "orderbypreisdesc",
+  4: "having"
+};
+
+function normalize(s) {
+  return s.toLowerCase().replace(/\s+/g, "").replace(/;/g,"");
+}
+
+function check(n) {
+  const input = normalize(document.getElementById("q"+n).value);
+  const feedback = document.getElementById("f"+n);
+
+  if (input.includes(solutions[n])) {
+    feedback.textContent = "Richtig 👍";
+    feedback.className = "feedback ok";
+  } else {
+    feedback.textContent = "Noch nicht richtig. Schau dir die Bedingung genau an.";
+    feedback.className = "feedback bad";
+  }
+}
+
+function showSolution(n) {
+  document.getElementById("s"+n).style.display = "block";
+}
+
+function update() {
+  steps.forEach((s,i)=>s.classList.toggle("active", i===step));
+  document.getElementById("progressBar").style.width =
+    ((step+1)/steps.length*100)+"%";
+}
+
+function next() {
+  if (step < steps.length-1) {
+    step++;
+    update();
+  }
+}
+
+function prev() {
+  if (step > 0) {
+    step--;
+    update();
+  }
+}
+
+update();
+</script>
+
 </body>
 </html>

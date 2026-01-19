@@ -34,7 +34,6 @@ const ALL_TASK_IDS = [
   "cat-electronics","cat-household","cat-sport",
   "price-25","price-50","price-100",
   "rating-5","rating-4",
-  "reset-filters",
   "priceAsc","priceDesc","popularity",
   "search",
   "open-cart",
@@ -127,134 +126,379 @@ class FreeMode {
   }
 
   buildTasks() {
-    // Wir validieren immer über Produkt-IDs.
     return {
+
+      "search": {
+        title: "Produkte suchen",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Ein Nutzer gibt einen Suchbegriff ein. Der Suchbegriff steht als Platzhalter :q zur Verfügung.
+Zeige alle Produkte, deren Name diesen Begriff enthält.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
+        refSql: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
+        mode: "set"
+      },
+
       "all": {
         title: "Alle Produkte",
-        goal: "Gib alle Produkt-IDs aus.",
-        starter: "SELECT id FROM produkte;",
-        refSql: "SELECT id FROM produkte;",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle vorhandenen Produkte.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte;",
+        refSql: "SELECT * FROM produkte;",
         mode: "set"
       },
 
       "express": {
         title: "Expresslieferung",
-        goal: "Produkte mit Lieferung morgen (liefertage = 1). Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE liefertage = 1;",
-        refSql: "SELECT id FROM produkte WHERE liefertage = 1;",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die bereits am nächsten Tag geliefert werden.
+Gib alle Produktdaten aus.
+
+Tipp: liefertage = 1`,
+        starter: "SELECT * FROM produkte WHERE liefertage = 1;",
+        refSql: "SELECT * FROM produkte WHERE liefertage = 1;",
         mode: "set"
       },
 
       "bestseller": {
         title: "Bestseller",
-        goal: "Produkte mit mindestens 300 Verkäufen. Gib IDs aus.",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die insgesamt öfter als 300-mal verkauft wurden.
+Ein Produkt kann mehrfach verkauft worden sein; alle diese Verkäufe sollen zusammengezählt werden.
+Gib alle Produktdaten aus.`,
         starter:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nHAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
+`SELECT p.id
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+GROUP BY p.id
+HAVING SUM(v.anzahl) > 300;`,
         refSql:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nHAVING COALESCE(SUM(v.anzahl),0) >= 300;`,
+`SELECT p.id
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+GROUP BY p.id
+HAVING SUM(v.anzahl) > 300;`,
         mode: "set"
       },
 
       "available": {
         title: "Nur noch wenige auf Lager",
-        goal: "Produkte mit lagerbestand zwischen 1 und 5. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE lagerbestand BETWEEN 1 AND 5;",
-        refSql: "SELECT id FROM produkte WHERE lagerbestand BETWEEN 1 AND 5;",
-        mode: "set"
-      },
-
-      "cat-electronics": {
-        title: "Kategorie: Elektronik",
-        goal: "Produkte in Kategorie 1. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE kategorie_id = 1;",
-        refSql: "SELECT id FROM produkte WHERE kategorie_id = 1;",
-        mode: "set"
-      },
-      "cat-household": {
-        title: "Kategorie: Haushalt",
-        goal: "Produkte in Kategorie 2. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE kategorie_id = 2;",
-        refSql: "SELECT id FROM produkte WHERE kategorie_id = 2;",
-        mode: "set"
-      },
-      "cat-sport": {
-        title: "Kategorie: Sport",
-        goal: "Produkte in Kategorie 3. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE kategorie_id = 3;",
-        refSql: "SELECT id FROM produkte WHERE kategorie_id = 3;",
-        mode: "set"
-      },
-
-      "price-25": {
-        title: "Preis: Unter 25 €",
-        goal: "Produkte mit preis <= 25. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE preis <= 25;",
-        refSql: "SELECT id FROM produkte WHERE preis <= 25;",
-        mode: "set"
-      },
-      "price-50": {
-        title: "Preis: 25–50 €",
-        goal: "Produkte mit preis zwischen 25 und 50. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE preis BETWEEN 25 AND 50;",
-        refSql: "SELECT id FROM produkte WHERE preis BETWEEN 25 AND 50;",
-        mode: "set"
-      },
-      "price-100": {
-        title: "Preis: 50–100 €",
-        goal: "Produkte mit preis zwischen 50 und 100. Gib IDs aus.",
-        starter: "SELECT id FROM produkte WHERE preis BETWEEN 50 AND 100;",
-        refSql: "SELECT id FROM produkte WHERE preis BETWEEN 50 AND 100;",
-        mode: "set"
-      },
-
-      "rating-5": {
-        title: "Bewertung: ★★★★★",
-        goal: "Produkte mit durchschnittlicher Bewertung = 5. Gib IDs aus.",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte, von denen nur noch wenige Stück auf Lager sind.
+Ein Produkt gilt als „nur noch wenige auf Lager“, wenn der Lagerbestand zwischen 1 und 5 Stück liegt.
+Gib alle Produktdaten aus.`,
         starter:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) = 5;`,
+`SELECT *
+FROM produkte
+WHERE lagerbestand >= 1
+AND lagerbestand <= 5;`,
         refSql:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) = 5;`,
-        mode: "set"
-      },
-      "rating-4": {
-        title: "Bewertung: ≥ ★★★★☆",
-        goal: "Produkte mit durchschnittlicher Bewertung >= 4. Gib IDs aus.",
-        starter:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) >= 4;`,
-        refSql:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN bewertungen b ON b.produkt_id = p.id\nGROUP BY p.id\nHAVING AVG(b.sterne) >= 4;`,
+`SELECT *
+FROM produkte
+WHERE lagerbestand >= 1
+AND lagerbestand <= 5;`,
         mode: "set"
       },
 
       "priceAsc": {
-        title: "Sortierung: Preis ↑",
-        goal: "Gib alle Produkt-IDs sortiert nach preis aufsteigend aus (bei Gleichstand nach id).",
-        starter: "SELECT id FROM produkte ORDER BY preis ASC, id ASC;",
-        refSql: "SELECT id FROM produkte ORDER BY preis ASC, id ASC;",
-        mode: "order"
-      },
-      "priceDesc": {
-        title: "Sortierung: Preis ↓",
-        goal: "Gib alle Produkt-IDs sortiert nach preis absteigend aus (bei Gleichstand nach id).",
-        starter: "SELECT id FROM produkte ORDER BY preis DESC, id ASC;",
-        refSql: "SELECT id FROM produkte ORDER BY preis DESC, id ASC;",
-        mode: "order"
-      },
-      "popularity": {
-        title: "Sortierung: Beliebtheit",
-        goal: "Gib alle Produkt-IDs sortiert nach Verkäufen (SUM(anzahl)) absteigend aus (bei Gleichstand nach id).",
-        starter:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
-        refSql:
-`SELECT p.id\nFROM produkte p\nLEFT JOIN verkäufe v ON v.produkt_id = p.id\nGROUP BY p.id\nORDER BY COALESCE(SUM(v.anzahl),0) DESC, p.id ASC;`,
+        title: "Preis aufsteigend",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte und sortiere sie vom günstigsten zum teuersten.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte ORDER BY preis ASC;",
+        refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
         mode: "order"
       },
 
-      "reset-filters": {
-        title: "Filter zurücksetzen",
-        goal: "Zum Freischalten: gib alle Produkt-IDs aus (wie „Alle Produkte“).",
-        starter: "SELECT id FROM produkte;",
-        refSql: "SELECT id FROM produkte;",
+      "priceDesc": {
+        title: "Preis absteigend",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte und sortiere sie vom teuersten zum günstigsten.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte ORDER BY preis DESC;",
+        refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
+        mode: "order"
+      },
+
+      "popularity": {
+        title: "Beliebtheit",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Sortiere Produkte nach ihrer Beliebtheit.
+Beliebtheit bedeutet, wie oft ein Produkt verkauft wurde.
+Mehrere Verkäufe desselben Produkts sollen zusammengezählt werden.
+Gib Produkt-ID und Verkaufszahl aus.`,
+        starter:
+`SELECT produkt_id, SUM(anzahl) AS verkäufe
+FROM verkäufe
+GROUP BY produkt_id
+ORDER BY verkäufe DESC;`,
+        refSql:
+`SELECT produkt_id, SUM(anzahl) AS verkäufe
+FROM verkäufe
+GROUP BY produkt_id
+ORDER BY verkäufe DESC;`,
+        mode: "order"
+      },
+
+      "cat-electronics": {
+        title: "Kategorie Elektronik",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die zur Kategorie „Elektronik“ gehören.
+Die Kategorie soll über ihren Namen bestimmt werden, nicht über eine ID.
+Gib alle Produktdaten aus.`,
+        starter:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Elektronik';`,
+        refSql:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Elektronik';`,
+        mode: "set"
+      },
+
+      "cat-household": {
+        title: "Kategorie Haushalt",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die zur Kategorie „Haushalt“ gehören.
+Die Kategorie soll über ihren Namen bestimmt werden.
+Gib alle Produktdaten aus.`,
+        starter:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Haushalt';`,
+        refSql:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Haushalt';`,
+        mode: "set"
+      },
+
+      "cat-sport": {
+        title: "Kategorie Sport",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die zur Kategorie „Sport“ gehören.
+Die Kategorie soll über ihren Namen bestimmt werden.
+Gib alle Produktdaten aus.`,
+        starter:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Sport';`,
+        refSql:
+`SELECT *
+FROM produkte, kategorien
+WHERE produkte.kategorie_id = kategorien.id
+AND kategorien.name = 'Sport';`,
+        mode: "set"
+      },
+
+      "price-25": {
+        title: "Preis unter 25 €",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die weniger als 25 € kosten.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte WHERE preis < 25;",
+        refSql: "SELECT * FROM produkte WHERE preis < 25;",
+        mode: "set"
+      },
+
+      "price-50": {
+        title: "Preis 25–50 €",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte, deren Preis zwischen 25 € und 50 € liegt.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
+        refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
+        mode: "set"
+      },
+
+      "price-100": {
+        title: "Preis 50–100 €",
+        difficulty: "+",
+        task:
+`Aufgabe:
+Zeige alle Produkte, deren Preis zwischen 50 € und 100 € liegt.
+Gib alle Produktdaten aus.`,
+        starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
+        refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
+        mode: "set"
+      },
+
+      "rating-5": {
+        title: "Bewertung 5 Sterne",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die mindestens eine Bewertung mit fünf Sternen erhalten haben.
+Ein Produkt kann mehrere Bewertungen haben.
+Gib alle Produktdaten aus.`,
+        starter:
+`SELECT *
+FROM produkte, bewertungen
+WHERE produkte.id = bewertungen.produkt_id
+AND bewertungen.sterne = 5;`,
+        refSql:
+`SELECT *
+FROM produkte, bewertungen
+WHERE produkte.id = bewertungen.produkt_id
+AND bewertungen.sterne = 5;`,
+        mode: "set"
+      },
+
+      "rating-4": {
+        title: "Bewertung 4 Sterne",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die mindestens eine Bewertung mit vier oder fünf Sternen erhalten haben.
+Ein Produkt kann mehrere Bewertungen haben.
+Gib alle Produktdaten aus.`,
+        starter:
+`SELECT *
+FROM produkte, bewertungen
+WHERE produkte.id = bewertungen.produkt_id
+AND bewertungen.sterne >= 4;`,
+        refSql:
+`SELECT *
+FROM produkte, bewertungen
+WHERE produkte.id = bewertungen.produkt_id
+AND bewertungen.sterne >= 4;`,
+        mode: "set"
+      },
+
+      "open-cart": {
+        title: "Mein Warenkorb",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
+Gib für jedes Produkt den Namen, den Preis und die Menge im Warenkorb aus.`,
+        starter:
+`SELECT p.name, p.preis, w.menge
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        refSql:
+`SELECT p.name, p.preis, w.menge
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        mode: "set"
+      },
+
+      "cart-refresh": {
+        title: "Warenkorb aktualisieren",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Aktualisiere die Anzeige des Warenkorbs.
+Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
+Gib für jedes Produkt den Namen, den Preis und die Menge im Warenkorb aus.`,
+        starter:
+`SELECT p.name, p.preis, w.menge
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        refSql:
+`SELECT p.name, p.preis, w.menge
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        mode: "set"
+      },
+
+      "cart-total": {
+        title: "Gesamtpreis Warenkorb",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Berechne den Gesamtpreis aller Produkte im Warenkorb.
+Gib nur den Gesamtpreis aus.`,
+        starter:
+`SELECT SUM(p.preis * w.menge)
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        refSql:
+`SELECT SUM(p.preis * w.menge)
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+        mode: "value"
+      },
+
+      "orders": {
+        title: "Meine Bestellungen",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Zeige die letzten drei Bestellungen des aktuell eingeloggten Nutzers an.
+Der eingeloggte Nutzer hat die ID 1.
+Gib Produktnamen, Menge und Gesamtpreis aus.`,
+        starter:
+`SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+AND v.nutzer_id = 1
+ORDER BY v.id DESC
+LIMIT 3;`,
+        refSql:
+`SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+AND v.nutzer_id = 1
+ORDER BY v.id DESC
+LIMIT 3;`,
+        mode: "set"
+      },
+
+      "topProducts": {
+        title: "Top-Produkte",
+        difficulty: "+++",
+        task:
+`Aufgabe:
+Zeige die zwei Produkte, die insgesamt am häufigsten verkauft wurden.
+Gib Produktnamen und Verkaufszahl aus.`,
+        starter:
+`SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+GROUP BY p.id
+ORDER BY gesamt_verkaeufe DESC
+LIMIT 2;`,
+        refSql:
+`SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+GROUP BY p.id
+ORDER BY gesamt_verkaeufe DESC
+LIMIT 2;`,
         mode: "set"
       }
     };
@@ -542,24 +786,47 @@ class FreeMode {
     }
   }
 
-  extractIds(execResult) {
-    if (!execResult || !execResult.length) return { ok: false, ids: [] };
-    const { columns, values } = execResult[0];
-    if (!columns || !values) return { ok: false, ids: [] };
-
-    const lower = columns.map(c => String(c).toLowerCase());
-    let idx = lower.indexOf("id");
-    if (idx === -1) idx = lower.indexOf("produkt_id");
-    if (idx === -1 && columns.length === 1) idx = 0;
-
-    if (idx === -1) return { ok: false, ids: [] };
-
-    const ids = values
-      .map(row => Number(row[idx]))
-      .filter(n => Number.isFinite(n));
-
-    return { ok: true, ids };
+ extractIds(execResult) {
+  // Kein Result-Objekt → trotzdem gültig, aber leer
+  if (!execResult || execResult.length === 0) {
+    return { ok: true, ids: [] };
   }
+
+  const res = execResult[0];
+
+  // Keine Werte → gültig, aber leer
+  if (!res.values || res.values.length === 0) {
+    return { ok: true, ids: [] };
+  }
+
+  const columns = res.columns || [];
+  const lowerCols = columns.map(c => String(c).toLowerCase());
+
+  let idx = lowerCols.findIndex(c =>
+    c === "id" ||
+    c === "produkt_id" ||
+    c.endsWith(".id") ||
+    c.endsWith("_id")
+  );
+
+  if (idx === -1 && lowerCols.length === 1) {
+    idx = 0;
+  }
+
+  if (idx === -1) {
+    return { ok: false, ids: [] };
+  }
+
+  const ids = res.values
+    .map(row => row[idx])
+    .filter(v => v !== null && v !== undefined)
+    .map(Number)
+    .filter(v => !Number.isNaN(v));
+
+  return { ok: true, ids };
+}
+
+
 
   isSelectOnly(sql) {
     const s = String(sql || "").trim().toLowerCase();
