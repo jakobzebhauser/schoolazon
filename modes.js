@@ -475,7 +475,8 @@ WHERE p.id = v.produkt_id
 AND v.nutzer_id = 1
 ORDER BY v.id DESC
 LIMIT 3;`,
-        mode: "set"
+        // returns text + numbers -> validate full rows (order matters)
+        mode: "rows_order"
       },
 
       "topProducts": {
@@ -499,7 +500,8 @@ WHERE p.id = v.produkt_id
 GROUP BY p.id
 ORDER BY gesamt_verkaeufe DESC
 LIMIT 2;`,
-        mode: "set"
+        // returns text + numbers -> validate full rows (order matters)
+        mode: "rows_order"
       }
     };
   }
@@ -519,73 +521,158 @@ LIMIT 2;`,
   }
 
   renderShell() {
+    const total = Object.keys(this.TASKS).length;
+
     this.root.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
-        <h2 style="margin:0;">Freier Modus</h2>
-        <div style="opacity:.85;font-size:13px;">
-          Wähle links im Shop einen <strong>gesperrten</strong> Button. Rechts öffnet sich dann die Programmierumgebung.
-          <br>Wichtig: Gib immer Produkt-IDs aus (Spalte <code>id</code> oder nur 1 numerische Spalte).
-        </div>
-
-        <div id="freeStatus" style="font-size:13px;opacity:.9;">DB wird geladen…</div>
-
-        <div style="border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:12px; min-height:0; display:flex; flex-direction:column; gap:10px;">
-          <div id="emptyState" style="opacity:.85; font-size:13px; padding:8px 0;">
-            Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.
-          </div>
-
-          <div id="editor" style="display:none; min-height:0; flex:1; flex-direction:column; gap:10px;">
-            <div id="taskTitle" style="font-weight:800;"></div>
-            <div id="taskGoal" style="font-size:13px;opacity:.9;"></div>
-
-            <textarea id="sqlInput" style="
-              width:100%;
-              min-height:150px;
-              resize:vertical;
-              border-radius:10px;
-              border:1px solid rgba(255,255,255,.15);
-              padding:10px;
-              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-              font-size:13px;
-              color:#e8eefc;
-              background: rgba(2,6,23,.55);
-              outline:none;
-            "></textarea>
-
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-              <button id="runBtn" style="padding:10px 12px;border-radius:10px;border:none;cursor:pointer;">Prüfen</button>
-              <button id="unlockBtn" disabled style="padding:10px 12px;border-radius:10px;border:none;cursor:not-allowed;opacity:.6;">Freischalten</button>
+      <div class="lab">
+        <div class="lab-header">
+          <div class="lab-header-top">
+            <div class="lab-title">
+              <h2>Programmierung</h2>
+              <div class="lab-sub">Klicke links im Shop auf ein gesperrtes Feature, um die Aufgabe zu öffnen.</div>
             </div>
 
-            <pre id="out" style="
-              margin:0;
-              padding:10px;
-              border-radius:10px;
-              border:1px solid rgba(255,255,255,.10);
-              background: rgba(2,6,23,.40);
-              min-height:70px;
-              white-space:pre-wrap;
-              font-size:12px;
-              color:#e8eefc;
-            "></pre>
+            <div class="lab-progress">
+              <div class="lab-progress-meta">
+                <span id="progressText">0 / ${total}</span>
+                <span id="progressPct">0%</span>
+              </div>
+              <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="lab-header-actions">
+            <button class="btn" id="extraBtn" disabled>Zusatzaufgabe</button>
+          </div>
+
+          <div id="freeStatus" class="lab-sub" style="margin-top:10px;">DB wird geladen…</div>
+        </div>
+
+        <div class="lab-card">
+          <div class="lab-card-inner">
+            <div id="emptyState" class="empty-state">
+              Keine Aufgabe ausgewählt.
+            </div>
+
+            <div id="editor" style="display:none; min-height:0; flex:1; flex-direction:column; gap:12px;">
+              <div class="task-head">
+                <div>
+                  <div class="task-title" id="taskTitle"></div>
+                  <div class="task-id" id="taskId"></div>
+                </div>
+
+                <div class="difficulty">
+                  <div class="difficulty-label">Schwierigkeit</div>
+                  <div class="difficulty-dots" id="diffDots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="task-body" id="taskGoal"></div>
+
+              <div class="editor">
+                <textarea id="sqlInput" spellcheck="false"></textarea>
+                <div class="editor-actions">
+                  <button id="runBtn" class="btn">Prüfen</button>
+                  <button id="unlockBtn" class="btn btn-primary" disabled>Freischalten</button>
+                </div>
+              </div>
+
+              <pre id="out" class="output"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div id="extraOverlay" class="overlay" role="dialog" aria-modal="true">
+          <div class="overlay-panel">
+            <div class="overlay-panel-inner">
+              <div class="overlay-top">
+                <h3 class="overlay-title">Zusatzaufgabe</h3>
+                <button class="btn" id="extraClose">Schließen</button>
+              </div>
+              <div class="task-body">
+                Platzhalter: Hier kommt später eine Zusatzaufgabe hin.
+              </div>
+            </div>
           </div>
         </div>
       </div>
     `;
 
-    this.statusEl = this.root.querySelector("#freeStatus");
-    this.emptyEl = this.root.querySelector("#emptyState");
-    this.editorEl = this.root.querySelector("#editor");
+    this.statusEl = this.root.querySelector('#freeStatus');
+    this.emptyEl = this.root.querySelector('#emptyState');
+    this.editorEl = this.root.querySelector('#editor');
 
-    this.titleEl = this.root.querySelector("#taskTitle");
-    this.goalEl = this.root.querySelector("#taskGoal");
-    this.sqlEl = this.root.querySelector("#sqlInput");
-    this.outEl = this.root.querySelector("#out");
-    this.runBtn = this.root.querySelector("#runBtn");
-    this.unlockBtn = this.root.querySelector("#unlockBtn");
+    this.titleEl = this.root.querySelector('#taskTitle');
+    this.taskIdEl = this.root.querySelector('#taskId');
+    this.goalEl = this.root.querySelector('#taskGoal');
+    this.sqlEl = this.root.querySelector('#sqlInput');
+    this.outEl = this.root.querySelector('#out');
+    this.runBtn = this.root.querySelector('#runBtn');
+    this.unlockBtn = this.root.querySelector('#unlockBtn');
 
-    this.runBtn.addEventListener("click", () => this.checkCurrent());
-    this.unlockBtn.addEventListener("click", () => this.unlockCurrent());
+    this.progressTextEl = this.root.querySelector('#progressText');
+    this.progressPctEl = this.root.querySelector('#progressPct');
+    this.progressFillEl = this.root.querySelector('#progressFill');
+    this.extraBtn = this.root.querySelector('#extraBtn');
+
+    this.diffDotsEl = this.root.querySelector('#diffDots');
+
+    this.extraOverlayEl = this.root.querySelector('#extraOverlay');
+    this.extraCloseEl = this.root.querySelector('#extraClose');
+
+    this.runBtn.className = 'btn';
+
+    this.runBtn.addEventListener('click', () => this.checkCurrent());
+    this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
+
+    this.extraBtn.addEventListener('click', () => this.openExtraTask());
+    this.extraCloseEl.addEventListener('click', () => this.closeExtraTask());
+    this.extraOverlayEl.addEventListener('click', (e) => {
+      if (e.target === this.extraOverlayEl) this.closeExtraTask();
+    });
+
+    this.totalTasks = total;
+    this.updateProgressUI();
+  }
+
+  getUnlockedCount() {
+    return Object.values(this.unlocked || {}).filter(Boolean).length;
+  }
+
+  getProgressRatio() {
+    const total = this.totalTasks || Object.keys(this.TASKS || {}).length || 1;
+    return this.getUnlockedCount() / total;
+  }
+
+  updateProgressUI() {
+    const total = this.totalTasks || Object.keys(this.TASKS || {}).length || 1;
+    const done = this.getUnlockedCount();
+    const ratio = total ? (done / total) : 0;
+    const pct = Math.round(ratio * 100);
+
+    if (this.progressTextEl) this.progressTextEl.textContent = `${done} / ${total}`;
+    if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
+    if (this.progressFillEl) this.progressFillEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+
+    const allowExtra = ratio >= 0.8;
+    if (this.extraBtn) {
+      this.extraBtn.disabled = !allowExtra;
+      this.extraBtn.title = allowExtra ? '' : 'Verfügbar ab 80% Fortschritt';
+    }
+  }
+
+  openExtraTask() {
+    const ratio = this.getProgressRatio();
+    if (ratio < 0.8) return;
+    if (this.extraOverlayEl) this.extraOverlayEl.classList.add('open');
+  }
+
+  closeExtraTask() {
+    if (this.extraOverlayEl) this.extraOverlayEl.classList.remove('open');
   }
 
   setEmptyState(isEmpty) {
@@ -636,9 +723,9 @@ LIMIT 2;`,
       }
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
-      this.statusEl.textContent = "✅ DB geladen. Klicke im Shop einen gesperrten Button, dann löse die Aufgabe rechts.";
+      this.statusEl.textContent = "DB bereit.";
     } catch (e) {
-      this.statusEl.textContent = "❌ DB-Fehler: " + e.message;
+      this.statusEl.textContent = "DB-Fehler: " + e.message;
       this.db = null;
     }
   }
@@ -649,20 +736,27 @@ LIMIT 2;`,
 
     const isUnlocked = !!this.unlocked[taskId];
 
-    // Nach Freischaltung keine erneute SQL-Eingabe erlauben
+    // Editor state
     this.sqlEl.readOnly = isUnlocked;
     this.runBtn.disabled = isUnlocked;
     this.runBtn.style.cursor = isUnlocked ? "not-allowed" : "pointer";
     this.runBtn.style.opacity = isUnlocked ? ".6" : "1";
 
-    // Unlock-Button bleibt bei unlocked ohnehin deaktiviert
+    this.titleEl.textContent = t.title;
+    this.taskIdEl.textContent = `ID: ${taskId}`;
+    this.goalEl.textContent = t.task || "";
 
-    this.titleEl.textContent = `${isUnlocked ? "✅" : "🔒"} ${t.title}  (${taskId})`;
-    this.goalEl.textContent = t.goal;
+    // Difficulty dots: +, ++, +++ -> 1..3
+    const plusCount = Math.max(1, Math.min(3, (String(t.difficulty || "+").match(/\+/g) || []).length));
+    const dots = Array.from(this.diffDotsEl?.querySelectorAll('.dot') || []);
+    dots.forEach((el, idx) => {
+      el.classList.toggle('active', idx < plusCount);
+    });
 
     this.sqlEl.value = t.starter || "";
+
     this.outEl.textContent = isUnlocked
-      ? "Bereits freigeschaltet. Du kannst die Abfrage trotzdem erneut prüfen."
+      ? "Bereits freigeschaltet."
       : "";
 
     this.unlockBtn.disabled = true;
@@ -677,7 +771,7 @@ LIMIT 2;`,
     this.unlockBtn.style.opacity = ".6";
 
     if (!this.currentId) {
-      this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
+      this.outEl.textContent = "Keine Aufgabe ausgewählt.";
       return;
     }
 
@@ -712,10 +806,10 @@ LIMIT 2;`,
 
     if (ok) {
       if (this.unlocked[this.currentId]) {
-        this.outEl.textContent = "✅ Korrekt (bereits freigeschaltet).";
+        this.outEl.textContent = "Korrekt (bereits freigeschaltet).";
         return;
       }
-      this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
+      this.outEl.textContent = "Korrekt. Du kannst jetzt freischalten.";
       this.unlockBtn.disabled = false;
       this.unlockBtn.style.cursor = "pointer";
       this.unlockBtn.style.opacity = "1";
@@ -723,8 +817,7 @@ LIMIT 2;`,
     }
 
     this.outEl.textContent =
-      "❌ Noch nicht korrekt.\n" +
-      "Tipp: Gib nur Produkt-IDs aus (z.B. SELECT id FROM produkte ...).";
+      "Noch nicht korrekt. Prüfe Filterbedingungen, Spaltenauswahl und ggf. Sortierung.";
   }
 
   async unlockCurrent() {
@@ -735,18 +828,23 @@ LIMIT 2;`,
     await this.shop.lock(id, false);
 
     // UI aktualisieren
-    this.selectTask(id);
+    this.updateProgressUI();
 
-    this.outEl.textContent = "🎉 Freigeschaltet! Der Button ist jetzt im Shop aktiv.";
-  
+    this.outEl.textContent = "Freigeschaltet. Der Button ist jetzt im Shop aktiv.";
 
-    // Editor schließen: nach Freischaltung keine erneute Bearbeitung
+    // Nach Freischaltung Editor schließen
     this.currentId = null;
     this.setEmptyState(true);
   }
 
   // ---------- Validation ----------
   validate(studentExec, refExec, mode) {
+    // Full table comparison (supports text + numeric outputs)
+    if (mode === "rows_order" || mode === "rows_set") {
+      const ordered = (mode === "rows_order");
+      return this.validateRows(studentExec, refExec, ordered);
+    }
+
     const stu = this.extractIds(studentExec);
     const ref = this.extractIds(refExec);
 
@@ -773,6 +871,65 @@ LIMIT 2;`,
     if (a.size !== b.size) return false;
     for (const x of a) if (!b.has(x)) return false;
     return true;
+  }
+
+  validateRows(studentExec, refExec, ordered) {
+    const s = this.extractRows(studentExec);
+    const r = this.extractRows(refExec);
+    if (!s.ok || !r.ok) return false;
+
+    // same shape
+    if (s.rows.length !== r.rows.length) return false;
+    if (s.rows.length === 0) return true;
+    if ((s.rows[0]?.length ?? 0) !== (r.rows[0]?.length ?? 0)) return false;
+
+    const normCell = (v) => {
+      if (v === null || v === undefined) return null;
+      // sql.js returns numbers for numeric columns and strings for text; accept numeric-like strings too
+      const n = Number(v);
+      if (typeof v === "number" || (typeof v === "string" && v.trim() !== "" && Number.isFinite(n))) {
+        return n;
+      }
+      return String(v);
+    };
+
+    const cellEq = (a, b) => {
+      const A = normCell(a);
+      const B = normCell(b);
+      if (typeof A === "number" && typeof B === "number") {
+        return Math.abs(A - B) < 1e-9;
+      }
+      return String(A) === String(B);
+    };
+
+    const rowKey = (row) => row.map(normCell).map(v => (typeof v === "number" ? `n:${v}` : `s:${v}`)).join("|");
+
+    if (ordered) {
+      for (let i = 0; i < s.rows.length; i++) {
+        const sr = s.rows[i];
+        const rr = r.rows[i];
+        if (sr.length !== rr.length) return false;
+        for (let c = 0; c < sr.length; c++) {
+          if (!cellEq(sr[c], rr[c])) return false;
+        }
+      }
+      return true;
+    }
+
+    // order-insensitive (multiset)
+    const sa = s.rows.map(rowKey).sort();
+    const rb = r.rows.map(rowKey).sort();
+    if (sa.length !== rb.length) return false;
+    for (let i = 0; i < sa.length; i++) if (sa[i] !== rb[i]) return false;
+    return true;
+  }
+
+  extractRows(execResult) {
+    // Valid even when empty
+    if (!execResult || execResult.length === 0) return { ok: true, rows: [] };
+    const res = execResult[0];
+    if (!res.values || res.values.length === 0) return { ok: true, rows: [] };
+    return { ok: true, rows: res.values };
   }
 
   extractScalar(execResult) {
