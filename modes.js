@@ -34,6 +34,7 @@ const ALL_TASK_IDS = [
   "cat-electronics","cat-household","cat-sport",
   "price-25","price-50","price-100",
   "rating-5","rating-4",
+  "reset-filters",
   "priceAsc","priceDesc","popularity",
   "search",
   "open-cart",
@@ -416,25 +417,6 @@ WHERE p.id = w.produkt_id;`,
         mode: "set"
       },
 
-      "cart-refresh": {
-        title: "Warenkorb aktualisieren",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Aktualisiere die Anzeige des Warenkorbs.
-Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
-Gib für jedes Produkt den Namen, den Preis und die Menge im Warenkorb aus.`,
-        starter:
-`SELECT p.name, p.preis, w.menge
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
-        refSql:
-`SELECT p.name, p.preis, w.menge
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
-        mode: "set"
-      },
-
       "cart-total": {
         title: "Gesamtpreis Warenkorb",
         difficulty: "+++",
@@ -450,7 +432,7 @@ WHERE p.id = w.produkt_id;`,
 `SELECT SUM(p.preis * w.menge)
 FROM produkte p, warenkorb w
 WHERE p.id = w.produkt_id;`,
-        mode: "value"
+        mode: "scalar"
       },
 
       "orders": {
@@ -475,7 +457,6 @@ WHERE p.id = v.produkt_id
 AND v.nutzer_id = 1
 ORDER BY v.id DESC
 LIMIT 3;`,
-        // returns text + numbers -> validate full rows (order matters)
         mode: "rows_order"
       },
 
@@ -500,7 +481,6 @@ WHERE p.id = v.produkt_id
 GROUP BY p.id
 ORDER BY gesamt_verkaeufe DESC
 LIMIT 2;`,
-        // returns text + numbers -> validate full rows (order matters)
         mode: "rows_order"
       }
     };
@@ -513,175 +493,195 @@ LIMIT 2;`,
     await this.shop.ready;
     await this.lockAllShopTasks(true);
 
+    // Name vom Shop übernehmen (best effort)
+    this.syncStudentName();
+
     // 2) DB laden (für Validierung)
     await this.loadDb();
 
     // 3) Initialer Zustand (keine Aufgabe ausgewählt)
     this.setEmptyState(true);
+    this.updateProgressUI();
   }
-
   renderShell() {
-    const total = Object.keys(this.TASKS).length;
-
     this.root.innerHTML = `
       <div class="lab">
-        <div class="lab-header">
+        <header class="lab-header">
           <div class="lab-header-top">
             <div class="lab-title">
-              <h2>Programmierung</h2>
-              <div class="lab-sub">Klicke links im Shop auf ein gesperrtes Feature, um die Aufgabe zu öffnen.</div>
+              <h2>Freier Bereich</h2>
+              <div class="lab-sub" id="labStudent">Schüler: — • Modus: Freier Bereich</div>
             </div>
 
-            <div class="lab-progress">
+            <div class="lab-progress" aria-label="Fortschritt">
               <div class="lab-progress-meta">
-                <span id="progressText">0 / ${total}</span>
-                <span id="progressPct">0%</span>
+                <div id="progressCount">0/0 erledigt</div>
+                <div id="progressPct">0%</div>
               </div>
-              <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+              <div class="progress-bar" style="height:12px;">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
             </div>
           </div>
 
-          <div class="lab-header-actions">
-            <button class="btn" id="extraBtn" disabled>Zusatzaufgabe</button>
+          <div class="lab-header-actions" style="justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div class="lab-actions-left" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn" id="btnSchema" type="button">DB-Schema (PDF)</button>
+              <button class="btn" id="btnSpicker" type="button">Theorie-Spicker (PDF)</button>
+            </div>
+            <div class="lab-actions-right" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-locked" id="btnBonus" type="button" aria-label="Zusatzaufgabe">Zusatzaufgabe</button>
+            </div>
           </div>
 
-          <div id="freeStatus" class="lab-sub" style="margin-top:10px;">DB wird geladen…</div>
-        </div>
+          <div id="labHint" class="lab-hint" style="display:none;"></div>
+        </header>
 
-        <div class="lab-card">
+        <section class="lab-card">
           <div class="lab-card-inner">
             <div id="emptyState" class="empty-state">
-              Keine Aufgabe ausgewählt.
+              Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.
             </div>
 
-            <div id="editor" style="display:none; min-height:0; flex:1; flex-direction:column; gap:12px;">
+            <div id="taskView" style="display:none; min-height:0;" class="task-view">
               <div class="task-head">
                 <div>
-                  <div class="task-title" id="taskTitle"></div>
+                  <h3 class="task-title" id="taskTitle"></h3>
                   <div class="task-id" id="taskId"></div>
                 </div>
 
-                <div class="difficulty">
-                  <div class="difficulty-label">Schwierigkeit</div>
-                  <div class="difficulty-dots" id="diffDots">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                <div style="display:flex; align-items:flex-start; gap:10px;">
+                  <div class="difficulty">
+                    <div class="difficulty-label">Schwierigkeit</div>
+                    <div class="difficulty-dots" id="difficultyDots">
+                      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    </div>
                   </div>
+                  <button class="btn btn-ghost" id="taskClose" type="button">Aufgabe schließen</button>
                 </div>
               </div>
 
-              <div class="task-body" id="taskGoal"></div>
+              <div class="task-body" id="taskBody"></div>
 
               <div class="editor">
                 <textarea id="sqlInput" spellcheck="false"></textarea>
                 <div class="editor-actions">
-                  <button id="runBtn" class="btn">Prüfen</button>
-                  <button id="unlockBtn" class="btn btn-primary" disabled>Freischalten</button>
+                  <button class="btn btn-primary" id="runBtn" type="button">Prüfen</button>
+                  <button class="btn" id="unlockBtn" type="button" disabled>Freischalten</button>
                 </div>
               </div>
 
-              <pre id="out" class="output"></pre>
+              <pre class="output" id="out"></pre>
             </div>
-          </div>
-        </div>
 
-        <div id="extraOverlay" class="overlay" role="dialog" aria-modal="true">
-          <div class="overlay-panel">
-            <div class="overlay-panel-inner">
-              <div class="overlay-top">
-                <h3 class="overlay-title">Zusatzaufgabe</h3>
-                <button class="btn" id="extraClose">Schließen</button>
+            <div id="bonusView" style="display:none; min-height:0;" class="bonus-view">
+              <div class="task-head">
+                <div>
+                  <h3 class="task-title">Zusatzaufgabe</h3>
+                  <div class="task-id">Platzhalter</div>
+                </div>
+                <button class="btn btn-ghost" id="bonusClose" type="button">Zurück</button>
               </div>
-              <div class="task-body">
-                Platzhalter: Hier kommt später eine Zusatzaufgabe hin.
-              </div>
+              <div class="task-body">Hier kommt später eine Zusatzaufgabe (z. B. SQL-Injection-Entdeckungsaufgabe).
+
+Aktuell: Platzhalter.</div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     `;
 
-    this.statusEl = this.root.querySelector('#freeStatus');
-    this.emptyEl = this.root.querySelector('#emptyState');
-    this.editorEl = this.root.querySelector('#editor');
+    // Header
+    this.studentEl = this.root.querySelector('#labStudent');
+    this.hintEl = this.root.querySelector('#labHint');
 
+    // Progress
+    this.progressCountEl = this.root.querySelector('#progressCount');
+    this.progressPctEl = this.root.querySelector('#progressPct');
+    this.progressFillEl = this.root.querySelector('#progressFill');
+
+    // Actions
+    this.btnSchema = this.root.querySelector('#btnSchema');
+    this.btnSpicker = this.root.querySelector('#btnSpicker');
+    this.btnBonus = this.root.querySelector('#btnBonus');
+
+    // Views
+    this.emptyEl = this.root.querySelector('#emptyState');
+    this.taskViewEl = this.root.querySelector('#taskView');
+    this.bonusViewEl = this.root.querySelector('#bonusView');
+
+    // Task UI
     this.titleEl = this.root.querySelector('#taskTitle');
     this.taskIdEl = this.root.querySelector('#taskId');
-    this.goalEl = this.root.querySelector('#taskGoal');
+    this.taskBodyEl = this.root.querySelector('#taskBody');
+    this.dotsEl = this.root.querySelector('#difficultyDots');
+    this.closeTaskBtn = this.root.querySelector('#taskClose');
+
+    // Editor
     this.sqlEl = this.root.querySelector('#sqlInput');
     this.outEl = this.root.querySelector('#out');
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
 
-    this.progressTextEl = this.root.querySelector('#progressText');
-    this.progressPctEl = this.root.querySelector('#progressPct');
-    this.progressFillEl = this.root.querySelector('#progressFill');
-    this.extraBtn = this.root.querySelector('#extraBtn');
+    // Bonus
+    this.bonusCloseBtn = this.root.querySelector('#bonusClose');
 
-    this.diffDotsEl = this.root.querySelector('#diffDots');
-
-    this.extraOverlayEl = this.root.querySelector('#extraOverlay');
-    this.extraCloseEl = this.root.querySelector('#extraClose');
-
-    this.runBtn.className = 'btn';
-
+    // Handlers
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
+    this.closeTaskBtn.addEventListener('click', () => this.closeTask());
 
-    this.extraBtn.addEventListener('click', () => this.openExtraTask());
-    this.extraCloseEl.addEventListener('click', () => this.closeExtraTask());
-    this.extraOverlayEl.addEventListener('click', (e) => {
-      if (e.target === this.extraOverlayEl) this.closeExtraTask();
-    });
-
-    this.totalTasks = total;
-    this.updateProgressUI();
-  }
-
-  getUnlockedCount() {
-    return Object.values(this.unlocked || {}).filter(Boolean).length;
-  }
-
-  getProgressRatio() {
-    const total = this.totalTasks || Object.keys(this.TASKS || {}).length || 1;
-    return this.getUnlockedCount() / total;
-  }
-
-  updateProgressUI() {
-    const total = this.totalTasks || Object.keys(this.TASKS || {}).length || 1;
-    const done = this.getUnlockedCount();
-    const ratio = total ? (done / total) : 0;
-    const pct = Math.round(ratio * 100);
-
-    if (this.progressTextEl) this.progressTextEl.textContent = `${done} / ${total}`;
-    if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
-    if (this.progressFillEl) this.progressFillEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-
-    const allowExtra = ratio >= 0.8;
-    if (this.extraBtn) {
-      this.extraBtn.disabled = !allowExtra;
-      this.extraBtn.title = allowExtra ? '' : 'Verfügbar ab 80% Fortschritt';
-    }
-  }
-
-  openExtraTask() {
-    const ratio = this.getProgressRatio();
-    if (ratio < 0.8) return;
-    if (this.extraOverlayEl) this.extraOverlayEl.classList.add('open');
-  }
-
-  closeExtraTask() {
-    if (this.extraOverlayEl) this.extraOverlayEl.classList.remove('open');
+    this.btnSchema.addEventListener('click', () => this.downloadPdf('db-schema.pdf', 'DB-Schema.pdf'));
+    this.btnSpicker.addEventListener('click', () => this.downloadPdf('theorie-spicker.pdf', 'Theorie-Spicker.pdf'));
+    this.btnBonus.addEventListener('click', () => this.openBonus());
+    this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
   }
 
   setEmptyState(isEmpty) {
+    // Hints ausblenden, wenn Nutzer aktiv wechselt
+    this.hideHint();
+
     if (isEmpty) {
-      this.emptyEl.style.display = "block";
-      this.editorEl.style.display = "none";
+      this.emptyEl.style.display = 'block';
+      this.taskViewEl.style.display = 'none';
+      this.bonusViewEl.style.display = 'none';
+      return;
+    }
+
+    this.emptyEl.style.display = 'none';
+    this.taskViewEl.style.display = 'block';
+    this.bonusViewEl.style.display = 'none';
+  }
+
+  showBonusView() {
+    this.hideHint();
+    this.emptyEl.style.display = 'none';
+    this.taskViewEl.style.display = 'none';
+    this.bonusViewEl.style.display = 'block';
+  }
+
+  closeTask() {
+    this.currentId = null;
+    this.setEmptyState(true);
+  }
+
+  openBonus() {
+    const pct = this.getProgressPct();
+    if (pct < 80) {
+      const missing = this.getMissingForPct(80);
+      this.showHint(`Zusatzaufgabe ist ab 80% verfügbar. Dir fehlen noch ${missing} Aufgabe(n).`);
+      this.pulseLocked(this.btnBonus);
+      return;
+    }
+
+    this.showBonusView();
+  }
+
+  closeBonus() {
+    if (this.currentId) {
+      this.setEmptyState(false);
     } else {
-      this.emptyEl.style.display = "none";
-      this.editorEl.style.display = "flex";
+      this.setEmptyState(true);
     }
   }
 
@@ -696,7 +696,6 @@ LIMIT 2;`,
 
     // Aufgabe auswählen + Editor öffnen
     this.selectTask(actionId);
-    this.setEmptyState(false);
 
     // UX: Fokus direkt in Editor
     try { this.sqlEl?.focus(); } catch (_) {}
@@ -709,24 +708,24 @@ LIMIT 2;`,
     }
   }
 
+  
   async loadDb() {
     try {
-      this.statusEl.textContent = "DB wird geladen…";
-
       const SQL = await initSqlJs({
         locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
       });
 
-      const res = await fetch("produkte.sqlite");
+      const res = await fetch('produkte.sqlite');
       if (!res.ok) {
-        throw new Error("produkte.sqlite nicht gefunden oder nicht erreichbar. Tipp: Seite ueber einen lokalen Webserver (z.B. VSCode Live Server) oeffnen und Datei im gleichen Ordner bereitstellen.");
+        throw new Error('produkte.sqlite nicht gefunden oder nicht erreichbar. Tipp: Seite über einen lokalen Webserver (z.B. VSCode Live Server) öffnen und Datei im gleichen Ordner bereitstellen.');
       }
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
-      this.statusEl.textContent = "DB bereit.";
+      // bewusst kein "DB bereit"-Text in der UI
+      this.hideHint();
     } catch (e) {
-      this.statusEl.textContent = "DB-Fehler: " + e.message;
       this.db = null;
+      this.showHint('DB-Fehler: ' + e.message);
     }
   }
 
@@ -736,32 +735,29 @@ LIMIT 2;`,
 
     const isUnlocked = !!this.unlocked[taskId];
 
+    // UI
+    this.titleEl.textContent = `${t.title}`;
+    this.taskIdEl.textContent = `Task: ${taskId}`;
+    this.taskBodyEl.textContent = t.task || '';
+
+    this.setDifficultyDots(this.getDifficultyLevel(t.difficulty));
+
     // Editor state
     this.sqlEl.readOnly = isUnlocked;
     this.runBtn.disabled = isUnlocked;
-    this.runBtn.style.cursor = isUnlocked ? "not-allowed" : "pointer";
-    this.runBtn.style.opacity = isUnlocked ? ".6" : "1";
+    this.runBtn.style.cursor = isUnlocked ? 'not-allowed' : 'pointer';
+    this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
-    this.titleEl.textContent = t.title;
-    this.taskIdEl.textContent = `ID: ${taskId}`;
-    this.goalEl.textContent = t.task || "";
-
-    // Difficulty dots: +, ++, +++ -> 1..3
-    const plusCount = Math.max(1, Math.min(3, (String(t.difficulty || "+").match(/\+/g) || []).length));
-    const dots = Array.from(this.diffDotsEl?.querySelectorAll('.dot') || []);
-    dots.forEach((el, idx) => {
-      el.classList.toggle('active', idx < plusCount);
-    });
-
-    this.sqlEl.value = t.starter || "";
-
-    this.outEl.textContent = isUnlocked
-      ? "Bereits freigeschaltet."
-      : "";
+    this.sqlEl.value = t.starter || '';
+    this.outEl.textContent = isUnlocked ? 'Bereits freigeschaltet.' : '';
 
     this.unlockBtn.disabled = true;
-    this.unlockBtn.style.cursor = "not-allowed";
-    this.unlockBtn.style.opacity = ".6";
+
+    // View
+    this.setEmptyState(false);
+
+    // UX: Fokus direkt in Editor
+    try { this.sqlEl?.focus(); } catch (_) {}
   }
 
   checkCurrent() {
@@ -771,7 +767,7 @@ LIMIT 2;`,
     this.unlockBtn.style.opacity = ".6";
 
     if (!this.currentId) {
-      this.outEl.textContent = "Keine Aufgabe ausgewählt.";
+      this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
       return;
     }
 
@@ -806,21 +802,21 @@ LIMIT 2;`,
 
     if (ok) {
       if (this.unlocked[this.currentId]) {
-        this.outEl.textContent = "Korrekt (bereits freigeschaltet).";
+        this.outEl.textContent = "✅ Korrekt (bereits freigeschaltet).";
         return;
       }
-      this.outEl.textContent = "Korrekt. Du kannst jetzt freischalten.";
+      this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
       this.unlockBtn.disabled = false;
       this.unlockBtn.style.cursor = "pointer";
       this.unlockBtn.style.opacity = "1";
       return;
     }
 
-    this.outEl.textContent =
-      "Noch nicht korrekt. Prüfe Filterbedingungen, Spaltenauswahl und ggf. Sortierung.";
+    this.outEl.textContent = '❌ Noch nicht korrekt.';
   }
 
-  async unlockCurrent() {
+  
+async unlockCurrent() {
     const id = this.currentId;
     if (!id) return;
 
@@ -828,108 +824,217 @@ LIMIT 2;`,
     await this.shop.lock(id, false);
 
     // UI aktualisieren
+    this.selectTask(id);
+
+    this.outEl.textContent = '🎉 Freigeschaltet! Der Button ist jetzt im Shop aktiv.';
+
     this.updateProgressUI();
 
-    this.outEl.textContent = "Freigeschaltet. Der Button ist jetzt im Shop aktiv.";
-
-    // Nach Freischaltung Editor schließen
+    // Editor schließen
     this.currentId = null;
     this.setEmptyState(true);
+  }
+
+
+
+  /* ---------- UI helpers ---------- */
+
+  syncStudentName() {
+    let name = '';
+    try {
+      const frame = document.getElementById('shopFrame');
+      const doc = frame?.contentDocument;
+      const el = doc?.getElementById('studentName');
+      name = (el?.textContent || '').trim();
+    } catch (_) {
+      // ignore
+    }
+
+    if (!name) name = 'Anna Müller';
+    if (this.studentEl) this.studentEl.textContent = `Schüler: ${name} • Modus: Freier Bereich`;
+  }
+
+  showHint(text) {
+    if (!this.hintEl) return;
+    this.hintEl.textContent = text;
+    this.hintEl.style.display = 'block';
+  }
+
+  hideHint() {
+    if (!this.hintEl) return;
+    this.hintEl.style.display = 'none';
+    this.hintEl.textContent = '';
+  }
+
+  pulseLocked(el) {
+    if (!el) return;
+    el.classList.remove('shake');
+    // reflow
+    void el.offsetWidth;
+    el.classList.add('shake');
+  }
+
+  getDifficultyLevel(difficulty) {
+    const s = String(difficulty || '').trim();
+    const n = (s.match(/\+/g) || []).length;
+    return Math.max(1, Math.min(3, n || 1));
+  }
+
+  setDifficultyDots(level) {
+    const dots = Array.from(this.dotsEl?.querySelectorAll('.dot') || []);
+    dots.forEach((d, i) => d.classList.toggle('active', i < level));
+  }
+
+  getProgressPct() {
+    const ids = Object.keys(this.TASKS || {});
+    const total = ids.length || 1;
+    const done = ids.filter(id => !!this.unlocked[id]).length;
+    return Math.round((done / total) * 100);
+  }
+
+  getMissingForPct(targetPct) {
+    const ids = Object.keys(this.TASKS || {});
+    const total = ids.length || 1;
+    const done = ids.filter(id => !!this.unlocked[id]).length;
+    const needed = Math.ceil((targetPct / 100) * total);
+    return Math.max(0, needed - done);
+  }
+
+  updateProgressUI() {
+    const ids = Object.keys(this.TASKS || {});
+    const total = ids.length || 1;
+    const done = ids.filter(id => !!this.unlocked[id]).length;
+    const pct = Math.round((done / total) * 100);
+
+    if (this.progressCountEl) this.progressCountEl.textContent = `${done}/${total} erledigt`;
+    if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
+    if (this.progressFillEl) this.progressFillEl.style.width = `${pct}%`;
+
+    // Bonus availability
+    const canBonus = pct >= 80;
+    if (this.btnBonus) {
+      this.btnBonus.classList.toggle('btn-locked', !canBonus);
+      this.btnBonus.setAttribute('aria-disabled', canBonus ? 'false' : 'true');
+      this.btnBonus.title = canBonus ? 'Zusatzaufgabe verfügbar' : 'Ab 80% Fortschritt verfügbar';
+    }
+  }
+
+  downloadPdf(url, filename) {
+    // best-effort: einfacher Download im selben Ordner
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   // ---------- Validation ----------
   validate(studentExec, refExec, mode) {
     // Full table comparison (supports text + numeric outputs)
-    if (mode === "rows_order" || mode === "rows_set") {
-      const ordered = (mode === "rows_order");
+    if (mode === 'rows_order' || mode === 'rows_set') {
+      const ordered = (mode === 'rows_order');
       return this.validateRows(studentExec, refExec, ordered);
     }
 
     const stu = this.extractIds(studentExec);
     const ref = this.extractIds(refExec);
 
-    if (!stu.ok) return false;
-    if (!ref.ok) return false;
+    if (!stu.ok || !ref.ok) return false;
 
-    if (mode === "scalar") {
+    if (mode === 'scalar') {
       const stuVal = this.extractScalar(studentExec);
       const refVal = this.extractScalar(refExec);
       if (!Number.isFinite(stuVal) || !Number.isFinite(refVal)) return false;
       return Math.abs(stuVal - refVal) < 1e-9;
     }
 
-    if (mode === "order") {
-      if (stu.ids.length != ref.ids.length) return false;
-      for (let i = 0; i < stu.ids.length; i++) {
-        if (stu.ids[i] !== ref.ids[i]) return false;
-      }
+    if (mode === 'order') {
+      if (stu.ids.length !== ref.ids.length) return false;
+      for (let i = 0; i < stu.ids.length; i++) if (stu.ids[i] !== ref.ids[i]) return false;
       return true;
     }
 
-    const a = new Set(stu.ids);
-    const b = new Set(ref.ids);
-    if (a.size !== b.size) return false;
-    for (const x of a) if (!b.has(x)) return false;
+    // default: set
+    const A = new Set(stu.ids);
+    const B = new Set(ref.ids);
+    if (A.size !== B.size) return false;
+    for (const x of A) if (!B.has(x)) return false;
     return true;
   }
 
   validateRows(studentExec, refExec, ordered) {
-    const s = this.extractRows(studentExec);
-    const r = this.extractRows(refExec);
-    if (!s.ok || !r.ok) return false;
+    const a = this.extractRows(studentExec);
+    const b = this.extractRows(refExec);
 
-    // same shape
-    if (s.rows.length !== r.rows.length) return false;
-    if (s.rows.length === 0) return true;
-    if ((s.rows[0]?.length ?? 0) !== (r.rows[0]?.length ?? 0)) return false;
-
-    const normCell = (v) => {
-      if (v === null || v === undefined) return null;
-      // sql.js returns numbers for numeric columns and strings for text; accept numeric-like strings too
-      const n = Number(v);
-      if (typeof v === "number" || (typeof v === "string" && v.trim() !== "" && Number.isFinite(n))) {
-        return n;
-      }
-      return String(v);
-    };
-
-    const cellEq = (a, b) => {
-      const A = normCell(a);
-      const B = normCell(b);
-      if (typeof A === "number" && typeof B === "number") {
-        return Math.abs(A - B) < 1e-9;
-      }
-      return String(A) === String(B);
-    };
-
-    const rowKey = (row) => row.map(normCell).map(v => (typeof v === "number" ? `n:${v}` : `s:${v}`)).join("|");
+    if (!a.ok || !b.ok) return false;
 
     if (ordered) {
-      for (let i = 0; i < s.rows.length; i++) {
-        const sr = s.rows[i];
-        const rr = r.rows[i];
-        if (sr.length !== rr.length) return false;
-        for (let c = 0; c < sr.length; c++) {
-          if (!cellEq(sr[c], rr[c])) return false;
-        }
+      if (a.rows.length !== b.rows.length) return false;
+      for (let i = 0; i < a.rows.length; i++) {
+        if (!this.rowsEqual(a.rows[i], b.rows[i])) return false;
       }
       return true;
     }
 
-    // order-insensitive (multiset)
-    const sa = s.rows.map(rowKey).sort();
-    const rb = r.rows.map(rowKey).sort();
-    if (sa.length !== rb.length) return false;
-    for (let i = 0; i < sa.length; i++) if (sa[i] !== rb[i]) return false;
+    // unordered: compare as multisets of serialized rows
+    const count = (rows) => {
+      const m = new Map();
+      for (const r of rows) {
+        const k = JSON.stringify(r);
+        m.set(k, (m.get(k) || 0) + 1);
+      }
+      return m;
+    };
+
+    const ca = count(a.rows);
+    const cb = count(b.rows);
+    if (ca.size !== cb.size) return false;
+    for (const [k, v] of ca.entries()) {
+      if (cb.get(k) !== v) return false;
+    }
     return true;
   }
 
   extractRows(execResult) {
-    // Valid even when empty
+    // Leeres Result ist gültig
     if (!execResult || execResult.length === 0) return { ok: true, rows: [] };
     const res = execResult[0];
-    if (!res.values || res.values.length === 0) return { ok: true, rows: [] };
-    return { ok: true, rows: res.values };
+    const values = res?.values || [];
+    if (!Array.isArray(values) || values.length === 0) return { ok: true, rows: [] };
+
+    // Normalize each cell to stable representation
+    const rows = values.map(row => row.map(v => this.normalizeCell(v)));
+    return { ok: true, rows };
+  }
+
+  normalizeCell(v) {
+    if (v === null || v === undefined) return null;
+
+    // numbers: stabilize float formatting
+    const n = (typeof v === 'number') ? v : (typeof v === 'string' ? Number(v) : NaN);
+    if (Number.isFinite(n) && String(v).trim() !== '') {
+      // round to 1e-9 to avoid minor float diffs
+      const r = Math.round(n * 1e9) / 1e9;
+      return r;
+    }
+
+    return String(v).trim();
+  }
+
+  rowsEqual(a, b) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      const y = b[i];
+      if (typeof x === 'number' && typeof y === 'number') {
+        if (Math.abs(x - y) > 1e-9) return false;
+      } else {
+        if (x !== y) return false;
+      }
+    }
+    return true;
   }
 
   extractScalar(execResult) {
@@ -1306,7 +1411,7 @@ class GuidedMode {
       </div>
     `;
 
-    this.statusEl = this.root.querySelector("#gStatus");
+    this._statusEl_unused = this.root.querySelector("#gStatus");
     this.stepEl = this.root.querySelector("#gStep");
     this.prevBtn = this.root.querySelector("#gPrev");
     this.nextBtn = this.root.querySelector("#gNext");
@@ -1321,9 +1426,9 @@ class GuidedMode {
   }
 
   setStatus(text, isError = false) {
-    if (!this.statusEl) return;
-    this.statusEl.textContent = text;
-    this.statusEl.style.color = isError ? "#fca5a5" : "";
+    if (!this._statusEl_unused) return;
+    this._statusEl_unused.textContent = text;
+    this._statusEl_unused.style.color = isError ? "#fca5a5" : "";
   }
 
   updateProgress() {

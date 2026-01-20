@@ -921,36 +921,73 @@ t-row strong {
    LOCKED FEATURE (Shop Button)
    =========================== */
 
+/*
+  Designziel:
+  - klar erkennbar "noch nicht implementiert"
+  - gut lesbar (nicht ausbleichen)
+  - klickbar bleibt erhalten (öffnet rechts die Aufgabe)
+*/
 [data-locked="true"] {
   position: relative;
-  opacity: 0.88;                  /* leicht, nicht tot */
-  background: rgba(255,255,255,0.06);
+  pointer-events: auto !important;
+  cursor: pointer;
+
+  /* Lesbarkeit behalten */
+  opacity: 1;
+  filter: none;
+  color: inherit;
+
+  /* Moderner Locked-Look */
   border-style: dashed !important;
-  border-color: rgba(240,136,4,0.6);
-  color: #e5e7eb;
+  border-width: 1.5px;
+  border-color: rgba(240,136,4,0.75);
+  background:
+    linear-gradient(135deg, rgba(240,136,4,0.10), rgba(255,255,255,0.02));
 }
 
-/* dezente Ecke statt Overlay */
-[data-locked="true"]::after {
-  content: "SQL";
+/* subtiler "pattern"-Overlay, ohne Text zu zerstören */
+[data-locked="true"]::before {
+  content: "";
   position: absolute;
-  top: -8px;
-  right: -6px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 7px;
+  inset: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255,255,255,0.06) 0,
+    rgba(255,255,255,0.06) 7px,
+    rgba(255,255,255,0.00) 7px,
+    rgba(255,255,255,0.00) 14px
+  );
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* Badge: Schloss statt "SQL" */
+[data-locked="true"]::after {
+  content: "🔒";
+  position: absolute;
+  top: -9px;
+  right: -7px;
+
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+
   border-radius: 999px;
   background: rgba(240,136,4,0.18);
-  color: #fde68a;
-  letter-spacing: .04em;
+  border: 1px solid rgba(240,136,4,0.28);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
 }
 
 [data-locked="true"]:hover {
-  opacity: 1;
-  box-shadow: 0 8px 28px rgba(240,136,4,0.25);
+  box-shadow: 0 10px 34px rgba(240,136,4,0.22);
   transform: translateY(-1px);
 }
-
 
 /* ===========================
    SQL LAB PANEL (Modern)
@@ -1798,8 +1835,6 @@ html.embed .app{
 [data-locked="true"] {
   pointer-events: auto !important;   /* ENTSCHEIDEND */
   cursor: pointer;
-  opacity: 0.88;
-  border-style: dashed !important;
 }
 
 
