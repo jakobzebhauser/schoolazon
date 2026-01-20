@@ -98,6 +98,9 @@ async function init() {
 
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
 
+    // Auth-Table fuer die SQLi-Lernaufgabe (nur lokal im Browser, keine Serverwirkung)
+    ensureAuthTable();
+
     // rechter Bereich: Name beibehalten (nur Anzeige)
     const nameEl = els.studentName();
     if (nameEl) nameEl.textContent = "Anna Müller";
@@ -112,6 +115,65 @@ async function init() {
     if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">❌ ${escapeHtml(err.message)}</p>`;
     console.error(err);
   }
+}
+
+// ================= SQLi Challenge: absichtlich unsicherer Demo-Login (Sandbox) =================
+
+function ensureAuthTable() {
+  if (!db) return;
+  try {
+    // Falls es bereits eine Tabelle gibt, nicht ueberschreiben.
+    const existing = db.exec(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('nutzer','users');"
+    );
+    const names = (existing?.[0]?.values || []).map(v => String(v[0]));
+    if (names.includes('nutzer') || names.includes('users')) {
+      return;
+    }
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS nutzer (
+        id INTEGER PRIMARY KEY,
+        username TEXT,
+        password TEXT
+      );
+    `);
+
+    // Demo-User (id=1 passt zum Rest des Demos)
+    db.exec("INSERT INTO nutzer(id, username, password) VALUES (1, 'anna', 'pass123');");
+  } catch (_) {
+    // best-effort: wenn DB readonly/ungewoehnlich ist, keine harten Fehler werfen
+  }
+}
+
+function vulnerableLogin() {
+  const status = document.getElementById("loginStatus");
+  if (!status || !db) return;
+
+  const panel = document.getElementById("accountPanel");
+  const userEl = panel?.querySelector("#loginUser") || panel?.querySelector("#username") || panel?.querySelector(".account-login input:nth-of-type(1)");
+  const passEl = panel?.querySelector("#loginPass") || panel?.querySelector("#password") || panel?.querySelector(".account-login input:nth-of-type(2)");
+
+  const username = String(userEl?.value ?? "");
+  const password = String(passEl?.value ?? "");
+
+  // ABSICHTLICH UNSICHER: direkte String-Konkatenation (SQL Injection Trainingsaufgabe)
+  const sql = `SELECT id FROM nutzer WHERE username = '${username}' AND password = '${password}' LIMIT 1;`;
+
+  try {
+    const res = db.exec(sql);
+    const ok = !!(res?.[0]?.values && res[0].values.length);
+    if (ok) {
+      status.textContent = "Login erfolgreich";
+      status.className = "login-status success";
+      return;
+    }
+  } catch (_) {
+    // bei Fehler: als fehlgeschlagen behandeln
+  }
+
+  status.textContent = "Login fehlgeschlagen";
+  status.className = "login-status error";
 }
 
 // ---------- UI Binding ----------
@@ -665,6 +727,14 @@ function openSqlLab(task) {
   labEls.out().textContent = "";
   labEls.table().innerHTML = "";
 
+  // Freischalten: pro Run standardmaessig gesperrt (wird nur nach korrekter Pruefung aktiviert)
+  const unlockBtn = document.getElementById("unlockBtn");
+  if (unlockBtn) {
+    unlockBtn.disabled = true;
+    unlockBtn.classList.remove("enabled");
+    unlockBtn.onclick = null;
+  }
+
   labEls.empty().style.display = "none";
   labEls.panel().classList.add("open");
 }
@@ -697,7 +767,12 @@ function runStudentSql() {
 
   out.textContent = "";
   successBox.style.display = "none";
-  unlockBtn.classList.remove("enabled");
+  if (unlockBtn) {
+    // Bei JEDEM Run wieder sperren, bis die Validierung korrekt ist
+    unlockBtn.disabled = true;
+    unlockBtn.classList.remove("enabled");
+    unlockBtn.onclick = null;
+  }
 
   try {
     const sql = labEls.input().value;
@@ -709,12 +784,19 @@ function runStudentSql() {
     const ok = currentTask.validate(res, db);
     if (ok) {
       successBox.style.display = "block";
-      unlockBtn.classList.add("enabled");
+      if (unlockBtn) {
+        unlockBtn.disabled = false;
+        unlockBtn.classList.add("enabled");
+      }
 
-      unlockBtn.onclick = () => {
-        unlockTask(currentTask.taskId);
-        closeSqlLab();
-      };
+      if (unlockBtn) {
+        unlockBtn.onclick = () => {
+          unlockTask(currentTask.taskId);
+          closeSqlLab();
+        };
+        // kleiner UX-Push: Fokus auf Freischalten
+        try { unlockBtn.focus(); } catch (_) {}
+      }
     }
 
   } catch (err) {
@@ -1027,18 +1109,7 @@ accountOverlay?.addEventListener("click", closeAccount);
 
 
 
-function fakeLogin(){
-  const status = document.getElementById("loginStatus");
-  if(!status) return;
-
-  // ❗ absichtlich KEINE echte Prüfung (für SQLi-Aufgabe später)
-  status.textContent = "❌ Login fehlgeschlagen";
-  status.className = "login-status error";
-
-  // Optional: später leicht austauschbar gegen Erfolg
-  // status.textContent = "✅ Login erfolgreich";
-  // status.className = "login-status success";
-}
+// (legacy) fakeLogin removed: replaced by vulnerableLogin() for the SQLi sandbox
 
 let ordersOpen = false;
 
@@ -1154,7 +1225,7 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
 
   if (btnLogin) {
     e.preventDefault();
-    fakeLogin();
+    vulnerableLogin();
     return;
   }
 

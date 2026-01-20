@@ -556,8 +556,9 @@ LIMIT 2;`,
 
           <div class="lab-header-actions" style="justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div class="lab-actions-left" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn" id="btnSchema" type="button">DB-Schema (PDF)</button>
-              <button class="btn" id="btnSpicker" type="button">Theorie-Spicker (PDF)</button>
+              <button class="btn" id="btnSchema" type="button">DB-Schema</button>
+              <button class="btn" id="btnSpicker" type="button">Spicker</button>
+              <button class="btn" id="btnSolutions" type="button">Lösungen</button>
             </div>
             <div class="lab-actions-right" style="display:flex; gap:10px; flex-wrap:wrap;">
               <button class="btn btn-locked" id="btnBonus" type="button" aria-label="Zusatzaufgabe">Zusatzaufgabe</button>
@@ -604,17 +605,15 @@ LIMIT 2;`,
               <pre class="output" id="out"></pre>
             </div>
 
-            <div id="bonusView" style="display:none; min-height:0;" class="bonus-view">
+            <div id="auxView" style="display:none; min-height:0;" class="bonus-view">
               <div class="task-head">
                 <div>
-                  <h3 class="task-title">Zusatzaufgabe</h3>
-                  <div class="task-id">Platzhalter</div>
+                  <h3 class="task-title" id="auxTitle">Info</h3>
+                  <div class="task-id" id="auxId">—</div>
                 </div>
-                <button class="btn btn-ghost" id="bonusClose" type="button">Zurück</button>
+                <button class="btn btn-ghost" id="auxClose" type="button">Zurück</button>
               </div>
-              <div class="task-body">Hier kommt später eine Zusatzaufgabe (z. B. SQL-Injection-Entdeckungsaufgabe).
-
-Aktuell: Platzhalter.</div>
+              <div class="task-body" id="auxBody"></div>
             </div>
           </div>
         </section>
@@ -633,12 +632,13 @@ Aktuell: Platzhalter.</div>
     // Actions
     this.btnSchema = this.root.querySelector('#btnSchema');
     this.btnSpicker = this.root.querySelector('#btnSpicker');
+    this.btnSolutions = this.root.querySelector('#btnSolutions');
     this.btnBonus = this.root.querySelector('#btnBonus');
 
     // Views
     this.emptyEl = this.root.querySelector('#emptyState');
     this.taskViewEl = this.root.querySelector('#taskView');
-    this.bonusViewEl = this.root.querySelector('#bonusView');
+    this.auxViewEl = this.root.querySelector('#auxView');
 
     // Task UI
     this.titleEl = this.root.querySelector('#taskTitle');
@@ -653,18 +653,22 @@ Aktuell: Platzhalter.</div>
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
 
-    // Bonus
-    this.bonusCloseBtn = this.root.querySelector('#bonusClose');
+    // Aux view
+    this.auxTitleEl = this.root.querySelector('#auxTitle');
+    this.auxIdEl = this.root.querySelector('#auxId');
+    this.auxBodyEl = this.root.querySelector('#auxBody');
+    this.auxCloseBtn = this.root.querySelector('#auxClose');
 
     // Handlers
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
 
-    this.btnSchema.addEventListener('click', () => this.downloadPdf('db-schema.pdf', 'DB-Schema.pdf'));
-    this.btnSpicker.addEventListener('click', () => this.downloadPdf('theorie-spicker.pdf', 'Theorie-Spicker.pdf'));
+    this.btnSchema.addEventListener('click', () => this.openAux('schema'));
+    this.btnSpicker.addEventListener('click', () => this.openAux('spicker'));
+    this.btnSolutions.addEventListener('click', () => this.openAux('solutions'));
     this.btnBonus.addEventListener('click', () => this.openBonus());
-    this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
+    this.auxCloseBtn.addEventListener('click', () => this.closeAux());
   }
 
   setEmptyState(isEmpty) {
@@ -674,20 +678,20 @@ Aktuell: Platzhalter.</div>
     if (isEmpty) {
       this.emptyEl.style.display = 'block';
       this.taskViewEl.style.display = 'none';
-      this.bonusViewEl.style.display = 'none';
+      this.auxViewEl.style.display = 'none';
       return;
     }
 
     this.emptyEl.style.display = 'none';
     this.taskViewEl.style.display = 'block';
-    this.bonusViewEl.style.display = 'none';
+    this.auxViewEl.style.display = 'none';
   }
 
-  showBonusView() {
+  showAuxView() {
     this.hideHint();
     this.emptyEl.style.display = 'none';
     this.taskViewEl.style.display = 'none';
-    this.bonusViewEl.style.display = 'block';
+    this.auxViewEl.style.display = 'block';
   }
 
   closeTask() {
@@ -704,15 +708,121 @@ Aktuell: Platzhalter.</div>
       return;
     }
 
-    this.showBonusView();
+    this.openAux('bonus');
   }
 
-  closeBonus() {
+  closeAux() {
     if (this.currentId) {
       this.setEmptyState(false);
     } else {
       this.setEmptyState(true);
     }
+  }
+
+  openAux(kind) {
+    // build content
+    const makeCard = (title, subtitle, bodyHtml) => {
+      if (this.auxTitleEl) this.auxTitleEl.textContent = title;
+      if (this.auxIdEl) this.auxIdEl.textContent = subtitle;
+      if (this.auxBodyEl) this.auxBodyEl.innerHTML = bodyHtml;
+      this.showAuxView();
+    };
+
+    if (kind === 'schema') {
+      makeCard(
+        'DB-Schema',
+        'Platzhalter',
+        `<div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="opacity:.92">Hier kommt später das Datenbankschema als sauber formatierte Übersicht hin (Tabellen, Attribute, Fremdschlüssel).</div>
+          <div style="opacity:.78">Platzhalter – wird im nächsten Schritt durch das echte Schema ersetzt.</div>
+        </div>`
+      );
+      return;
+    }
+
+    if (kind === 'spicker') {
+      makeCard(
+        'Theorie‑Spicker',
+        'Platzhalter',
+        `<div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="opacity:.92">Hier kommt später der Spicker (JOIN, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, Aggregatfunktionen) in kompakter Form hin.</div>
+          <div style="opacity:.78">Platzhalter – wird im nächsten Schritt durch den echten Spicker ersetzt.</div>
+        </div>`
+      );
+      return;
+    }
+
+    if (kind === 'solutions') {
+      const ids = Object.keys(this.TASKS || {});
+      const unlockedIds = ids.filter(id => !!this.unlocked?.[id]);
+
+      if (!unlockedIds.length) {
+        makeCard(
+          'Lösungen',
+          'Noch nichts freigeschaltet',
+          `<div style="opacity:.85">Sobald du Aufgaben freigeschaltet hast, werden hier die zugehörigen Referenz‑SQL‑Lösungen angezeigt.</div>`
+        );
+        return;
+      }
+
+      const items = unlockedIds.map(id => {
+        const t = this.TASKS[id];
+        const sql = this.escape(t?.refSql || t?.starter || '');
+        const title = this.escape(t?.title || id);
+        return `
+          <div style="border:1px solid rgba(255,255,255,.10);background:rgba(2,6,23,.45);border-radius:14px;padding:12px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
+              <div style="font-weight:800;">${title}</div>
+              <div style="opacity:.65;font-size:12px;">Task: ${this.escape(id)}</div>
+            </div>
+            <pre style="margin:10px 0 0;white-space:pre-wrap;line-height:1.5;font-size:12px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;">${sql}</pre>
+          </div>
+        `;
+      }).join('');
+
+      makeCard(
+        'Lösungen',
+        `${unlockedIds.length} freigeschaltet`,
+        `<div style="display:flex;flex-direction:column;gap:10px;">${items}</div>`
+      );
+      return;
+    }
+
+    // bonus / SQL injection
+    makeCard(
+      'Zusatzaufgabe: SQL Injection',
+      'Security‑Challenge',
+      `<div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-weight:800; margin-bottom:6px;">Kurze Einführung</div>
+          <div style="opacity:.9;">
+            SQL‑Injection entsteht, wenn Eingaben ungefiltert in SQL‑Strings verkettet werden. Dadurch kann der Angreifer die Query‑Logik manipulieren (z. B. Authentifizierung umgehen).
+          </div>
+        </div>
+
+        <div>
+          <div style="font-weight:800; margin-bottom:6px;">Aufgabe 1 – „Versuche dich reinzuhacken“</div>
+          <div style="opacity:.9;">
+            Öffne im Shop <b>„Konto &amp; Listen“</b> und nutze das Login‑Formular. Ziel: Ohne das korrekte Passwort eine erfolgreiche Anmeldung erzwingen.
+            Wenn es klappt, erscheint <b>„Login erfolgreich“</b>.
+          </div>
+          <div style="opacity:.78; margin-top:6px;">
+            Hinweis: Der Login ist absichtlich unsicher implementiert (Training‑Sandbox). Arbeite sauber und dokumentiere deinen Weg.
+          </div>
+        </div>
+
+        <div>
+          <div style="font-weight:800; margin-bottom:6px;">Aufgabe 2 – Gegenmaßnahmen recherchieren</div>
+          <div style="opacity:.9;">
+            Informiere dich im Internet, was man gegen SQL‑Injection macht. Fasse die wichtigsten Maßnahmen stichpunktartig zusammen (mind. 5 Punkte) und ordne sie nach Wirksamkeit.
+          </div>
+        </div>
+
+        <div style="opacity:.78;">
+          Optional: Überlege, wie du den Login hier im Projekt so härtest, dass SQL‑Injection nicht mehr funktioniert.
+        </div>
+      </div>`
+    );
   }
 
   onShopSelect(actionId) {
