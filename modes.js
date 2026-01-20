@@ -34,7 +34,6 @@ const ALL_TASK_IDS = [
   "cat-electronics","cat-household","cat-sport",
   "price-25","price-50","price-100",
   "rating-5","rating-4",
-  "reset-filters",
   "priceAsc","priceDesc","popularity",
   "search",
   "open-cart",
@@ -415,6 +414,37 @@ WHERE p.id = w.produkt_id;`,
 FROM produkte p, warenkorb w
 WHERE p.id = w.produkt_id;`,
         mode: "set"
+      },
+
+      "cart-refresh": {
+        title: "Warenkorb aktualisieren",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
+Gib für jedes Produkt die Produkt-ID, den Namen, den Preis, die Menge und die Zeilensumme (Preis * Menge) aus.
+Sortiere alphabetisch nach dem Produktnamen.`,
+        starter:
+`SELECT
+  p.id,
+  p.name,
+  p.preis,
+  w.menge,
+  ROUND(p.preis * w.menge, 2) AS zeilensumme
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id
+ORDER BY p.name ASC;`,
+        refSql:
+`SELECT
+  p.id,
+  p.name,
+  p.preis,
+  w.menge,
+  ROUND(p.preis * w.menge, 2) AS zeilensumme
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id
+ORDER BY p.name ASC;`,
+        mode: "rows_order"
       },
 
       "cart-total": {
