@@ -61,6 +61,7 @@ const ALL_TASK_IDS = [
 
 
     this.handlers = [];
+    this.sqliHandlers = [];
     window.addEventListener("message", (e) => {
       if (e.origin !== window.location.origin) return;
       const msg = e.data;
@@ -76,6 +77,10 @@ if (msg.type === "SHOP_READY") {
 
       if (msg.type === "SHOP_ACTION") {
         this.handlers.forEach(fn => fn(msg.actionId));
+      }
+
+      if (msg.type === "SQLI_SUCCESS") {
+        this.sqliHandlers.forEach(fn => fn());
       }
     });
   }
@@ -100,6 +105,10 @@ if (msg.type === "SHOP_READY") {
   onShopAction(fn) {
     this.handlers.push(fn);
   }
+
+  onSqliSuccess(fn) {
+    this.sqliHandlers.push(fn);
+  }
 }
 
 /* ===========================
@@ -112,17 +121,70 @@ class FreeMode {
     this.shop = new ShopBridge("shopFrame");
     this.db = null;
 
+    // Progress/Score (Gamification)
+    // UI soll explizit bei x/21 bleiben.
+    this.TOTAL_TASKS = 21;
+    this.hintUsed = {};
+    this.sqliDone = false;
+
     // Aufgaben-Definitionen (auf data-task IDs gemappt)
     this.TASKS = this.buildTasks();
 
-    // unlocked state (nur RAM, v1)
+    // unlocked state (persistiert)
     this.unlocked = {};
     Object.keys(this.TASKS).forEach(id => this.unlocked[id] = false);
+    this.loadProgressState();
 
     // Shop-Klicks -> Aufgabe auswählen
     this.shop.onShopAction((actionId) => this.onShopSelect(actionId));
 
+    // SQLi-Bonus (Login erfolgreich)
+    this.shop.onSqliSuccess?.(() => this.onSqliSuccess());
+
     this.currentId = null;
+  }
+
+  loadProgressState() {
+    // Defensive: nichts kaputt machen, wenn localStorage nicht verfügbar ist.
+    try {
+      const rawUnlocked = localStorage.getItem('schulazon_unlocked_v1');
+      if (rawUnlocked) {
+        const data = JSON.parse(rawUnlocked);
+        if (data && typeof data === 'object') {
+          Object.keys(this.unlocked).forEach((k) => {
+            this.unlocked[k] = !!data[k];
+          });
+        }
+      }
+
+      const rawHints = localStorage.getItem('schulazon_hint_used_v1');
+      if (rawHints) {
+        const data = JSON.parse(rawHints);
+        if (data && typeof data === 'object') this.hintUsed = data;
+      }
+
+      this.sqliDone = localStorage.getItem('schulazon_sqli_done_v1') === 'true';
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  persistProgressState() {
+    try {
+      localStorage.setItem('schulazon_unlocked_v1', JSON.stringify(this.unlocked));
+      localStorage.setItem('schulazon_hint_used_v1', JSON.stringify(this.hintUsed || {}));
+      localStorage.setItem('schulazon_sqli_done_v1', this.sqliDone ? 'true' : 'false');
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  onSqliSuccess() {
+    if (this.sqliDone) return;
+    this.sqliDone = true;
+    this.persistProgressState();
+    this.updateProgressUI();
+    this.showHint('SQL‑Injection geschafft: +10 Score.');
   }
 
   buildTasks() {
@@ -416,37 +478,6 @@ WHERE p.id = w.produkt_id;`,
         mode: "set"
       },
 
-      "cart-refresh": {
-        title: "Warenkorb aktualisieren",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
-Gib für jedes Produkt die Produkt-ID, den Namen, den Preis, die Menge und die Zeilensumme (Preis * Menge) aus.
-Sortiere alphabetisch nach dem Produktnamen.`,
-        starter:
-`SELECT
-  p.id,
-  p.name,
-  p.preis,
-  w.menge,
-  ROUND(p.preis * w.menge, 2) AS zeilensumme
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id
-ORDER BY p.name ASC;`,
-        refSql:
-`SELECT
-  p.id,
-  p.name,
-  p.preis,
-  w.menge,
-  ROUND(p.preis * w.menge, 2) AS zeilensumme
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id
-ORDER BY p.name ASC;`,
-        mode: "rows_order"
-      },
-
       "cart-total": {
         title: "Gesamtpreis Warenkorb",
         difficulty: "+++",
@@ -545,7 +576,10 @@ LIMIT 2;`,
 
             <div class="lab-progress" aria-label="Fortschritt">
               <div class="lab-progress-meta">
-                <div id="progressCount">0/0 erledigt</div>
+                <div class="progress-left">
+                  <div id="progressCount">0/0 erledigt</div>
+                  <div id="scoreEl" class="score-pill">Score: 0</div>
+                </div>
                 <div id="progressPct">0%</div>
               </div>
               <div class="progress-bar" style="height:12px;">
@@ -557,7 +591,7 @@ LIMIT 2;`,
           <div class="lab-header-actions" style="justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div class="lab-actions-left" style="display:flex; gap:10px; flex-wrap:wrap;">
               <button class="btn" id="btnSchema" type="button">DB-Schema</button>
-              <button class="btn" id="btnSpicker" type="button">Spicker</button>
+              <button class="btn" id="btnSpicker" type="button">Theorie-Spicker</button>
               <button class="btn" id="btnSolutions" type="button">Lösungen</button>
             </div>
             <div class="lab-actions-right" style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -588,11 +622,14 @@ LIMIT 2;`,
                       <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                     </div>
                   </div>
+                  <button class="btn btn-ghost" id="hintBtn" type="button">Tipp</button>
                   <button class="btn btn-ghost" id="taskClose" type="button">Aufgabe schließen</button>
                 </div>
               </div>
 
               <div class="task-body" id="taskBody"></div>
+
+              <div id="taskHint" class="task-hint" style="display:none;"></div>
 
               <div class="editor">
                 <textarea id="sqlInput" spellcheck="false"></textarea>
@@ -605,18 +642,34 @@ LIMIT 2;`,
               <pre class="output" id="out"></pre>
             </div>
 
-            <div id="auxView" style="display:none; min-height:0;" class="bonus-view">
+            <div id="bonusView" style="display:none; min-height:0;" class="bonus-view">
               <div class="task-head">
                 <div>
-                  <h3 class="task-title" id="auxTitle">Info</h3>
-                  <div class="task-id" id="auxId">—</div>
+                  <h3 class="task-title" id="sideTitle">Zusatzaufgabe</h3>
+                  <div class="task-id" id="sideMeta">Platzhalter</div>
                 </div>
-                <button class="btn btn-ghost" id="auxClose" type="button">Zurück</button>
+                <button class="btn btn-ghost" id="bonusClose" type="button">Zurück</button>
               </div>
-              <div class="task-body" id="auxBody"></div>
+              <div class="task-body" id="sideBody">Platzhalter.</div>
             </div>
           </div>
         </section>
+
+        <div class="overlay" id="confirmOverlay" aria-hidden="true">
+          <div class="overlay-panel">
+            <div class="overlay-panel-inner">
+              <div class="overlay-top">
+                <h3 class="overlay-title" id="confirmTitle">Tipp anzeigen?</h3>
+                <button class="btn btn-ghost" id="confirmClose" type="button">✕</button>
+              </div>
+              <div class="task-body" id="confirmText">Wenn du den Tipp öffnest, verlierst du 1 Score‑Punkt. Trotzdem anzeigen?</div>
+              <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn btn-ghost" id="confirmNo" type="button">Abbrechen</button>
+                <button class="btn btn-primary" id="confirmYes" type="button">Tipp anzeigen (-1)</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -628,6 +681,7 @@ LIMIT 2;`,
     this.progressCountEl = this.root.querySelector('#progressCount');
     this.progressPctEl = this.root.querySelector('#progressPct');
     this.progressFillEl = this.root.querySelector('#progressFill');
+    this.scoreEl = this.root.querySelector('#scoreEl');
 
     // Actions
     this.btnSchema = this.root.querySelector('#btnSchema');
@@ -638,7 +692,7 @@ LIMIT 2;`,
     // Views
     this.emptyEl = this.root.querySelector('#emptyState');
     this.taskViewEl = this.root.querySelector('#taskView');
-    this.auxViewEl = this.root.querySelector('#auxView');
+    this.bonusViewEl = this.root.querySelector('#bonusView');
 
     // Task UI
     this.titleEl = this.root.querySelector('#taskTitle');
@@ -646,6 +700,8 @@ LIMIT 2;`,
     this.taskBodyEl = this.root.querySelector('#taskBody');
     this.dotsEl = this.root.querySelector('#difficultyDots');
     this.closeTaskBtn = this.root.querySelector('#taskClose');
+    this.hintBtn = this.root.querySelector('#hintBtn');
+    this.taskHintEl = this.root.querySelector('#taskHint');
 
     // Editor
     this.sqlEl = this.root.querySelector('#sqlInput');
@@ -653,45 +709,146 @@ LIMIT 2;`,
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
 
-    // Aux view
-    this.auxTitleEl = this.root.querySelector('#auxTitle');
-    this.auxIdEl = this.root.querySelector('#auxId');
-    this.auxBodyEl = this.root.querySelector('#auxBody');
-    this.auxCloseBtn = this.root.querySelector('#auxClose');
+    // Confirm modal
+    this.confirmOverlayEl = this.root.querySelector('#confirmOverlay');
+    this.confirmCloseBtn = this.root.querySelector('#confirmClose');
+    this.confirmNoBtn = this.root.querySelector('#confirmNo');
+    this.confirmYesBtn = this.root.querySelector('#confirmYes');
+    this._pendingHintTaskId = null;
+
+    // Bonus
+    this.bonusCloseBtn = this.root.querySelector('#bonusClose');
+
+    // Side view content
+    this.sideTitleEl = this.root.querySelector('#sideTitle');
+    this.sideMetaEl = this.root.querySelector('#sideMeta');
+    this.sideBodyEl = this.root.querySelector('#sideBody');
+    this.currentSideView = null;
 
     // Handlers
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
+    this.hintBtn.addEventListener('click', () => this.requestHint());
 
-    this.btnSchema.addEventListener('click', () => this.openAux('schema'));
-    this.btnSpicker.addEventListener('click', () => this.openAux('spicker'));
-    this.btnSolutions.addEventListener('click', () => this.openAux('solutions'));
+    this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
+    this.confirmNoBtn.addEventListener('click', () => this.closeConfirm());
+    this.confirmYesBtn.addEventListener('click', () => this.confirmHint());
+    this.confirmOverlayEl.addEventListener('click', (e) => {
+      if (e.target === this.confirmOverlayEl) this.closeConfirm();
+    });
+
+    this.btnSchema.addEventListener('click', () => this.openSideView('schema'));
+    this.btnSpicker.addEventListener('click', () => this.openSideView('spicker'));
+    this.btnSolutions.addEventListener('click', () => this.openSideView('solutions'));
     this.btnBonus.addEventListener('click', () => this.openBonus());
-    this.auxCloseBtn.addEventListener('click', () => this.closeAux());
+    this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
+  }
+
+  openSideView(kind) {
+    this.currentSideView = kind;
+
+    // Inhalte
+    if (kind === 'schema') {
+      this.sideTitleEl.textContent = 'DB‑Schema';
+      this.sideMetaEl.textContent = 'Platzhalter';
+      this.sideBodyEl.innerHTML = `
+        <p><strong>Platzhalter:</strong> Hier wird später das Datenbankschema angezeigt.</p>
+        <p class="muted">Idee: Tabellen, Schlüssel und wichtige Spalten kurz erklären. Dazu 1–2 Beispielqueries.</p>
+      `;
+    } else if (kind === 'spicker') {
+      this.sideTitleEl.textContent = 'Theorie‑Spicker';
+      this.sideMetaEl.textContent = 'Platzhalter';
+      this.sideBodyEl.innerHTML = `
+        <p><strong>Platzhalter:</strong> Hier wird später ein kompakter Spicker angezeigt.</p>
+        <ul>
+          <li>SELECT‑Grundform</li>
+          <li>WHERE, ORDER BY, LIMIT</li>
+          <li>JOIN, GROUP BY, Aggregationen</li>
+        </ul>
+      `;
+    } else if (kind === 'solutions') {
+      this.sideTitleEl.textContent = 'Lösungen';
+      this.sideMetaEl.textContent = 'Nur bereits freigeschaltet';
+
+      const unlockedIds = Object.keys(this.TASKS).filter(id => !!this.unlocked[id]);
+      if (!unlockedIds.length) {
+        this.sideBodyEl.innerHTML = `<p>Noch keine Aufgaben freigeschaltet.</p>`;
+      } else {
+        const blocks = unlockedIds.map((id) => {
+          const t = this.TASKS[id];
+          const sql = (t && t.refSql) ? t.refSql : '';
+          return `
+            <div style="margin-bottom:14px; padding:12px; border:1px solid rgba(255,255,255,.08); border-radius:12px;">
+              <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                <div>
+                  <div style="font-weight:700;">${this.escapeHtml(t?.title || id)}</div>
+                  <div class="muted" style="margin-top:2px;">Task: ${this.escapeHtml(id)}</div>
+                </div>
+                <div class="muted" style="white-space:nowrap;">${this.escapeHtml(t?.difficulty || '')}</div>
+              </div>
+              ${sql ? `<pre class="output" style="margin-top:10px; white-space:pre-wrap;">${this.escapeHtml(sql)}</pre>` : `<div class="muted" style="margin-top:10px;">Keine Referenz‑SQL hinterlegt.</div>`}
+            </div>
+          `;
+        }).join('');
+        this.sideBodyEl.innerHTML = blocks;
+      }
+    } else if (kind === 'sqli') {
+      this.sideTitleEl.textContent = 'SQL‑Injection';
+      this.sideMetaEl.textContent = 'Zusatzaufgabe';
+      this.sideBodyEl.innerHTML = `
+        <p><strong>Ein‑Satz‑Einordnung:</strong> SQL‑Injection entsteht, wenn SQL‑Statements aus unvalidierten Nutzereingaben per String‑Verkettung gebaut werden und Angreifer die Query‑Logik manipulieren.</p>
+
+        <h4 style="margin:14px 0 8px;">Aufgabe 1: „Versuche dich reinzuhacken“</h4>
+        <ol>
+          <li>Öffne im Shop rechts oben das <strong>Konto‑Panel</strong>.</li>
+          <li>Nutze das Login‑Formular. Ziel: <strong>„Login erfolgreich“</strong> ohne echtes Passwort.</li>
+          <li>Hinweis: Du manipulierst die <strong>WHERE‑Bedingung</strong> (ohne die komplette Lösung zu verraten: denke an „immer wahr“ und Kommentare).</li>
+        </ol>
+        <div class="muted" style="margin-top:6px;">Wenn du es schaffst, bekommst du automatisch <strong>+10 Score</strong>.</div>
+
+        <h4 style="margin:14px 0 8px;">Aufgabe 2: Recherche (Internet)</h4>
+        <p>Recherchiere online, welche Gegenmaßnahmen man in realen Anwendungen einsetzt, und notiere <strong>mindestens 4 konkrete Maßnahmen</strong> (z. B. Parametrisierung/Prepared Statements, Eingabevalidierung, Least Privilege, sichere ORM‑Nutzung).</p>
+
+        <h4 style="margin:14px 0 8px;">Warum das hier erlaubt ist</h4>
+        <p class="muted">Das ist eine Lern‑Sandbox. In echten Systemen ist das ein kritischer Security‑Bug.</p>
+      `;
+    }
+
+    this.showBonusView();
+  }
+
+  escapeHtml(s) {
+    return (s ?? '').toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   setEmptyState(isEmpty) {
     // Hints ausblenden, wenn Nutzer aktiv wechselt
     this.hideHint();
+    this.hideTaskHint();
 
     if (isEmpty) {
       this.emptyEl.style.display = 'block';
       this.taskViewEl.style.display = 'none';
-      this.auxViewEl.style.display = 'none';
+      this.bonusViewEl.style.display = 'none';
       return;
     }
 
     this.emptyEl.style.display = 'none';
     this.taskViewEl.style.display = 'block';
-    this.auxViewEl.style.display = 'none';
+    this.bonusViewEl.style.display = 'none';
   }
 
-  showAuxView() {
+  showBonusView() {
     this.hideHint();
     this.emptyEl.style.display = 'none';
     this.taskViewEl.style.display = 'none';
-    this.auxViewEl.style.display = 'block';
+    this.bonusViewEl.style.display = 'block';
   }
 
   closeTask() {
@@ -708,121 +865,16 @@ LIMIT 2;`,
       return;
     }
 
-    this.openAux('bonus');
+    // Immer die SQL‑Injection‑Challenge öffnen (nicht von vorherigen Side‑Views abhängen)
+    this.openSideView('sqli');
   }
 
-  closeAux() {
+  closeBonus() {
     if (this.currentId) {
       this.setEmptyState(false);
     } else {
       this.setEmptyState(true);
     }
-  }
-
-  openAux(kind) {
-    // build content
-    const makeCard = (title, subtitle, bodyHtml) => {
-      if (this.auxTitleEl) this.auxTitleEl.textContent = title;
-      if (this.auxIdEl) this.auxIdEl.textContent = subtitle;
-      if (this.auxBodyEl) this.auxBodyEl.innerHTML = bodyHtml;
-      this.showAuxView();
-    };
-
-    if (kind === 'schema') {
-      makeCard(
-        'DB-Schema',
-        'Platzhalter',
-        `<div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="opacity:.92">Hier kommt später das Datenbankschema als sauber formatierte Übersicht hin (Tabellen, Attribute, Fremdschlüssel).</div>
-          <div style="opacity:.78">Platzhalter – wird im nächsten Schritt durch das echte Schema ersetzt.</div>
-        </div>`
-      );
-      return;
-    }
-
-    if (kind === 'spicker') {
-      makeCard(
-        'Theorie‑Spicker',
-        'Platzhalter',
-        `<div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="opacity:.92">Hier kommt später der Spicker (JOIN, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, Aggregatfunktionen) in kompakter Form hin.</div>
-          <div style="opacity:.78">Platzhalter – wird im nächsten Schritt durch den echten Spicker ersetzt.</div>
-        </div>`
-      );
-      return;
-    }
-
-    if (kind === 'solutions') {
-      const ids = Object.keys(this.TASKS || {});
-      const unlockedIds = ids.filter(id => !!this.unlocked?.[id]);
-
-      if (!unlockedIds.length) {
-        makeCard(
-          'Lösungen',
-          'Noch nichts freigeschaltet',
-          `<div style="opacity:.85">Sobald du Aufgaben freigeschaltet hast, werden hier die zugehörigen Referenz‑SQL‑Lösungen angezeigt.</div>`
-        );
-        return;
-      }
-
-      const items = unlockedIds.map(id => {
-        const t = this.TASKS[id];
-        const sql = this.escape(t?.refSql || t?.starter || '');
-        const title = this.escape(t?.title || id);
-        return `
-          <div style="border:1px solid rgba(255,255,255,.10);background:rgba(2,6,23,.45);border-radius:14px;padding:12px;">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
-              <div style="font-weight:800;">${title}</div>
-              <div style="opacity:.65;font-size:12px;">Task: ${this.escape(id)}</div>
-            </div>
-            <pre style="margin:10px 0 0;white-space:pre-wrap;line-height:1.5;font-size:12px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;">${sql}</pre>
-          </div>
-        `;
-      }).join('');
-
-      makeCard(
-        'Lösungen',
-        `${unlockedIds.length} freigeschaltet`,
-        `<div style="display:flex;flex-direction:column;gap:10px;">${items}</div>`
-      );
-      return;
-    }
-
-    // bonus / SQL injection
-    makeCard(
-      'Zusatzaufgabe: SQL Injection',
-      'Security‑Challenge',
-      `<div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
-          <div style="font-weight:800; margin-bottom:6px;">Kurze Einführung</div>
-          <div style="opacity:.9;">
-            SQL‑Injection entsteht, wenn Eingaben ungefiltert in SQL‑Strings verkettet werden. Dadurch kann der Angreifer die Query‑Logik manipulieren (z. B. Authentifizierung umgehen).
-          </div>
-        </div>
-
-        <div>
-          <div style="font-weight:800; margin-bottom:6px;">Aufgabe 1 – „Versuche dich reinzuhacken“</div>
-          <div style="opacity:.9;">
-            Öffne im Shop <b>„Konto &amp; Listen“</b> und nutze das Login‑Formular. Ziel: Ohne das korrekte Passwort eine erfolgreiche Anmeldung erzwingen.
-            Wenn es klappt, erscheint <b>„Login erfolgreich“</b>.
-          </div>
-          <div style="opacity:.78; margin-top:6px;">
-            Hinweis: Der Login ist absichtlich unsicher implementiert (Training‑Sandbox). Arbeite sauber und dokumentiere deinen Weg.
-          </div>
-        </div>
-
-        <div>
-          <div style="font-weight:800; margin-bottom:6px;">Aufgabe 2 – Gegenmaßnahmen recherchieren</div>
-          <div style="opacity:.9;">
-            Informiere dich im Internet, was man gegen SQL‑Injection macht. Fasse die wichtigsten Maßnahmen stichpunktartig zusammen (mind. 5 Punkte) und ordne sie nach Wirksamkeit.
-          </div>
-        </div>
-
-        <div style="opacity:.78;">
-          Optional: Überlege, wie du den Login hier im Projekt so härtest, dass SQL‑Injection nicht mehr funktioniert.
-        </div>
-      </div>`
-    );
   }
 
   onShopSelect(actionId) {
@@ -870,6 +922,7 @@ LIMIT 2;`,
   }
 
   selectTask(taskId) {
+    this.hideTaskHint();
     this.currentId = taskId;
     const t = this.TASKS[taskId];
 
@@ -905,6 +958,7 @@ LIMIT 2;`,
     this.unlockBtn.disabled = true;
     this.unlockBtn.style.cursor = "not-allowed";
     this.unlockBtn.style.opacity = ".6";
+    this.unlockBtn.classList.remove('btn-unlock-ready');
 
     if (!this.currentId) {
       this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
@@ -949,6 +1003,7 @@ LIMIT 2;`,
       this.unlockBtn.disabled = false;
       this.unlockBtn.style.cursor = "pointer";
       this.unlockBtn.style.opacity = "1";
+      this.unlockBtn.classList.add('btn-unlock-ready');
       return;
     }
 
@@ -961,12 +1016,13 @@ async unlockCurrent() {
     if (!id) return;
 
     this.unlocked[id] = true;
+    this.persistProgressState();
     await this.shop.lock(id, false);
 
     // UI aktualisieren
     this.selectTask(id);
 
-    this.outEl.textContent = '🎉 Freigeschaltet! Der Button ist jetzt im Shop aktiv.';
+    this.outEl.textContent = 'Freigeschaltet! Der Button ist jetzt im Shop aktiv.';
 
     this.updateProgressUI();
 
@@ -1006,6 +1062,112 @@ async unlockCurrent() {
     this.hintEl.textContent = '';
   }
 
+  /* ---------- Tipp-System (mit Score-Abzug) ---------- */
+
+  requestHint() {
+    if (!this.currentId) return;
+    const id = this.currentId;
+    const alreadyUsed = !!this.hintUsed?.[id];
+
+    // Wenn schon genutzt: einfach anzeigen/umschalten, ohne erneut -1.
+    if (alreadyUsed) {
+      const isOpen = this.taskHintEl && this.taskHintEl.style.display !== 'none';
+      if (isOpen) {
+        this.hideTaskHint();
+      } else {
+        this.showTaskHint(this.getHintText(id));
+      }
+      return;
+    }
+
+    this._pendingHintTaskId = id;
+    this.openConfirm();
+  }
+
+  openConfirm() {
+    if (!this.confirmOverlayEl) return;
+    this.confirmOverlayEl.classList.add('open');
+    this.confirmOverlayEl.setAttribute('aria-hidden', 'false');
+  }
+
+  closeConfirm() {
+    this._pendingHintTaskId = null;
+    if (!this.confirmOverlayEl) return;
+    this.confirmOverlayEl.classList.remove('open');
+    this.confirmOverlayEl.setAttribute('aria-hidden', 'true');
+  }
+
+  confirmHint() {
+    const id = this._pendingHintTaskId;
+    this.closeConfirm();
+    if (!id) return;
+
+    // Abzug nur 1x pro Aufgabe
+    this.hintUsed[id] = true;
+    this.persistProgressState();
+    this.updateProgressUI();
+
+    this.showTaskHint(this.getHintText(id));
+  }
+
+  showTaskHint(text) {
+    if (!this.taskHintEl) return;
+    this.taskHintEl.textContent = text;
+    this.taskHintEl.style.display = 'block';
+  }
+
+  hideTaskHint() {
+    if (!this.taskHintEl) return;
+    this.taskHintEl.style.display = 'none';
+    this.taskHintEl.textContent = '';
+  }
+
+  getHintText(taskId) {
+    const t = this.TASKS?.[taskId];
+    const H = {
+      "search": "Nutze LIKE mit Platzhalter :q und Wildcards (%). Achte darauf, dass du die Wildcards korrekt zusammensetzt.",
+      "bestseller": "Du brauchst eine Aggregation über verkäufe: GROUP BY produkt_id und SUM(anzahl). Danach filterst du mit HAVING.",
+      "available": "Das ist eine reine WHERE‑Bedingung auf lagerbestand. Formuliere den Bereich eindeutig.",
+      "popularity": "Beliebtheit = SUM(anzahl) pro Produkt. Gib produkt_id und die Summe aus und sortiere danach absteigend.",
+      "cat-electronics": "Du musst produkte mit kategorien verknüpfen (JOIN) und dann nach kategorien.name filtern.",
+      "cat-household": "Verknüpfe produkte mit kategorien und filtere nach kategorien.name.",
+      "cat-sport": "Verknüpfe produkte mit kategorien und filtere nach kategorien.name.",
+      "rating-5": "Verknüpfe produkte mit bewertungen und filtere nach sterne = 5. Denk daran: Produkte können mehrere Bewertungen haben.",
+      "rating-4": "Wie bei 5‑Sterne, aber mit sterne >= 4. Achte auf mögliche Duplikate.",
+      "open-cart": "Verknüpfe warenkorb mit produkte über produkt_id. Gib Name/Preis/Menge aus.",
+      "cart-refresh": "Du brauchst zusätzlich eine berechnete Spalte (preis * menge) mit Alias. Danach ORDER BY nach Name.",
+      "cart-total": "Aggregation: SUM(preis * menge). Gib nur einen Wert zurück.",
+      "orders": "Filtere auf nutzer_id = 1, sortiere nach der neuesten Bestellung (id DESC) und LIMIT 3.",
+      "topProducts": "SUM(anzahl) pro Produkt, danach absteigend sortieren und LIMIT 2. Gib Name und Summe aus.",
+    };
+
+    if (H[taskId]) return H[taskId];
+
+    // Fallback – hilft, verrät nicht die Lösung
+    const lvl = this.getDifficultyLevel(t?.difficulty);
+    if (lvl === 1) return "Starte mit SELECT ... FROM ... und ergänze dann genau eine passende WHERE‑Bedingung. Prüfe zuerst, ob die richtigen Zeilen kommen.";
+    if (lvl === 2) return "Überlege, welche zwei Tabellen zusammengehören, und verbinde sie über passende Schlüsselspalten. Danach filterst du über WHERE.";
+    return "Wenn Aggregation nötig ist: GROUP BY auf der richtigen Schlüsselspalte, SUM/COUNT für die Kennzahl und HAVING für Bedingungen auf Aggregaten.";
+  }
+
+  /* ---------- Score ---------- */
+
+  getTaskPoints(taskId) {
+    const t = this.TASKS?.[taskId];
+    const lvl = this.getDifficultyLevel(t?.difficulty);
+    if (lvl === 1) return 1;
+    if (lvl === 2) return 2;
+    return 4;
+  }
+
+  computeScore() {
+    const ids = Object.keys(this.TASKS || {});
+    const base = ids.reduce((acc, id) => acc + (this.unlocked?.[id] ? this.getTaskPoints(id) : 0), 0);
+    const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
+    const bonus = this.sqliDone ? 10 : 0;
+    return Math.max(0, base + bonus - hints);
+  }
+
   pulseLocked(el) {
     if (!el) return;
     el.classList.remove('shake');
@@ -1027,14 +1189,14 @@ async unlockCurrent() {
 
   getProgressPct() {
     const ids = Object.keys(this.TASKS || {});
-    const total = ids.length || 1;
+    const total = Math.max(1, this.TOTAL_TASKS || ids.length || 1);
     const done = ids.filter(id => !!this.unlocked[id]).length;
-    return Math.round((done / total) * 100);
+    return Math.min(100, Math.round((done / total) * 100));
   }
 
   getMissingForPct(targetPct) {
     const ids = Object.keys(this.TASKS || {});
-    const total = ids.length || 1;
+    const total = Math.max(1, this.TOTAL_TASKS || ids.length || 1);
     const done = ids.filter(id => !!this.unlocked[id]).length;
     const needed = Math.ceil((targetPct / 100) * total);
     return Math.max(0, needed - done);
@@ -1042,13 +1204,15 @@ async unlockCurrent() {
 
   updateProgressUI() {
     const ids = Object.keys(this.TASKS || {});
-    const total = ids.length || 1;
+    const total = Math.max(1, this.TOTAL_TASKS || ids.length || 1);
     const done = ids.filter(id => !!this.unlocked[id]).length;
-    const pct = Math.round((done / total) * 100);
+    const pct = Math.min(100, Math.round((done / total) * 100));
 
     if (this.progressCountEl) this.progressCountEl.textContent = `${done}/${total} erledigt`;
     if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
     if (this.progressFillEl) this.progressFillEl.style.width = `${pct}%`;
+
+    if (this.scoreEl) this.scoreEl.textContent = `Score: ${this.computeScore()}`;
 
     // Bonus availability
     const canBonus = pct >= 80;
@@ -1254,98 +1418,334 @@ async unlockCurrent() {
    =========================== */
 class GuidedMode {
   constructor(root) {
+    window.currentMode = this; // active mode for iframe messages
     this.root = root;
     this.shop = new ShopBridge("shopFrame");
-    this.db = null;
 
-    // linear steps: theory blocks + occasional gated SQL tasks
     this.steps = this.buildSteps();
     this.stepIndex = 0;
 
-    // unlock state (RAM v1)
-    this.unlocked = {};
+    // Per-step transient state
+    this.stepState = {};   // stepId -> state object
 
-    // IMPORTANT: Guided mode ignores shop clicks (no free selection).
-    this._ignoreShop = true;
+    // Shop interaction tracking
+    this.clickedGlobal = new Set();  // all clicks across session
   }
 
   buildSteps() {
-    // v1 demo flow: 4 theory blocks -> 1 task (unlock search) -> 1 theory recap
+    // IDs available from the shop (see ALL_TASK_IDS above)
+    const TASK_LABELS = {
+      // Shop bar
+      "all": "Alle Produkte",
+      "express": "Express-Lieferung",
+      "bestseller": "Bestseller",
+      "available": "Verfügbar",
+
+      // Kategorien
+      "cat-electronics": "Kategorie: Elektronik",
+      "cat-household": "Kategorie: Haushalt",
+      "cat-sport": "Kategorie: Sport",
+
+      // Preis
+      "price-25": "Preis ≤ 25€",
+      "price-50": "Preis ≤ 50€",
+      "price-100": "Preis ≤ 100€",
+
+      // Rating
+      "rating-5": "Rating: 5★",
+      "rating-4": "Rating: 4★+",
+
+      // Sort
+      "priceAsc": "Sort: Preis ↑",
+      "priceDesc": "Sort: Preis ↓",
+      "popularity": "Sort: Beliebtheit",
+
+      // Suche
+      "search": "Suche",
+
+      // Panels / Account
+      "open-cart": "Warenkorb",
+      "orders": "Bestellungen",
+      "topProducts": "Top-Produkte",
+
+      // Warenkorb-Aktionen
+      "cart-refresh": "Warenkorb: Aktualisieren",
+      "cart-total": "Warenkorb: Gesamt"
+    };
+
+    const sqlBlocksPairs = [
+      { left: "SELECT", right: "Welche Spalten sollen angezeigt werden" },
+      { left: "FROM", right: "Aus welcher(n) Tabelle(n) kommen die Daten" },
+      { left: "WHERE", right: "Welche Zeilen werden ausgewählt (Bedingungen)" },
+      { left: "ORDER BY", right: "Sortierung der Ergebnistabelle" },
+      { left: "AGGREGAT / GROUP BY / HAVING", right: "Zusammenfassen und Filtern von Gruppen" }
+    ];
+
     return [
       {
-        type: "theory",
-        title: "Willkommen im Guided Mode",
-        body: `
-          <p>Du arbeitest dich hier Schritt für Schritt durch kurze Theorie‑Blöcke und kleine Missionen.</p>
-          <ul>
-            <li>Links ist der Shop: <strong>alles ist zunächst gesperrt</strong>.</li>
-            <li>Rechts bekommst du Theorie und genau definierte Aufgaben.</li>
-            <li>Nur wenn du eine Mission löst, wird ein Feature im Shop freigeschaltet.</li>
-          </ul>
-        `
+        id: "intro",
+        type: "match",
+        title: "Einleitung: Bausteine einer SQL-Abfrage",
+        lead: "SQL-Abfragen bestehen aus festen Bausteinen. Ordne die Bausteine dem richtigen Zweck zu.",
+        pairs: sqlBlocksPairs
       },
       {
-        type: "theory",
-        title: "SQL‑Grundform",
+        id: "keys",
+        type: "info",
+        title: "Schlüssel: Primärschlüssel und Fremdschlüssel",
+        lead: "Tabellen speichern Datensätze (Zeilen) mit Attributen (Spalten). Schlüssel verbinden Tabellen eindeutig.",
+        body: this.renderKeysBody()
+      },
+      {
+        id: "select",
+        type: "interactive",
+        title: "SELECT … FROM …: * und DISTINCT",
+        lead: "Mit SELECT legst du Spalten fest, mit FROM die Tabelle. * = alle Spalten, DISTINCT entfernt Duplikate.",
+        widget: "distinctDemo"
+      },
+      {
+        id: "allButtons",
+        type: "shopChecklist",
+        title: "Aufgabe: Alle Buttons einmal anklicken",
+        lead: "Klicke im Shop jede Funktion mindestens einmal an. Hinweis: „Bestellungen“ und „Top‑Produkte“ findest du im Konto-Bereich.",
+        required: ALL_TASK_IDS.filter(id => !["open-cart","cart-refresh","cart-total"].includes(id)),
+        labels: TASK_LABELS,
+        unlockWhenDone: ALL_TASK_IDS.filter(id => !["open-cart","cart-refresh","cart-total"].includes(id))
+      },
+      {
+        id: "where",
+        type: "shopTask",
+        title: "WHERE: Filtern",
+        lead: "WHERE filtert Zeilen. Teste typische Filter im Shop (entspricht Bedingungen in WHERE).",
+        tables: [
+          {
+            title: "Operatoren",
+            rows: [
+              ["=", "gleich"],
+              ["<>", "ungleich"],
+              ["< / <=", "kleiner / kleiner-gleich"],
+              ["> / >=", "größer / größer-gleich"]
+            ]
+          },
+          {
+            title: "Logik",
+            rows: [
+              ["AND", "beide Bedingungen müssen wahr sein"],
+              ["OR", "mindestens eine Bedingung muss wahr sein"],
+              ["NOT", "kehrt eine Bedingung um"]
+            ]
+          }
+        ],
+        required: ["available", "express", "price-50"],
+        labels: TASK_LABELS,
+        sqlPlaceholder: {
+          title: "SQL-Mission (Platzhalter)",
+          text: "Hier kommt später eine echte SQL-Aufgabe, die genau diese Filter per WHERE implementiert."
+        }
+      },
+      {
+        id: "orderby",
+        type: "shopTask",
+        title: "ORDER BY: Sortieren",
+        lead: "ORDER BY sortiert nach Spalten – aufsteigend (ASC) oder absteigend (DESC).",
+        required: ["priceAsc", "priceDesc"],
+        labels: TASK_LABELS,
+        sqlPlaceholder: {
+          title: "SQL-Mission (Platzhalter)",
+          text: "Hier kommt später eine SQL-Aufgabe, die die Sortierung über ORDER BY korrekt umsetzt."
+        }
+      },
+      {
+        id: "agg",
+        type: "fill",
+        title: "Aggregat & AS: Zusammenfassen und Alias",
+        lead: "Aggregatfunktionen fassen viele Zeilen zusammen. AS gibt Ergebnisspalten einen verständlichen Alias.",
+        aggregatesTable: [
+          ["COUNT(...)", "zählt Werte/Zeilen"],
+          ["SUM(...)", "Summe"],
+          ["AVG(...)", "Durchschnitt"],
+          ["MIN(...)", "kleinster Wert"],
+          ["MAX(...)", "größter Wert"]
+        ],
+        exercises: this.buildAggregateExercises()
+      },
+      {
+        id: "groupby",
+        type: "fill",
+        title: "GROUP BY & HAVING: Gruppen bilden und filtern",
+        lead: "GROUP BY bildet Gruppen, damit du pro Gruppe Aggregatwerte berechnen kannst. HAVING filtert Gruppen.",
+        exercises: this.buildGroupByExercises()
+      },
+      {
+        id: "rel1n",
+        type: "diagram",
+        title: "Verbund 1:n",
+        lead: "Eine 1:n-Beziehung: ein Datensatz auf der 1‑Seite gehört zu vielen auf der n‑Seite.",
+        diagram: {
+          left: { title: "kategorien", note: "1" },
+          right: { title: "produkte", note: "n", foot: "produkte.kategorie_id → kategorien.id" }
+        }
+      },
+      {
+        id: "relnm",
+        type: "diagram",
+        title: "Verbund n:m",
+        lead: "Eine n:m-Beziehung wird über eine zusätzliche Beziehungstabelle umgesetzt.",
+        diagram: {
+          left: { title: "bestellungen", note: "n" },
+          mid: { title: "bestellpositionen", note: "Beziehung", foot: "(bestellung_id, produkt_id)" },
+          right: { title: "produkte", note: "m" }
+        }
+      },
+      {
+        id: "privacy",
+        type: "confirm",
+        title: "Personenbezogene Daten",
+        lead: "Personenbezogene Daten beziehen sich direkt oder indirekt auf eine identifizierbare Person und sind besonders geschützt.",
+        confirmLabel: "Verstanden"
+      },
+      {
+        id: "end",
+        type: "info",
+        title: "Ende",
+        lead: "Du bist durch das Tutorial durch. Links sind nun alle Funktionen freigeschaltet – probiere sie aus.",
         body: `
-          <p>Wir starten mit <code>SELECT</code>‑Abfragen. In Schulazon gilt: Gib primär <strong>Produkt‑IDs</strong> aus.</p>
-          <div style="margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);">
-            <div style="font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:#cbd5e1;">Merksatz</div>
-            <div style="margin-top:6px; font-size:13px; color:#e8eefc;">
-              <code>SELECT ... FROM ... WHERE ...</code> filtert Daten, <code>ORDER BY</code> sortiert, <code>LIMIT</code> begrenzt.
+          <div class="tut-callout">
+            <div class="tut-callout-title">Nächster Schritt</div>
+            <div class="tut-callout-body">
+              Schalte jetzt so viele Features frei, wie du schaffst – später über echte SQL-Missionen (Platzhalter sind vorbereitet).
             </div>
           </div>
-        `
-      },
-      {
-        type: "theory",
-        title: "Filtern mit WHERE",
-        body: `
-          <p>Mit <code>WHERE</code> begrenzt du die Ergebnismenge. Typisch: <code>=</code>, <code>BETWEEN</code>, <code>LIKE</code>.</p>
-          <p style="opacity:.9; font-size:13px;">In Schulazon hängt z. B. die Suche an einem Query, der zu einem Suchbegriff passende Produkte findet.</p>
-        `
-      },
-      {
-        type: "theory",
-        title: "Mini‑Mission steht an",
-        body: `
-          <p>Als Nächstes schaltest du die <strong>Suchleiste</strong> frei.</p>
-          <p style="opacity:.9; font-size:13px;">Ziel: Du gibst IDs + Namen aus, damit die Suche im Shop aktiv wird.</p>
-        `
-      },
-      {
-        type: "task",
-        taskId: "search",
-        title: "Mission: Suche freischalten",
-        goal: "Gib Produkt-IDs und Namen aus (2 Spalten), damit die Suchleiste freigeschaltet wird.",
-        starter: "SELECT id, name FROM produkte;",
-        refSql: "SELECT id, name FROM produkte;",
-        mode: "set",
-        unlockLabel: "Suchleiste freischalten"
-      },
-      {
-        type: "theory",
-        title: "Freigeschaltet",
-        body: `
-          <p>Du hast ein Feature im Shop freigeschaltet. In Guided Mode kommt als Nächstes wieder Theorie und später weitere Missionen.</p>
-          <p style="opacity:.9; font-size:13px;">Nächster Ausbau: weitere Theorie‑Kapitel + Missionen (JOIN/GROUP BY) für Bestellungen, Top‑Produkte, Warenkorb‑Buttons.</p>
         `
       }
     ];
   }
 
-  async mount() {
-    this.renderShell();
+  renderKeysBody() {
+    // Based on the DB schema comment in script.js (Schulazon Shop).
+    return `
+      <div class="tut-grid-2">
+        <div class="tut-panel">
+          <div class="tut-panel-title">Begriffe</div>
+          <ul class="tut-list">
+            <li><strong>Primärschlüssel (PK)</strong>: identifiziert einen Datensatz eindeutig (z. B. <code>produkte.id</code>).</li>
+            <li><strong>Fremdschlüssel (FK)</strong>: verweist auf den PK einer anderen Tabelle (z. B. <code>produkte.kategorie_id</code> → <code>kategorien.id</code>).</li>
+          </ul>
+        </div>
 
-    // lock everything in the shop for guided mode
+        <div class="tut-panel">
+          <div class="tut-panel-title">Schulazon – stark vereinfacht</div>
+          <div class="tut-schema">
+            <div class="tut-table">
+              <div class="tut-table-head">kategorien</div>
+              <div class="tut-table-row"><span class="pill pk">PK</span> id</div>
+              <div class="tut-table-row">name</div>
+            </div>
+
+            <div class="tut-arrow" aria-hidden="true">→</div>
+
+            <div class="tut-table">
+              <div class="tut-table-head">produkte</div>
+              <div class="tut-table-row"><span class="pill pk">PK</span> id</div>
+              <div class="tut-table-row">name</div>
+              <div class="tut-table-row">preis</div>
+              <div class="tut-table-row"><span class="pill fk">FK</span> kategorie_id</div>
+              <div class="tut-table-row">lagerbestand</div>
+              <div class="tut-table-row">liefertage</div>
+            </div>
+          </div>
+
+          <div class="tut-hint">
+            Merke: FK-Felder sind das technische Bindeglied für JOINs.
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  buildAggregateExercises() {
+    return [
+      {
+        id: "agg1",
+        prompt: "Wie viele Produkte gibt es?",
+        template: `SELECT <select data-blank="fn">
+          <option value="">…</option>
+          <option value="COUNT">COUNT</option>
+          <option value="SUM">SUM</option>
+          <option value="AVG">AVG</option>
+          <option value="MIN">MIN</option>
+          <option value="MAX">MAX</option>
+        </select>(*) AS <select data-blank="alias">
+          <option value="">…</option>
+          <option value="anzahl">anzahl</option>
+          <option value="summe">summe</option>
+          <option value="durchschnitt">durchschnitt</option>
+        </select>
+        FROM produkte;`,
+        solution: { fn: "COUNT", alias: "anzahl" }
+      },
+      {
+        id: "agg2",
+        prompt: "Was ist der Durchschnittspreis?",
+        template: `SELECT <select data-blank="fn">
+          <option value="">…</option>
+          <option value="COUNT">COUNT</option>
+          <option value="SUM">SUM</option>
+          <option value="AVG">AVG</option>
+          <option value="MIN">MIN</option>
+          <option value="MAX">MAX</option>
+        </select>(preis) AS <select data-blank="alias">
+          <option value="">…</option>
+          <option value="durchschnittspreis">durchschnittspreis</option>
+          <option value="minpreis">minpreis</option>
+          <option value="maxpreis">maxpreis</option>
+        </select>
+        FROM produkte;`,
+        solution: { fn: "AVG", alias: "durchschnittspreis" }
+      }
+    ];
+  }
+
+  buildGroupByExercises() {
+    return [
+      {
+        id: "gb1",
+        prompt: "Wie viele Produkte gibt es pro Kategorie (nur Kategorien mit ≥ 2 Produkten)?",
+        template: `SELECT kategorie_id, COUNT(*) AS anzahl
+        FROM produkte
+        <select data-blank="groupby">
+          <option value="">…</option>
+          <option value="GROUP BY">GROUP BY</option>
+          <option value="ORDER BY">ORDER BY</option>
+          <option value="WHERE">WHERE</option>
+        </select> kategorie_id
+        <select data-blank="having">
+          <option value="">…</option>
+          <option value="HAVING">HAVING</option>
+          <option value="WHERE">WHERE</option>
+          <option value="LIMIT">LIMIT</option>
+        </select> COUNT(*) >= 2;`,
+        solution: { groupby: "GROUP BY", having: "HAVING" }
+      }
+    ];
+  }
+
+  async mount() {
+    // Ensure the bottom progress dock stays visible: disable outer scroll, use inner scroll.
+    const pane = document.querySelector(".mode-right");
+    if (pane) {
+      pane.style.overflow = "hidden";
+      pane.style.padding = "16px";
+    }
+
+    this.renderShell();
     await this.shop.ready;
+
+    // Guided: start locked to keep focus; unlocks happen via tutorial.
     await this.lockAllShopTasks(true);
 
-    // load db for tasks
-    await this.loadDb();
-
-    // render first step
     this.renderStep();
+    this.setStatus("Bereit.");
   }
 
   async lockAllShopTasks(locked) {
@@ -1353,296 +1753,719 @@ class GuidedMode {
     for (const id of ids) await this.shop.lock(id, locked);
   }
 
-  async loadDb() {
-    try {
-      this.setStatus("DB wird geladen…");
+  /* ---------- Shop click routing ---------- */
 
-      await this.ensureSqlJsLoaded();
+  onShopSelect(actionId) {
+    if (!actionId) return;
 
-      const SQL = await initSqlJs({
-        locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
-      });
+    this.clickedGlobal.add(actionId);
 
-      const res = await fetch("produkte.sqlite");
-      if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im Projektordner?)");
+    const step = this.steps[this.stepIndex];
+    if (!step) return;
 
-      this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
-      this.setStatus("Bereit.");
-    } catch (e) {
-      this.db = null;
-      this.setStatus("DB-Fehler: " + e.message, true);
+    if (step.type === "shopChecklist" || step.type === "shopTask") {
+      const st = this.getStepState(step.id, () => ({
+        clicked: new Set(),
+        done: false,
+        unlocked: false
+      }));
+
+      st.clicked.add(actionId);
+      this.updateShopTaskUI(step, st);
     }
   }
 
-
-  async ensureSqlJsLoaded() {
-    if (typeof window.initSqlJs === "function") return;
-
-    // Load sql.js from CDN (same version as FreeMode)
-    await this.loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js", "__sqljs_wasm_loaded__");
-
-    if (typeof window.initSqlJs !== "function") {
-      throw new Error("sql.js konnte nicht geladen werden (initSqlJs fehlt). Prüfe Internetzugang oder Content-Security-Policy.");
-    }
-  }
-
-  loadScriptOnce(src, flagName) {
-    return new Promise((resolve, reject) => {
-      if (window[flagName]) return resolve();
-
-      const existing = Array.from(document.scripts).some(s => s.src === src);
-      if (existing) {
-        window[flagName] = true;
-        return resolve();
-      }
-
-      const s = document.createElement("script");
-      s.src = src;
-      s.async = true;
-      s.onload = () => { window[flagName] = true; resolve(); };
-      s.onerror = () => reject(new Error("Script konnte nicht geladen werden: " + src));
-      document.head.appendChild(s);
-    });
-  }
-
-  /* ---------- UI ---------- */
+  /* ---------- UI Shell ---------- */
 
   renderShell() {
     this.root.innerHTML = `
       <style>
-        .g-shell{ display:flex; flex-direction:column; gap:14px; min-height:0; height:100%; }
-        .g-head{ display:flex; flex-direction:column; gap:10px; }
-        .g-title{ margin:0; font-size:22px; font-weight:900; letter-spacing:.01em; }
-        .g-status{ font-size:12px; opacity:.85; }
-        .g-card{
+        /* Guided tutorial – isolated style scope (tut-*) */
+
+        .tut-shell{
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-height: 0;
+        }
+
+        .tut-header{
           position: relative;
           border-radius: 18px;
-          padding: 16px;
-          background: rgba(255,255,255,.06);
+          padding: 14px 14px 12px;
           border: 1px solid rgba(255,255,255,.10);
-          box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+          background: rgba(255,255,255,.05);
           backdrop-filter: blur(10px);
-          overflow:hidden;
+          overflow: hidden;
         }
-        .g-card::before{
+
+        .tut-header::before{
           content:"";
           position:absolute;
-          inset:-40% -30%;
-          background: radial-gradient(circle at 30% 20%, rgba(34,197,94,.20), transparent 45%),
-                      radial-gradient(circle at 70% 70%, rgba(240,136,4,.18), transparent 55%);
+          inset:-45% -25%;
+          background:
+            radial-gradient(circle at 20% 15%, rgba(34,197,94,.18), transparent 45%),
+            radial-gradient(circle at 80% 85%, rgba(251,191,36,.14), transparent 55%);
           filter: blur(18px);
           pointer-events:none;
         }
-        .g-card-inner{ position:relative; z-index:1; }
-        .g-step-title{ margin:0 0 10px 0; font-size:18px; font-weight:800; }
-        .g-body{ font-size:14px; line-height:1.55; color:#e8eefc; }
-        .g-body p{ margin:0 0 10px 0; }
-        .g-body ul{ margin:8px 0 0 18px; }
-        .g-body li{ margin:6px 0; opacity:.95; }
-        .g-nav{
-          margin-top:auto;
+
+        .tut-header-inner{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .tut-title{ margin:0; font-size:16px; font-weight:900; letter-spacing:.01em; }
+        .tut-sub{ margin-top:2px; font-size:12px; color: rgba(232,238,252,.72); }
+
+        .tut-status{
+          font-size:12px;
+          color: rgba(232,238,252,.78);
+          display:flex;
+          align-items:center;
+          gap:10px;
+          justify-content:flex-end;
+          text-align:right;
+          min-width: 140px;
+        }
+
+        .tut-scroll{
+          flex: 1;
+          min-height: 0;
+          overflow: auto;
+          padding-right: 4px;
+        }
+
+        .tut-scroll::-webkit-scrollbar{ width: 10px; }
+        .tut-scroll::-webkit-scrollbar-thumb{
+          background: rgba(255,255,255,.10);
+          border-radius: 999px;
+          border: 2px solid rgba(0,0,0,0);
+          background-clip: padding-box;
+        }
+
+        .tut-card{
+          position: relative;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(255,255,255,.05);
+          box-shadow: 0 18px 60px rgba(0,0,0,.35);
+          overflow: hidden;
+        }
+
+        .tut-card::before{
+          content:"";
+          position:absolute;
+          inset:-55% -35%;
+          background:
+            radial-gradient(circle at 30% 20%, rgba(59,130,246,.12), transparent 45%),
+            radial-gradient(circle at 70% 70%, rgba(34,197,94,.10), transparent 55%);
+          filter: blur(18px);
+          pointer-events:none;
+        }
+
+        .tut-card-inner{
+          position: relative;
+          z-index: 1;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .tut-step-title{ margin:0; font-size:16px; font-weight:900; letter-spacing:.01em; }
+        .tut-lead{ margin:0; font-size:13px; color: rgba(232,238,252,.88); line-height: 1.55; }
+
+        .tut-divider{ height:1px; background: rgba(255,255,255,.08); margin: 2px 0; }
+
+        .tut-callout{
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.45);
+          padding: 12px;
+        }
+        .tut-callout-title{ font-size:12px; font-weight:900; letter-spacing:.06em; text-transform: uppercase; color: rgba(232,238,252,.72); }
+        .tut-callout-body{ margin-top:6px; font-size:13px; color: rgba(232,238,252,.90); line-height: 1.55; }
+
+        .tut-panel{
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.40);
+          padding: 12px;
+        }
+        .tut-panel-title{ font-size:12px; font-weight:900; color: rgba(232,238,252,.80); margin-bottom: 8px; }
+        .tut-hint{
+          margin-top: 10px;
+          padding: 10px 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(34,197,94,.18);
+          background: rgba(34,197,94,.08);
+          color: rgba(187,247,208,.92);
+          font-size: 13px;
+        }
+
+        .tut-list{ margin:0; padding-left: 18px; color: rgba(232,238,252,.92); font-size: 13px; line-height: 1.55; }
+        .tut-list li{ margin: 6px 0; }
+
+        .tut-grid-2{
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        @media (max-width: 980px){
+          .tut-grid-2{ grid-template-columns: 1fr; }
+        }
+
+        /* Schema mini-visual */
+        .tut-schema{
+          display:flex;
+          align-items: stretch;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .tut-table{
+          min-width: 220px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(255,255,255,.06);
+          overflow: hidden;
+        }
+        .tut-table-head{
+          padding: 10px 12px;
+          font-size: 12px;
+          font-weight: 900;
+          color: rgba(232,238,252,.92);
+          border-bottom: 1px solid rgba(255,255,255,.08);
+          background: rgba(255,255,255,.04);
+        }
+        .tut-table-row{
+          padding: 8px 12px;
+          display:flex;
+          gap: 10px;
+          align-items:center;
+          border-bottom: 1px solid rgba(255,255,255,.06);
+          font-size: 13px;
+          color: rgba(232,238,252,.90);
+        }
+        .tut-table-row:last-child{ border-bottom:none; }
+
+        .pill{
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          min-width: 34px;
+          padding: 4px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: .04em;
+        }
+        .pill.pk{ background: rgba(59,130,246,.18); border: 1px solid rgba(59,130,246,.30); color: rgba(191,219,254,.95); }
+        .pill.fk{ background: rgba(251,191,36,.14); border: 1px solid rgba(251,191,36,.30); color: rgba(254,243,199,.95); }
+
+        .tut-arrow{
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size: 18px;
+          font-weight: 900;
+          opacity: .75;
+          padding: 0 4px;
+        }
+
+        /* Match (Zuordnung) */
+        .tut-match{
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        @media (max-width: 980px){
+          .tut-match{ grid-template-columns: 1fr; }
+        }
+
+        .tut-match-col{
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.35);
+          padding: 12px;
+        }
+        .tut-match-head{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .tut-match-title{
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: rgba(232,238,252,.70);
+        }
+        .tut-chip-grid{
+          display:grid;
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .tut-chip{
+          width: 100%;
+          text-align: left;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(255,255,255,.06);
+          color: rgba(232,238,252,.95);
+          border-radius: 14px;
+          padding: 10px 12px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 800;
+          transition: transform .12s ease, background .12s ease, box-shadow .12s ease, border-color .12s ease;
+        }
+        .tut-chip:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
+        .tut-chip:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
+
+        .tut-chip.selected{
+          border-color: rgba(251,191,36,.45);
+          box-shadow: 0 0 0 3px rgba(251,191,36,.12);
+        }
+
+        .tut-chip.matched{
+          border-color: rgba(34,197,94,.45);
+          background: rgba(34,197,94,.10);
+        }
+
+        .tut-chip.wrong{
+          animation: tutshake .22s ease-in-out;
+          border-color: rgba(248,113,113,.55);
+          box-shadow: 0 0 0 3px rgba(248,113,113,.10);
+        }
+
+        @keyframes tutshake{
+          0%{ transform: translateX(0); }
+          25%{ transform: translateX(-4px); }
+          50%{ transform: translateX(4px); }
+          75%{ transform: translateX(-3px); }
+          100%{ transform: translateX(0); }
+        }
+
+        .tut-inline-actions{
+          display:flex;
+          gap: 10px;
+          justify-content:flex-end;
+          flex-wrap:wrap;
+        }
+
+        .tut-btn{
+          border: 1px solid rgba(255,255,255,.12);
+          background: rgba(255,255,255,.06);
+          color: #e8eefc;
+          border-radius: 12px;
+          padding: 10px 12px;
+          cursor: pointer;
+          font-weight: 900;
+          font-size: 13px;
+          transition: transform .12s ease, background .12s ease, opacity .12s ease;
+        }
+        .tut-btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.10); }
+        .tut-btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+
+        .tut-btn.primary{
+          border: none;
+          background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(74,222,128,.95));
+          color: #052e16;
+        }
+
+        .tut-btn.warning{
+          border: none;
+          background: linear-gradient(90deg, rgba(240,136,4,.92), rgba(251,191,36,.92));
+          color: #1f2937;
+        }
+
+        .tut-code{
+          margin: 0;
+          padding: 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.55);
+          color: rgba(232,238,252,.92);
+          font-size: 12px;
+          overflow: auto;
+          white-space: pre;
+        }
+
+        .tut-table-mini{
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+          color: rgba(232,238,252,.92);
+          border-radius: 14px;
+          overflow: hidden;
+        }
+        .tut-table-mini th,
+        .tut-table-mini td{
+          padding: 10px 10px;
+          border-top: 1px solid rgba(255,255,255,.08);
+          vertical-align: top;
+        }
+        .tut-table-mini th{
+          text-align: left;
+          font-weight: 900;
+          color: rgba(232,238,252,.75);
+          background: rgba(255,255,255,.04);
+          border-top: none;
+        }
+
+        /* Shop checklist chips */
+        .tut-chiplist{
+          display:flex;
+          flex-wrap:wrap;
+          gap: 8px;
+        }
+        .tut-taskchip{
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,.12);
+          background: rgba(255,255,255,.06);
+          color: rgba(232,238,252,.92);
+          padding: 8px 10px;
+          font-size: 12px;
+          font-weight: 800;
+          display:inline-flex;
+          align-items:center;
+          gap: 8px;
+          transition: background .12s ease, border-color .12s ease;
+          user-select: none;
+        }
+        .tut-taskchip .dot{
+          width: 10px; height:10px; border-radius: 50%;
+          background: rgba(255,255,255,.22);
+        }
+        .tut-taskchip.done{
+          border-color: rgba(34,197,94,.40);
+          background: rgba(34,197,94,.10);
+        }
+        .tut-taskchip.done .dot{
+          background: rgba(34,197,94,.85);
+        }
+
+        .tut-group{ display:flex; flex-direction:column; gap: 10px; }
+        .tut-group-title{
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: rgba(232,238,252,.70);
+        }
+
+        /* Fill-in exercises */
+        .tut-ex{
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.40);
+          padding: 12px;
           display:flex;
           flex-direction:column;
-          gap:10px;
-          padding-top: 6px;
+          gap: 10px;
         }
-        .g-progress-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:#cbd5e1; }
-        .g-progress-bar{ height:10px; border-radius:999px; background:#1e293b; overflow:hidden; }
-        .g-progress-fill{ height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#4ade80); transition: width .35s ease; }
-        .g-buttons{ display:flex; gap:10px; justify-content:space-between; }
-        .g-btn{
-          border:none;
-          border-radius: 14px;
-          padding: 12px 14px;
-          font-weight:800;
-          cursor:pointer;
-          transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
-          background: rgba(255,255,255,.10);
-          color:#e8eefc;
+        .tut-ex-prompt{ font-size: 13px; color: rgba(232,238,252,.90); font-weight: 800; }
+        .tut-ex select{
+          background: rgba(255,255,255,.06);
+          color: rgba(232,238,252,.95);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 10px;
+          padding: 6px 8px;
+          font-weight: 900;
+          margin: 0 4px;
+          outline: none;
         }
-        .g-btn:hover{ transform: translateY(-1px); box-shadow: 0 16px 40px rgba(0,0,0,.25); }
-        .g-btn.primary{
-          background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(74,222,128,0.95));
-          color:#052e16;
-        }
-        .g-btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
-        .g-fade{ animation: gfade .22s ease both; }
-        @keyframes gfade { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:none;} }
+        .tut-ex select:focus{ box-shadow: 0 0 0 3px rgba(59,130,246,.12); border-color: rgba(59,130,246,.35); }
 
-        /* Task editor */
-        .g-editor{ margin-top:12px; border-radius: 16px; overflow:hidden; border:1px solid rgba(255,255,255,.10); background: rgba(2,6,23,.70); }
-        .g-editor-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background: rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.08); }
-        .g-pill{ font-size:12px; padding:6px 10px; border-radius:999px; background: rgba(240,136,4,.14); color:#fde68a; font-weight:800; }
-        .g-textarea{
-          width:100%;
-          min-height:160px;
-          resize:vertical;
-          border:none;
-          outline:none;
-          padding:14px;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-          font-size:13px;
-          line-height:1.5;
-          color:#e8eefc;
-          background: transparent;
+        .tut-ok{
+          padding: 10px 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(34,197,94,.18);
+          background: rgba(34,197,94,.08);
+          color: rgba(187,247,208,.92);
+          font-size: 13px;
+          display:none;
         }
-        .g-actions{ display:flex; justify-content:flex-end; gap:10px; padding:10px 12px; background: rgba(255,255,255,.04); border-top:1px solid rgba(255,255,255,.08); }
-        .g-run{
-          border:none;
-          border-radius: 12px;
-          padding: 10px 14px;
-          cursor:pointer;
-          font-weight:900;
-          background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(74,222,128,0.95));
-          color:#052e16;
-          transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+        .tut-ok.show{ display:block; }
+
+        /* Diagram */
+        .tut-diagram{
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap: 12px;
+          flex-wrap: wrap;
         }
-        .g-run:hover{ transform: translateY(-1px); box-shadow: 0 16px 40px rgba(34,197,94,.22); }
-        .g-unlock{
-          border:none;
-          border-radius: 12px;
-          padding: 10px 14px;
-          cursor:not-allowed;
-          font-weight:900;
-          background: rgba(255,255,255,.10);
-          color:#e8eefc;
-          opacity:.55;
-          transition: opacity .15s ease, transform .15s ease, box-shadow .15s ease;
+        .tut-node{
+          border-radius: 16px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(255,255,255,.06);
+          padding: 12px 14px;
+          min-width: 220px;
+          box-shadow: 0 14px 40px rgba(0,0,0,.22);
         }
-        .g-unlock.enabled{
-          cursor:pointer;
-          opacity:1;
-          background: linear-gradient(90deg, rgba(240,136,4,0.92), rgba(251,191,36,0.92));
-          color:#1f2937;
+        .tut-node-title{
+          display:flex;
+          align-items:baseline;
+          justify-content:space-between;
+          gap: 10px;
+          font-weight: 900;
         }
-        .g-unlock.enabled:hover{ transform: translateY(-1px); box-shadow: 0 18px 46px rgba(240,136,4,.22); }
-        .g-out{
-          margin:0;
-          padding:12px;
-          border-top:1px solid rgba(255,255,255,.08);
-          font-size:12px;
-          white-space:pre-wrap;
-          color:#e8eefc;
-          min-height:70px;
+        .tut-node-title span{ font-size: 13px; }
+        .tut-node-title em{
+          font-style: normal;
+          font-size: 12px;
+          opacity: .75;
+          font-weight: 900;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+        }
+        .tut-node-foot{ margin-top:8px; font-size:12px; opacity:.85; }
+
+        /* Bottom dock */
+        .tut-dock{
+          flex-shrink: 0;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(255,255,255,.05);
+          backdrop-filter: blur(10px);
+          padding: 12px;
+        }
+        .tut-dock-top{
+          display:flex;
+          align-items:flex-start;
+          justify-content:space-between;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+        .tut-dock-meta{
+          min-width: 0;
+        }
+        .tut-dock-step{
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: rgba(232,238,252,.70);
+        }
+        .tut-dock-name{
+          margin-top: 3px;
+          font-size: 13px;
+          font-weight: 900;
+          color: rgba(232,238,252,.95);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 520px;
+        }
+        .tut-dock-pct{
+          font-size: 12px;
+          font-weight: 900;
+          color: rgba(232,238,252,.85);
+          white-space: nowrap;
+        }
+
+        .tut-progress{
+          height: 10px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.08);
+          overflow: hidden;
+          margin-bottom: 10px;
+        }
+        .tut-progress-fill{
+          height: 100%;
+          width: 0%;
+          background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(74,222,128,.95));
+          transition: width .35s ease;
+        }
+
+        .tut-dock-actions{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap: 10px;
+        }
+
+        .tut-nav{
+          display:flex;
+          gap: 10px;
+        }
+
+        .tut-muted{ opacity:.8; font-size: 12px; }
+
+        /* DISTINCT demo */
+        .tut-distinct{
+          display:flex;
+          flex-direction:column;
+          gap: 10px;
+        }
+        .tut-toggle{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.10);
+          background: rgba(2,6,23,.40);
+        }
+        .tut-toggle strong{ font-size: 13px; }
+        .tut-switch{
+          width: 48px;
+          height: 28px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,.12);
+          background: rgba(255,255,255,.08);
+          position: relative;
+          cursor: pointer;
+        }
+        .tut-switch::after{
+          content:"";
+          width: 22px; height: 22px;
+          border-radius: 50%;
+          position: absolute;
+          top: 2px; left: 2px;
+          background: rgba(232,238,252,.92);
+          transition: transform .18s ease;
+        }
+        .tut-switch.on{
+          background: rgba(34,197,94,.18);
+          border-color: rgba(34,197,94,.30);
+        }
+        .tut-switch.on::after{ transform: translateX(20px); background: rgba(187,247,208,.95); }
+
+        .strike{
+          text-decoration: line-through;
+          color: rgba(248,113,113,.95);
         }
       </style>
 
-      <div class="g-shell">
-        <div class="g-head">
-          <h2 class="g-title">Angeleiteter Modus</h2>
-          <div class="g-status" id="gStatus">Initialisiere…</div>
-        </div>
-
-        <div class="g-card">
-          <div class="g-card-inner g-fade" id="gStep"></div>
-        </div>
-
-        <div class="g-nav">
-          <div class="g-progress-row">
-            <div id="gProgressLabel">Kapitel 1/1</div>
-            <div id="gProgressPct">0%</div>
+      <div class="tut-shell">
+        <div class="tut-header">
+          <div class="tut-header-inner">
+            <div>
+              <div class="tut-title">Angeleiteter Modus</div>
+              <div class="tut-sub" id="tutSub">Tutorial</div>
+            </div>
+            <div class="tut-status">
+              <span id="tutStatus">Initialisiere…</span>
+            </div>
           </div>
-          <div class="g-progress-bar"><div class="g-progress-fill" id="gProgressFill"></div></div>
-          <div class="g-buttons">
-            <button class="g-btn" id="gPrev">Zurück</button>
-            <button class="g-btn primary" id="gNext">Weiter</button>
+        </div>
+
+        <div class="tut-scroll" id="tutScroll">
+          <div class="tut-card">
+            <div class="tut-card-inner" id="tutCard"></div>
+          </div>
+        </div>
+
+        <div class="tut-dock">
+          <div class="tut-dock-top">
+            <div class="tut-dock-meta">
+              <div class="tut-dock-step" id="tutStepMeta">Kapitel 1/1</div>
+              <div class="tut-dock-name" id="tutStepName">…</div>
+            </div>
+            <div class="tut-dock-pct" id="tutPct">0%</div>
+          </div>
+
+          <div class="tut-progress"><div class="tut-progress-fill" id="tutProgressFill"></div></div>
+
+          <div class="tut-dock-actions">
+            <div class="tut-muted" id="tutGateHint"></div>
+            <div class="tut-nav">
+              <button class="tut-btn" id="tutPrev">Zurück</button>
+              <button class="tut-btn primary" id="tutNext">Weiter</button>
+            </div>
           </div>
         </div>
       </div>
     `;
 
-    this._statusEl_unused = this.root.querySelector("#gStatus");
-    this.stepEl = this.root.querySelector("#gStep");
-    this.prevBtn = this.root.querySelector("#gPrev");
-    this.nextBtn = this.root.querySelector("#gNext");
-    this.progressLabelEl = this.root.querySelector("#gProgressLabel");
-    this.progressPctEl = this.root.querySelector("#gProgressPct");
-    this.progressFillEl = this.root.querySelector("#gProgressFill");
+    this.cardEl = this.root.querySelector("#tutCard");
+    this.statusEl = this.root.querySelector("#tutStatus");
+    this.subEl = this.root.querySelector("#tutSub");
+    this.prevBtn = this.root.querySelector("#tutPrev");
+    this.nextBtn = this.root.querySelector("#tutNext");
+    this.stepMetaEl = this.root.querySelector("#tutStepMeta");
+    this.stepNameEl = this.root.querySelector("#tutStepName");
+    this.pctEl = this.root.querySelector("#tutPct");
+    this.progressFillEl = this.root.querySelector("#tutProgressFill");
+    this.gateHintEl = this.root.querySelector("#tutGateHint");
 
     this.prevBtn.addEventListener("click", () => this.go(-1));
     this.nextBtn.addEventListener("click", () => this.go(1));
-
-    this.setStatus("Bereit.");
   }
 
-  setStatus(text, isError = false) {
-    if (!this._statusEl_unused) return;
-    this._statusEl_unused.textContent = text;
-    this._statusEl_unused.style.color = isError ? "#fca5a5" : "";
+  setStatus(text) {
+    if (!this.statusEl) return;
+    this.statusEl.textContent = text;
   }
 
-  updateProgress() {
+  /* ---------- Render steps ---------- */
+
+  renderStep() {
+    const step = this.steps[this.stepIndex];
+    if (!step) return;
+
+    this.subEl.textContent = step.title;
+
+    if (step.type === "match") this.renderMatchStep(step);
+    else if (step.type === "info") this.renderInfoStep(step);
+    else if (step.type === "interactive") this.renderInteractiveStep(step);
+    else if (step.type === "shopChecklist") this.renderShopChecklistStep(step);
+    else if (step.type === "shopTask") this.renderShopTaskStep(step);
+    else if (step.type === "fill") this.renderFillStep(step);
+    else if (step.type === "diagram") this.renderDiagramStep(step);
+    else if (step.type === "confirm") this.renderConfirmStep(step);
+    else this.renderInfoStep(step);
+
+    this.updateProgressUI();
+    this.updateGate();
+
+    this.prevBtn.disabled = this.stepIndex <= 0;
+
+    const sc = this.root.querySelector("#tutScroll");
+    if (sc) sc.scrollTop = 0;
+  }
+
+  updateProgressUI() {
     const total = this.steps.length;
     const idx = this.stepIndex + 1;
     const pct = total > 0 ? Math.round((idx / total) * 100) : 0;
 
-    this.progressLabelEl.textContent = `Kapitel ${idx}/${total}`;
-    this.progressPctEl.textContent = `${pct}%`;
+    this.stepMetaEl.textContent = `Kapitel ${idx}/${total}`;
+    this.stepNameEl.textContent = this.steps[this.stepIndex]?.title || "";
+    this.pctEl.textContent = `${pct}%`;
     this.progressFillEl.style.width = `${pct}%`;
-
-    this.prevBtn.disabled = this.stepIndex <= 0;
+    this.nextBtn.textContent = (idx === total) ? "Fertig" : "Weiter";
   }
 
-  renderStep() {
+  updateGate() {
     const step = this.steps[this.stepIndex];
-    this.updateProgress();
+    const enabled = this.isStepComplete(step);
+    this.nextBtn.disabled = !enabled;
 
-    // Default: next enabled, but tasks may gate it
-    this.nextBtn.disabled = false;
-
-    if (step.type === "theory") {
-      this.stepEl.innerHTML = `
-        <div class="g-fade">
-          <h3 class="g-step-title">${this.escape(step.title)}</h3>
-          <div class="g-body">${step.body}</div>
-        </div>
-      `;
-      this.nextBtn.textContent = (this.stepIndex === this.steps.length - 1) ? "Fertig" : "Weiter";
+    if (enabled) {
+      this.gateHintEl.textContent = "";
       return;
     }
 
-    if (step.type === "task") {
-      this.nextBtn.textContent = "Weiter";
-      // gate progression until task unlocked
-      this.nextBtn.disabled = true;
+    if (step?.type === "match") this.gateHintEl.textContent = "Zuordnung abschließen, um fortzufahren.";
+    else if (step?.type === "shopChecklist") this.gateHintEl.textContent = "Alle Chips durch Anklicken im Shop abhaken.";
+    else if (step?.type === "shopTask") this.gateHintEl.textContent = "Geforderte Shop-Buttons anklicken.";
+    else if (step?.type === "fill") this.gateHintEl.textContent = "Lücken korrekt ausfüllen.";
+    else if (step?.type === "confirm") this.gateHintEl.textContent = "„Verstanden“ anklicken.";
+    else this.gateHintEl.textContent = "";
+  }
 
-      this.stepEl.innerHTML = `
-        <div class="g-fade">
-          <h3 class="g-step-title">${this.escape(step.title)}</h3>
-          <div class="g-body">
-            <p style="opacity:.9">${this.escape(step.goal)}</p>
-          </div>
+  isStepComplete(step) {
+    if (!step) return true;
+    if (step.type === "info" || step.type === "diagram") return true;
 
-          <div class="g-editor" style="margin-top:14px;">
-            <div class="g-editor-top">
-              <div class="g-pill">MISSION</div>
-              <div style="font-size:12px; opacity:.85;">Ziel: korrekt prüfen → freischalten</div>
-            </div>
+    const st = this.stepState[step.id];
+    if (step.type === "interactive") return true; // informational; no gate
 
-            <textarea class="g-textarea" id="gSql">${this.escape(step.starter || "")}</textarea>
-
-            <div class="g-actions">
-              <button class="g-run" id="gRun">Prüfen</button>
-              <button class="g-unlock" id="gUnlock" disabled>${this.escape(step.unlockLabel || "Freischalten")}</button>
-            </div>
-
-            <pre class="g-out" id="gOut"></pre>
-          </div>
-        </div>
-      `;
-
-      this.sqlEl = this.root.querySelector("#gSql");
-      this.outEl = this.root.querySelector("#gOut");
-      this.runEl = this.root.querySelector("#gRun");
-      this.unlockEl = this.root.querySelector("#gUnlock");
-
-      this.runEl.addEventListener("click", () => this.checkTask());
-      this.unlockEl.addEventListener("click", () => this.unlockTask());
-
-      // UX
-      try { this.sqlEl?.focus(); } catch (_) {}
-      return;
-    }
+    return !!st?.done;
   }
 
   go(delta) {
@@ -1652,150 +2475,502 @@ class GuidedMode {
     this.renderStep();
   }
 
-  /* ---------- Task logic ---------- */
+  /* ---------- Step renderers ---------- */
 
-  checkTask() {
-    const step = this.steps[this.stepIndex];
-    if (!step || step.type !== "task") return;
-
-    this.outEl.textContent = "";
-    this.unlockEl.disabled = true;
-    this.unlockEl.classList.remove("enabled");
-
-    if (!this.db) {
-      this.outEl.textContent = "DB ist nicht geladen.";
-      return;
-    }
-
-    const sql = this.sqlEl.value || "";
-    if (!this.isSelectOnly(sql)) {
-      this.outEl.textContent = "Nur SELECT-Abfragen sind erlaubt.";
-      return;
-    }
-
-    let studentRes, refRes;
-    try {
-      studentRes = this.db.exec(sql);
-    } catch (e) {
-      this.outEl.textContent = "SQL-Fehler: " + e.message;
-      return;
-    }
-
-    try {
-      refRes = this.db.exec(step.refSql);
-    } catch (e) {
-      this.outEl.textContent = "Interner Referenz-Fehler: " + e.message;
-      return;
-    }
-
-    const ok = this.validate(studentRes, refRes, step.mode);
-
-    if (ok) {
-      this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
-      this.unlockEl.disabled = false;
-      this.unlockEl.classList.add("enabled");
-      return;
-    }
-
-    this.outEl.textContent = "❌ Noch nicht korrekt. Tipp: Achte auf die geforderte Ausgabeform (IDs + ggf. Name).";
+  renderBase(step, innerHtml) {
+    this.cardEl.innerHTML = `
+      <h3 class="tut-step-title">${this.escape(step.title)}</h3>
+      <p class="tut-lead">${this.escape(step.lead || "")}</p>
+      <div class="tut-divider"></div>
+      ${innerHtml || ""}
+    `;
   }
 
-  async unlockTask() {
-    const step = this.steps[this.stepIndex];
-    if (!step || step.type !== "task") return;
-
-    // unlock in shop
-    this.unlocked[step.taskId] = true;
-    await this.shop.lock(step.taskId, false);
-
-    // lock UI: no re-edit in guided
-    this.sqlEl.readOnly = true;
-    this.runEl.disabled = true;
-    this.runEl.style.opacity = ".6";
-    this.runEl.style.cursor = "not-allowed";
-    this.unlockEl.disabled = true;
-    this.unlockEl.classList.remove("enabled");
-
-    this.outEl.textContent = "🎉 Freigeschaltet! Du kannst jetzt weiter.";
-    this.nextBtn.disabled = false;
-
-    // optional micro-delay for feel
-    setTimeout(() => {
-      try { this.nextBtn.focus(); } catch(_) {}
-    }, 120);
+  renderInfoStep(step) {
+    this.renderBase(step, step.body || "");
   }
 
-  /* ---------- Validation helpers ---------- */
+  renderDiagramStep(step) {
+    const d = step.diagram || {};
+    this.renderBase(step, `
+      <div class="tut-diagram">
+        <div class="tut-node">
+          <div class="tut-node-title"><span>${this.escape(d.left?.title || "")}</span><em>${this.escape(d.left?.note || "")}</em></div>
+          ${d.left?.foot ? `<div class="tut-node-foot">${this.escape(d.left.foot)}</div>` : ""}
+        </div>
 
-  validate(studentExec, refExec, mode) {
-    if (mode === "scalar") {
-      const a = this.extractScalar(studentExec);
-      const b = this.extractScalar(refExec);
-      if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
-      return Math.abs(a - b) < 1e-9;
+        <div class="tut-arrow">→</div>
+
+        ${d.mid ? `
+          <div class="tut-node">
+            <div class="tut-node-title"><span>${this.escape(d.mid.title)}</span><em>${this.escape(d.mid.note || "")}</em></div>
+            ${d.mid.foot ? `<div class="tut-node-foot">${this.escape(d.mid.foot)}</div>` : ""}
+          </div>
+          <div class="tut-arrow">→</div>
+        ` : ""}
+
+        <div class="tut-node">
+          <div class="tut-node-title"><span>${this.escape(d.right?.title || "")}</span><em>${this.escape(d.right?.note || "")}</em></div>
+          ${d.right?.foot ? `<div class="tut-node-foot">${this.escape(d.right.foot)}</div>` : ""}
+        </div>
+      </div>
+    `);
+  }
+
+  renderConfirmStep(step) {
+    const st = this.getStepState(step.id, () => ({ done: false }));
+    this.renderBase(step, `
+      <div class="tut-callout">
+        <div class="tut-callout-title">Hinweis</div>
+        <div class="tut-callout-body">
+          Wenn du personenbezogene Daten speicherst oder verarbeitest, musst du besonders sorgfältig sein (Zugriff, Zweckbindung, Minimierung).
+        </div>
+      </div>
+
+      <div class="tut-inline-actions">
+        <button class="tut-btn warning" id="tutConfirmBtn">${this.escape(step.confirmLabel || "Verstanden")}</button>
+      </div>
+    `);
+
+    const btn = this.root.querySelector("#tutConfirmBtn");
+    btn.addEventListener("click", () => {
+      st.done = true;
+      btn.disabled = true;
+      btn.textContent = "✓ Bestätigt";
+      this.updateGate();
+    });
+  }
+
+  renderInteractiveStep(step) {
+    if (step.widget === "distinctDemo") return this.renderDistinctDemoStep(step);
+    this.renderInfoStep(step);
+  }
+
+  renderDistinctDemoStep(step) {
+    // informational; no gating
+    this.renderBase(step, `
+      <div class="tut-distinct">
+        <div class="tut-toggle">
+          <div>
+            <strong>DISTINCT anwenden</strong>
+            <div class="tut-muted" style="margin-top:4px;">Duplikate werden entfernt (oder in der Liste ignoriert).</div>
+          </div>
+          <div class="tut-switch" id="tutDistinctSwitch" role="switch" aria-checked="false" tabindex="0"></div>
+        </div>
+
+        <div class="tut-panel">
+          <div class="tut-panel-title">Beispiel (vereinfachte Ergebnisspalte: kategorie_id)</div>
+          <pre class="tut-code" id="tutDistinctSql"></pre>
+          <table class="tut-table-mini" id="tutDistinctTable"></table>
+        </div>
+
+        <div class="tut-callout">
+          <div class="tut-callout-title">Merksatz</div>
+          <div class="tut-callout-body">
+            <code>SELECT DISTINCT spalte</code> liefert jede Ausprägung nur einmal.
+          </div>
+        </div>
+      </div>
+    `);
+
+    const st = this.getStepState(step.id, () => ({ distinct: false }));
+    const sw = this.root.querySelector("#tutDistinctSwitch");
+    const sqlEl = this.root.querySelector("#tutDistinctSql");
+    const tableEl = this.root.querySelector("#tutDistinctTable");
+
+    const raw = [
+      { kategorie_id: 1 },
+      { kategorie_id: 1 },
+      { kategorie_id: 2 },
+      { kategorie_id: 3 },
+      { kategorie_id: 3 }
+    ];
+
+    const render = () => {
+      const isOn = !!st.distinct;
+      sw.classList.toggle("on", isOn);
+      sw.setAttribute("aria-checked", isOn ? "true" : "false");
+
+      sqlEl.textContent = isOn
+        ? "SELECT DISTINCT kategorie_id FROM produkte;"
+        : "SELECT kategorie_id FROM produkte;";
+
+      const rows = isOn
+        ? Array.from(new Set(raw.map(r => r.kategorie_id))).map(v => ({ kategorie_id: v }))
+        : raw;
+
+      const seen = new Set();
+      const bodyRows = rows.map((r) => {
+        const dup = !isOn && seen.has(r.kategorie_id);
+        seen.add(r.kategorie_id);
+        return `<tr><td class="${dup ? "strike" : ""}">${this.escape(String(r.kategorie_id))}</td></tr>`;
+      }).join("");
+
+      tableEl.innerHTML = `
+        <thead><tr><th>kategorie_id</th></tr></thead>
+        <tbody>${bodyRows}</tbody>
+      `;
+    };
+
+    const toggle = () => { st.distinct = !st.distinct; render(); };
+    sw.addEventListener("click", toggle);
+    sw.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+
+    render();
+  }
+
+  renderMatchStep(step) {
+    const st = this.getStepState(step.id, () => ({
+      done: false,
+      activeLeft: null,
+      activeRight: null,
+      matchedLeft: new Set(),
+      matchedRight: new Set()
+    }));
+
+    if (!st.rightOrder) st.rightOrder = step.pairs.map(p => p.right).slice().sort(() => Math.random() - 0.5);
+
+    const leftHtml = step.pairs.map((p) => {
+      const isMatched = st.matchedLeft.has(p.left);
+      return `<button class="tut-chip ${isMatched ? "matched" : ""}" data-left="${this.escapeAttr(p.left)}" ${isMatched ? "disabled" : ""}>${this.escape(p.left)}</button>`;
+    }).join("");
+
+    const rightHtml = st.rightOrder.map((r) => {
+      const isMatched = st.matchedRight.has(r);
+      return `<button class="tut-chip ${isMatched ? "matched" : ""}" data-right="${this.escapeAttr(r)}" ${isMatched ? "disabled" : ""}>${this.escape(r)}</button>`;
+    }).join("");
+
+    this.renderBase(step, `
+      <div class="tut-match">
+        <div class="tut-match-col">
+          <div class="tut-match-head">
+            <div class="tut-match-title">Baustein</div>
+            <div class="tut-muted">${st.matchedLeft.size}/${step.pairs.length}</div>
+          </div>
+          <div class="tut-chip-grid" id="tutLeftCol">${leftHtml}</div>
+        </div>
+
+        <div class="tut-match-col">
+          <div class="tut-match-head">
+            <div class="tut-match-title">Zweck</div>
+            <div class="tut-inline-actions">
+              <button class="tut-btn" id="tutResetMatch">Reset</button>
+            </div>
+          </div>
+          <div class="tut-chip-grid" id="tutRightCol">${rightHtml}</div>
+        </div>
+      </div>
+
+      <div class="tut-ok" id="tutMatchOk">✓ Zuordnung korrekt. Du kannst weiter.</div>
+    `);
+
+    const leftCol = this.root.querySelector("#tutLeftCol");
+    const rightCol = this.root.querySelector("#tutRightCol");
+    const okEl = this.root.querySelector("#tutMatchOk");
+    const resetBtn = this.root.querySelector("#tutResetMatch");
+
+    const clearSelection = () => {
+      st.activeLeft = null;
+      st.activeRight = null;
+      this.root.querySelectorAll(".tut-chip.selected").forEach(el => el.classList.remove("selected"));
+    };
+
+    const markSelected = () => {
+      this.root.querySelectorAll(".tut-chip").forEach(el => el.classList.remove("selected"));
+      if (st.activeLeft) this.root.querySelector(`[data-left="${this.escapeAttr(st.activeLeft)}"]`)?.classList.add("selected");
+      if (st.activeRight) this.root.querySelector(`[data-right="${this.escapeAttr(st.activeRight)}"]`)?.classList.add("selected");
+    };
+
+    const checkPair = (left, right) => {
+      const expected = (step.pairs.find(p => p.left === left) || {}).right;
+      return expected === right;
+    };
+
+    const tryResolve = () => {
+      if (!st.activeLeft || !st.activeRight) return;
+
+      const left = st.activeLeft;
+      const right = st.activeRight;
+
+      if (checkPair(left, right)) {
+        st.matchedLeft.add(left);
+        st.matchedRight.add(right);
+
+        const lEl = this.root.querySelector(`[data-left="${this.escapeAttr(left)}"]`);
+        const rEl = this.root.querySelector(`[data-right="${this.escapeAttr(right)}"]`);
+        lEl?.classList.add("matched"); rEl?.classList.add("matched");
+        if (lEl) lEl.disabled = true;
+        if (rEl) rEl.disabled = true;
+
+        clearSelection();
+
+        if (st.matchedLeft.size === step.pairs.length) {
+          st.done = true;
+          okEl.classList.add("show");
+          this.updateGate();
+        }
+        return;
+      }
+
+      const rEl = this.root.querySelector(`[data-right="${this.escapeAttr(right)}"]`);
+      rEl?.classList.add("wrong");
+      setTimeout(() => rEl?.classList.remove("wrong"), 260);
+      clearSelection();
+    };
+
+    leftCol.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-left]");
+      if (!btn || btn.disabled) return;
+      st.activeLeft = btn.getAttribute("data-left");
+      markSelected();
+      tryResolve();
+    });
+
+    rightCol.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-right]");
+      if (!btn || btn.disabled) return;
+      st.activeRight = btn.getAttribute("data-right");
+      markSelected();
+      tryResolve();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      this.stepState[step.id] = null;
+      delete this.stepState[step.id];
+      this.renderStep();
+    });
+
+    // restore completion state if user navigates back
+    if (st.done) okEl.classList.add("show");
+  }
+
+  renderShopChecklistStep(step) {
+    const st = this.getStepState(step.id, () => ({ clicked: new Set(), done: false, unlocked: false }));
+
+    const groups = [
+      { title: "Shop-Bar", ids: ["all","express","bestseller","available"] },
+      { title: "Kategorien", ids: ["cat-electronics","cat-household","cat-sport"] },
+      { title: "Preisfilter", ids: ["price-25","price-50","price-100"] },
+      { title: "Rating", ids: ["rating-5","rating-4"] },
+      { title: "Sortierung", ids: ["priceAsc","priceDesc","popularity"] },
+      { title: "Suche", ids: ["search"] },
+      { title: "Panels", ids: ["orders","topProducts"] },
+          ];
+
+    const renderGroup = (g) => {
+      const chips = g.ids.map((id) => {
+        const done = st.clicked.has(id);
+        const label = (step.labels && step.labels[id]) ? step.labels[id] : id;
+        return `<span class="tut-taskchip ${done ? "done" : ""}" data-taskchip="${this.escapeAttr(id)}"><span class="dot"></span>${this.escape(label)}</span>`;
+      }).join("");
+      return `
+        <div class="tut-group">
+          <div class="tut-group-title">${this.escape(g.title)}</div>
+          <div class="tut-chiplist">${chips}</div>
+        </div>
+      `;
+    };
+
+    const totalRequired = (step.required || []).length;
+    const doneCount = (step.required || []).filter(id => st.clicked.has(id)).length;
+
+    this.renderBase(step, `
+      <div class="tut-callout">
+        <div class="tut-callout-title">Ziel</div>
+        <div class="tut-callout-body">
+          Einmal überall klicken, um die Funktionen zu sehen. Fortschritt: <strong id="tutChecklistProgress">${doneCount}/${totalRequired}</strong>
+        </div>
+      </div>
+
+      ${groups.map(renderGroup).join("")}
+
+      <div class="tut-ok" id="tutShopOk">✓ Fertig. Du kannst weiter.</div>
+    `);
+
+    this.updateShopTaskUI(step, st);
+  }
+
+  renderShopTaskStep(step) {
+    const st = this.getStepState(step.id, () => ({ clicked: new Set(), done: false, unlocked: false }));
+
+    const req = (step.required || []).map((id) => {
+      const label = (step.labels && step.labels[id]) ? step.labels[id] : id;
+      const done = st.clicked.has(id);
+      return `<span class="tut-taskchip ${done ? "done" : ""}" data-taskchip="${this.escapeAttr(id)}"><span class="dot"></span>${this.escape(label)}</span>`;
+    }).join("");
+
+    const tables = (step.tables || []).map((t) => {
+      const rows = (t.rows || []).map(r => `<tr><td>${this.escape(r[0])}</td><td>${this.escape(r[1])}</td></tr>`).join("");
+      return `
+        <div class="tut-panel" style="margin-top:10px;">
+          <div class="tut-panel-title">${this.escape(t.title)}</div>
+          <table class="tut-table-mini">
+            <thead><tr><th>Symbol</th><th>Bedeutung</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }).join("");
+
+    const placeholder = step.sqlPlaceholder ? `
+      <div class="tut-callout">
+        <div class="tut-callout-title">${this.escape(step.sqlPlaceholder.title)}</div>
+        <div class="tut-callout-body">${this.escape(step.sqlPlaceholder.text)}</div>
+      </div>
+    ` : "";
+
+    this.renderBase(step, `
+      <div class="tut-grid-2">
+        <div class="tut-panel">
+          <div class="tut-panel-title">Aufgabe</div>
+          <div class="tut-muted" style="margin-bottom:10px;">Klicke diese Shop-Buttons:</div>
+          <div class="tut-chiplist">${req}</div>
+          <div class="tut-hint">Tipp: Filter ≈ WHERE, Sortierung ≈ ORDER BY.</div>
+          <div class="tut-ok" id="tutShopOk">✓ Fertig. Du kannst weiter.</div>
+        </div>
+
+        <div class="tut-panel">
+          <div class="tut-panel-title">Kurzreferenz</div>
+          ${tables || `<div class="tut-muted">—</div>`}
+        </div>
+      </div>
+
+      ${placeholder}
+    `);
+
+    this.updateShopTaskUI(step, st);
+  }
+
+  updateShopTaskUI(step, st) {
+    const required = step.required || [];
+
+    // Update chips
+    required.forEach((id) => {
+      const chip = this.root.querySelector(`[data-taskchip="${this.escapeAttr(id)}"]`);
+      if (chip) chip.classList.toggle("done", st.clicked.has(id));
+    });
+
+    // Checklist progress number (if present)
+    const progressEl = this.root.querySelector("#tutChecklistProgress");
+    if (progressEl) {
+      const total = required.length;
+      const done = required.filter(id => st.clicked.has(id)).length;
+      progressEl.textContent = `${done}/${total}`;
     }
 
-    const stu = this.extractIds(studentExec);
-    const ref = this.extractIds(refExec);
+    // Completion
+    const done = required.length > 0 && required.every(id => st.clicked.has(id));
+    st.done = done;
 
-    if (!stu.ok || !ref.ok) return false;
+    const okEl = this.root.querySelector("#tutShopOk");
+    if (okEl) okEl.classList.toggle("show", done);
 
-    if (mode === "order") {
-      if (stu.ids.length !== ref.ids.length) return false;
-      for (let i = 0; i < stu.ids.length; i++) if (stu.ids[i] !== ref.ids[i]) return false;
-      return true;
+    // Unlock once, if configured
+    if (done && step.unlockWhenDone && Array.isArray(step.unlockWhenDone) && !st.unlocked) {
+      st.unlocked = true;
+      this.unlockTasks(step.unlockWhenDone).catch(() => {});
     }
 
-    const A = new Set(stu.ids);
-    const B = new Set(ref.ids);
-    if (A.size !== B.size) return false;
-    for (const x of A) if (!B.has(x)) return false;
-    return true;
+    this.updateGate();
   }
 
-  extractScalar(execResult) {
-    try {
-      if (!execResult || !execResult.length) return NaN;
-      const row = execResult[0]?.values?.[0];
-      if (!row || row.length < 1) return NaN;
-      return Number(row[0]);
-    } catch (_) {
-      return NaN;
+  async unlockTasks(ids) {
+    if (!Array.isArray(ids) || !ids.length) return;
+    for (const id of ids) {
+      try { await this.shop.lock(id, false); } catch (_) {}
     }
   }
 
-  extractIds(execResult) {
-    if (!execResult || !execResult.length) return { ok: false, ids: [] };
-    const { columns, values } = execResult[0];
-    if (!columns || !values) return { ok: false, ids: [] };
+  renderFillStep(step) {
+    const st = this.getStepState(step.id, () => ({ done: false, answers: {} }));
 
-    const lower = columns.map(c => String(c).toLowerCase());
-    let idx = lower.indexOf("id");
-    if (idx === -1) idx = lower.indexOf("produkt_id");
-    if (idx === -1 && columns.length === 1) idx = 0;
-    if (idx === -1) return { ok: false, ids: [] };
+    const aggTable = step.aggregatesTable ? `
+      <div class="tut-panel">
+        <div class="tut-panel-title">Aggregatfunktionen</div>
+        <table class="tut-table-mini">
+          <thead><tr><th>Funktion</th><th>Zweck</th></tr></thead>
+          <tbody>${step.aggregatesTable.map(r => `<tr><td>${this.escape(r[0])}</td><td>${this.escape(r[1])}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>
+    ` : "";
 
-    const ids = values
-      .map(row => Number(row[idx]))
-      .filter(n => Number.isFinite(n));
+    const exHtml = (step.exercises || []).map((ex) => `
+      <div class="tut-ex" data-ex="${this.escapeAttr(ex.id)}">
+        <div class="tut-ex-prompt">${this.escape(ex.prompt)}</div>
+        <pre class="tut-code">${ex.template}</pre>
+      </div>
+    `).join("");
 
-    return { ok: true, ids };
+    this.renderBase(step, `
+      ${aggTable}
+      ${exHtml}
+      <div class="tut-ok" id="tutFillOk">✓ Korrekt. Du kannst weiter.</div>
+    `);
+
+    const okEl = this.root.querySelector("#tutFillOk");
+
+    // Hook selects inside code blocks
+    this.root.querySelectorAll(".tut-ex").forEach((exEl) => {
+      const exId = exEl.getAttribute("data-ex");
+      const ex = (step.exercises || []).find(e => e.id === exId);
+      if (!ex) return;
+
+      exEl.querySelectorAll("select[data-blank]").forEach((sel) => {
+        sel.addEventListener("change", () => {
+          const blank = sel.getAttribute("data-blank");
+          st.answers[`${exId}.${blank}`] = sel.value;
+          this.checkFillStep(step, st, okEl);
+        });
+      });
+
+      // Restore previous selections on back navigation
+      exEl.querySelectorAll("select[data-blank]").forEach((sel) => {
+        const blank = sel.getAttribute("data-blank");
+        const key = `${exId}.${blank}`;
+        if (st.answers[key]) sel.value = st.answers[key];
+      });
+    });
+
+    this.checkFillStep(step, st, okEl);
   }
 
-  isSelectOnly(sql) {
-    const s = String(sql || "").trim().toLowerCase();
-    if (!s.startsWith("select")) return false;
-    const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
-    return !forbidden.some(k => s.includes(k));
+  checkFillStep(step, st, okEl) {
+    const exercises = step.exercises || [];
+    let allOk = true;
+
+    for (const ex of exercises) {
+      const sol = ex.solution || {};
+      for (const [blank, val] of Object.entries(sol)) {
+        const key = `${ex.id}.${blank}`;
+        const got = st.answers[key] || "";
+        if (got !== val) allOk = false;
+      }
+    }
+
+    st.done = allOk;
+    if (okEl) okEl.classList.toggle("show", allOk);
+    this.updateGate();
+  }
+
+  /* ---------- Helpers ---------- */
+
+  getStepState(stepId, initFn) {
+    if (!this.stepState[stepId]) this.stepState[stepId] = initFn ? initFn() : {};
+    return this.stepState[stepId];
   }
 
   escape(s) {
-    return String(s).replace(/[&<>"']/g, m => ({
+    return String(s ?? "").replace(/[&<>"']/g, (m) => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
   }
-}
 
+  escapeAttr(s) {
+    return this.escape(s).replace(/"/g, "&quot;");
+  }
+}
 class TestMode {
   constructor(root){ this.root = root; }
   mount(){ this.root.innerHTML = `<h2>Test-Modus</h2><p>Platzhalter.</p>`; }
@@ -1819,3 +2994,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   const r = m.mount();
   if (r && typeof r.then === "function") await r;
 });
+
+
+

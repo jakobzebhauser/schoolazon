@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schulazon – SQL Pre/Post-Test (10 Minuten)</title>
+  <style>
+    :root { --maxw: 920px; --fg:#111; --muted:#666; --bg:#fff; --line:#e6e6e6; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--fg); background:var(--bg); }
+    header { border-bottom:1px solid var(--line); background:#fafafa; }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 16px; }
+    h1 { margin: 0 0 6px; font-size: 18px; }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .card { border:1px solid var(--line); border-radius: 12px; padding: 14px; background:#fff; }
+    .grid { display:grid; gap:12px; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width:720px){ .grid2 { grid-template-columns: 1fr; } }
+    label { font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    input[type="text"], select {
+      width: 100%; padding: 10px 11px; border:1px solid var(--line); border-radius: 10px; font-size: 14px;
+    }
+    button {
+      border:1px solid var(--line); background:#111; color:#fff; padding: 10px 12px; border-radius: 10px;
+      cursor:pointer; font-size:14px;
+    }
+    button.secondary { background:#fff; color:#111; }
+    button.ghost { background:#fff; color:#111; border-style:dashed; }
+    button:disabled { opacity: 0.5; cursor:not-allowed; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .pill { display:inline-flex; gap:8px; align-items:center; border:1px solid var(--line); border-radius: 999px; padding: 8px 10px; background:#fff; }
+    .pill strong { font-variant-numeric: tabular-nums; }
+    .progress { width: 100%; height: 8px; background:#f1f1f1; border-radius:999px; overflow:hidden; }
+    .progress > div { height:100%; background:#111; width:0%; }
+    .qtitle { font-size: 15px; margin: 0 0 10px; }
+    .opt { display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+    .opt input { margin-top: 2px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .codebox { font-size: 18px; padding: 12px; border:1px solid var(--line); border-radius: 10px; background:#fafafa; }
+    .warn { border-left: 4px solid #111; padding-left: 10px; }
+    .hidden { display:none; }
+    .spacer { height: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div>
+          <h1>Schulazon – SQL Pre/Post-Test</h1>
+          <div class="muted">
+            14 Single-Choice-Items, Zeitlimit 10:00 Minuten. Kein Feedback. Bitte ruhig und zügig arbeiten.
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnFullscreen" class="secondary" type="button">Vollbild</button>
+          <button id="btnResetAttempt" class="ghost" type="button">Neuer Versuch</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Setup -->
+    <section id="setupView" class="grid">
+      <div class="card grid">
+        <div class="warn muted">
+          Hinweis: Während des Tests gibt es keine Rückmeldung. Am Ende erhältst du einen Code, den du zusammen mit deiner Nutzer-ID auf einem Blatt notierst.
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label for="studentId">Nutzer-ID (genau wie vorgegeben)</label>
+            <input id="studentId" type="text" autocomplete="off" inputmode="text" placeholder="z. B. S-1042" />
+            <div class="muted">Wird nicht validiert, aber für die Zuordnung auf Papier benötigt.</div>
+          </div>
+          <div>
+            <label for="testType">Testtyp</label>
+            <select id="testType">
+              <option value="pre">Pre-Test</option>
+              <option value="post">Post-Test</option>
+            </select>
+            <div class="muted">Pre/Post nutzt denselben Test; Reihenfolge/Optionen sind pro Versuch zufällig.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btnStart" type="button">Test starten</button>
+          <div class="muted">Gesamtzeit: <span class="kbd">10:00</span>. Auto-Abgabe bei 0:00.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="muted" style="margin-bottom:10px;"><strong>Mini-Datenbank (für Aufgabenbezug)</strong></div>
+        <div class="muted kbd" style="white-space:pre-wrap;">
+Schema:
+categories(cat_id, cat_name)
+products(prod_id, prod_name, cat_id, price, stock)
+orders(order_id, user_id, order_date)
+order_items(order_id, prod_id, qty)
+
+Daten:
+categories:
+(1,"Audio"), (2,"Kabel"), (3,"Zubehör")
+
+products:
+(10,"Bluetooth Speaker",1,49.99,12)
+(11,"USB-C Kabel 1m",2,5.99,80)
+(12,"USB-C Kabel 2m",2,7.99,40)
+(13,"Laptop Stand",3,29.99,15)
+(14,"Mauspad",3,9.99,0)
+
+orders:
+(100,1,"2026-02-10"), (101,2,"2026-02-11")
+
+order_items:
+(100,11,2), (100,13,1), (101,12,3)
+        </div>
+      </div>
+    </section>
+
+    <!-- Test -->
+    <section id="testView" class="grid hidden">
+      <div class="card">
+        <div class="topbar">
+          <div class="row" style="align-items:center;">
+            <div class="pill"><span class="muted">Test</span> <strong id="lblTestType">Pre</strong></div>
+            <div class="pill"><span class="muted">Fortschritt</span> <strong id="lblProgress">1/14</strong></div>
+          </div>
+          <div class="row" style="align-items:center;">
+            <div class="pill"><span class="muted">Zeit</span> <strong id="lblTime" class="kbd">10:00</strong></div>
+            <button id="btnSubmit" type="button" class="secondary">Abgeben</button>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+
+      <div class="card">
+        <div id="questionHost"></div>
+        <div class="row" style="justify-content:space-between; margin-top:12px;">
+          <button id="btnPrev" type="button" class="secondary">Zurück</button>
+          <button id="btnNext" type="button">Weiter</button>
+        </div>
+        <div class="muted" style="margin-top:10px;">
+          Du kannst Antworten ändern, solange du nicht abgegeben hast. Es gibt keine Hinweise auf richtige Lösungen.
+        </div>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <section id="resultView" class="grid hidden">
+      <div class="card grid">
+        <div>
+          <h2 style="margin:0 0 6px; font-size:16px;">Test beendet</h2>
+          <div class="muted">
+            Notiere den Code zusammen mit deiner Nutzer-ID auf dem Blatt. Danach kannst du dieses Fenster schließen.
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="card" style="margin:0;">
+            <div class="muted">Nutzer-ID</div>
+            <div class="kbd" id="outStudentId" style="font-size:16px; margin-top:6px;"></div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="muted">Testtyp</div>
+            <div class="kbd" id="outTestType" style="font-size:16px; margin-top:6px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="muted">Dein Code (exakt abschreiben):</div>
+          <div class="codebox kbd" id="outCode"></div>
+          <div class="muted">Dieser Code dient der eindeutigen Zuordnung des Versuchs (ohne Antworten offenzulegen).</div>
+        </div>
+
+        <div class="grid2">
+          <div class="card" style="margin:0;">
+            <div class="muted">Bearbeitungszeit</div>
+            <div class="kbd" id="outTime" style="font-size:16px; margin-top:6px;"></div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="muted">Score (wird nicht erklärt)</div>
+            <div class="kbd" id="outScore" style="font-size:16px; margin-top:6px;"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btnCopyCode" type="button">Code kopieren</button>
+          <button id="btnDownloadJson" type="button" class="secondary">JSON herunterladen</button>
+        </div>
+
+        <div class="muted">
+          Hinweis: Wenn du den Test erneut startest, entsteht ein neuer Versuch mit neuer Reihenfolge.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="test.js"></script>
+</body>
+</html>
