@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulazon – Einführung</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="shell.css" />
+
+  <style>
+    /* ===== Tutorial Overlay (dependency-free) ===== */
+    .tour-mask { position: fixed; left:0; top:0; right:0; bottom:0; z-index: 9990; pointer-events: none; }
+    .tour-mask .m { position: fixed; background: rgba(0,0,0,.68); pointer-events: auto; }
+    .tour-highlight {
+      position: fixed;
+      z-index: 9991;
+      border-radius: 16px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.92), 0 18px 60px rgba(0,0,0,.55);
+      pointer-events: none;
+      transition: all .12s ease;
+    }
+    .tour-tooltip {
+      position: fixed;
+      z-index: 9992;
+      width: min(440px, calc(100vw - 24px));
+      background: rgba(18,20,24,.96);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      color: rgba(255,255,255,.92);
+      overflow: hidden;
+      transition: all .12s ease;
+    }
+    .tour-tooltip .hd { padding: 14px 14px 10px; border-bottom: 1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .tour-tooltip .title { font-weight: 700; font-size: 15px; line-height: 1.25; }
+    .tour-tooltip .meta { opacity:.75; font-size: 12px; white-space: nowrap; margin-top: 2px; }
+    .tour-tooltip .bd { padding: 12px 14px; font-size: 13.5px; line-height: 1.45; }
+    .tour-tooltip .bd code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12.5px; }
+    .tour-tooltip .bd pre { margin: 10px 0 0; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); overflow:auto; }
+    .tour-tooltip .ft { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap: wrap; }
+    .tour-tooltip .btnRow { display:flex; gap:10px; }
+    .tour-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tour-btn.primary { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); }
+    .tour-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .tour-skip { opacity:.8; text-decoration: underline; background: transparent; border: none; padding: 0; cursor:pointer; color: rgba(255,255,255,.85); font-size: 12.5px; }
+    .tour-badge {
+      position: fixed;
+      z-index: 9992;
+      top: 12px;
+      left: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.85);
+      font-size: 12px;
+      pointer-events: none;
+      display:none;
+    }
+    .tour-badge.show { display:block; }
+  </style>
+
+  <!-- Tutorial sandbox: verhindert, dass die Einführung Fortschritt/Timer persistent verändert -->
+  <script>
+    (function(){
+      try { top.__SCHULAZON_TUTORIAL__ = true; } catch (_) { window.__SCHULAZON_TUTORIAL__ = true; }
+
+      const TOUR_KEYS = new Set([
+        "schulazon_unlocked_v1",
+        "schulazon_hint_used_v1",
+        "schulazon_sqli_done_v1",
+        "schulazon_free_startedAt_v1"
+      ]);
+
+      if (!Storage.prototype.__schulazonTourPatch) {
+        Storage.prototype.__schulazonTourPatch = true;
+
+        const _get = Storage.prototype.getItem;
+        const _set = Storage.prototype.setItem;
+        const _rem = Storage.prototype.removeItem;
+        const _clr = Storage.prototype.clear;
+
+        const isTut = () => {
+          try { return !!top.__SCHULAZON_TUTORIAL__; } catch (_) { return !!globalThis.__SCHULAZON_TUTORIAL__; }
+        };
+
+        Storage.prototype.getItem = function(k){
+          if (isTut() && TOUR_KEYS.has(String(k))) return null;
+          return _get.call(this, k);
+        };
+        Storage.prototype.setItem = function(k,v){
+          if (isTut() && TOUR_KEYS.has(String(k))) return;
+          return _set.call(this, k, v);
+        };
+        Storage.prototype.removeItem = function(k){
+          if (isTut() && TOUR_KEYS.has(String(k))) return;
+          return _rem.call(this, k);
+        };
+        Storage.prototype.clear = function(){
+          if (isTut()) return;
+          return _clr.call(this);
+        };
+      }
+    })();
+  </script>
+</head>
+
+<body data-mode="free" data-tutorial="1">
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="appIcon" aria-hidden="true"></div>
+        <div>
+          <div class="logo">schul<span>azon</span></div>
+          <div class="sub" id="subline">Einführung (Tutorial)</div>
+        </div>
+      </div>
+
+      <div class="status">
+        <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
+
+        <div class="pill" id="pillName" style="display:none;">
+          <span>Hi, <b id="nameTag"></b></span>
+        </div>
+
+        <div class="pill" id="pillTimer">
+          <span>Zeit</span> <b id="timerTag">60:00</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-shell">
+      <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
+      <main class="mode-right" id="modeRoot"></main>
+    </div>
+  </div>
+
+  <!-- Tutorial UI -->
+  <div class="tour-badge" id="tourBadge">Tutorial aktiv (Esc = beenden)</div>
+
+  <div class="tour-mask" id="tourMask" aria-hidden="true" style="display:none;">
+    <div class="m" id="mTop"></div>
+    <div class="m" id="mLeft"></div>
+    <div class="m" id="mRight"></div>
+    <div class="m" id="mBottom"></div>
+  </div>
+  <div class="tour-highlight" id="tourHL" style="display:none;"></div>
+
+  <div class="tour-tooltip" id="tourTip" style="display:none;" role="dialog" aria-modal="true">
+    <div class="hd">
+      <div>
+        <div class="title" id="tourTitle">—</div>
+        <div class="meta" id="tourMeta">—</div>
+      </div>
+      <button class="tour-skip" id="tourSkip" type="button">Beenden</button>
+    </div>
+    <div class="bd" id="tourBody"></div>
+    <div class="ft">
+      <div class="btnRow">
+        <button class="tour-btn" id="tourBack" type="button">Zurück</button>
+        <button class="tour-btn primary" id="tourNext" type="button">Weiter</button>
+      </div>
+      <button class="tour-skip" id="tourRestart" type="button">Neu starten</button>
+    </div>
+  </div>
+
+  <!-- sql.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <!-- Mode Logic -->
+  <script src="modes.js"></script>
+
+  <script>
+    (function(){
+      const $ = (sel, root=document) => root.querySelector(sel);
+
+      function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+      async function waitFor(fn, timeoutMs=15000){
+        const t0 = Date.now();
+        while (Date.now() - t0 < timeoutMs){
+          try { if (fn()) return true; } catch (_) {}
+          await sleep(80);
+        }
+        return false;
+      }
+
+      function getFrameDoc(){
+        const f = document.getElementById("shopFrame");
+        try { return f && f.contentDocument; } catch (_) { return null; }
+      }
+
+      function findInFrame(fn){
+        const doc = getFrameDoc();
+        if (!doc) return null;
+        try { return fn(doc) || null; } catch (_) { return null; }
+      }
+
+      function resolve(step){
+        if (!step || !step.target) return null;
+
+        let t = step.target;
+        if (typeof t === "function") t = t();
+        if (!t) return null;
+
+        // 1) direct element
+        if (t instanceof Element) {
+          return { el: t, rect: t.getBoundingClientRect(), frame: null };
+        }
+
+        // 2) selector string in parent
+        if (typeof t === "string") {
+          const el = document.querySelector(t);
+          if (!el) return null;
+          return { el, rect: el.getBoundingClientRect(), frame: null };
+        }
+
+        // 3) object target (parent or iframe)
+        if (t.frame) {
+          const frameEl = document.querySelector(t.frame);
+          const doc = getFrameDoc();
+          if (!frameEl || !doc) return null;
+
+          const el = t.element ? t.element : doc.querySelector(t.selector);
+          if (!el) return null;
+
+          try { el.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }); } catch (_) {}
+
+          const rEl = el.getBoundingClientRect();
+          const rFr = frameEl.getBoundingClientRect();
+          const rect = {
+            left: rFr.left + rEl.left,
+            top: rFr.top + rEl.top,
+            width: rEl.width,
+            height: rEl.height,
+            right: rFr.left + rEl.right,
+            bottom: rFr.top + rEl.bottom
+          };
+          return { el, rect, frame: t.frame };
+        }
+
+        if (t.element) {
+          const el = t.element;
+          return { el, rect: el.getBoundingClientRect(), frame: null };
+        }
+
+        if (t.selector) {
+          const el = document.querySelector(t.selector);
+          if (!el) return null;
+          return { el, rect: el.getBoundingClientRect(), frame: null };
+        }
+
+        return null;
+      }
+
+      function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+      const ui = {
+        badge: $("#tourBadge"),
+        mask: $("#tourMask"),
+        mTop: $("#mTop"),
+        mLeft: $("#mLeft"),
+        mRight: $("#mRight"),
+        mBottom: $("#mBottom"),
+        hl: $("#tourHL"),
+        tip: $("#tourTip"),
+        title: $("#tourTitle"),
+        meta: $("#tourMeta"),
+        body: $("#tourBody"),
+        back: $("#tourBack"),
+        next: $("#tourNext"),
+        skip: $("#tourSkip"),
+        restart: $("#tourRestart")
+      };
+
+      const PAD = 10;
+
+      function setHole(rect){
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        if (!rect) {
+          ui.mTop.style.cssText    = `left:0;top:0;width:${vw}px;height:${vh}px;`;
+          ui.mLeft.style.cssText   = `left:0;top:0;width:0;height:0;`;
+          ui.mRight.style.cssText  = `left:0;top:0;width:0;height:0;`;
+          ui.mBottom.style.cssText = `left:0;top:0;width:0;height:0;`;
+          ui.hl.style.display = "none";
+          return;
+        }
+
+        const x = clamp(rect.left - PAD, 8, vw-8);
+        const y = clamp(rect.top - PAD, 8, vh-8);
+        const w = clamp(rect.width + PAD*2, 24, vw-16);
+        const h = clamp(rect.height + PAD*2, 24, vh-16);
+        const right = clamp(x + w, 8, vw-8);
+        const bottom = clamp(y + h, 8, vh-8);
+
+        ui.mTop.style.cssText    = `left:0;top:0;width:${vw}px;height:${y}px;`;
+        ui.mLeft.style.cssText   = `left:0;top:${y}px;width:${x}px;height:${h}px;`;
+        ui.mRight.style.cssText  = `left:${right}px;top:${y}px;width:${vw-right}px;height:${h}px;`;
+        ui.mBottom.style.cssText = `left:0;top:${bottom}px;width:${vw}px;height:${vh-bottom}px;`;
+
+        ui.hl.style.display = "block";
+        ui.hl.style.left = `${x}px`;
+        ui.hl.style.top = `${y}px`;
+        ui.hl.style.width = `${w}px`;
+        ui.hl.style.height = `${h}px`;
+      }
+
+      function placeTooltip(rect){
+        const tip = ui.tip;
+        const margin = 10;
+
+        tip.style.left = "0px";
+        tip.style.top = "0px";
+        tip.style.visibility = "hidden";
+        tip.style.display = "block";
+        const w = tip.offsetWidth;
+        const h = tip.offsetHeight;
+        tip.style.visibility = "visible";
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        if (!rect) {
+          tip.style.left = `${Math.round((vw - w)/2)}px`;
+          tip.style.top = `${Math.round((vh - h)/2)}px`;
+          return;
+        }
+
+        const candidates = [
+          { x: rect.right + margin, y: rect.top },                 // right
+          { x: rect.left - w - margin, y: rect.top },              // left
+          { x: rect.left, y: rect.bottom + margin },               // bottom
+          { x: rect.left, y: rect.top - h - margin }               // top
+        ];
+
+        let pos = candidates[0];
+        for (const c of candidates) {
+          const okX = (c.x >= 8 && c.x + w <= vw - 8);
+          const okY = (c.y >= 8 && c.y + h <= vh - 8);
+          if (okX && okY) { pos = c; break; }
+        }
+
+        const x = clamp(pos.x, 8, vw - w - 8);
+        const y = clamp(pos.y, 8, vh - h - 8);
+        tip.style.left = `${Math.round(x)}px`;
+        tip.style.top = `${Math.round(y)}px`;
+      }
+
+      function frameTargetBySelector(selector){
+        return { frame: "#shopFrame", selector };
+      }
+
+      function frameTargetByElement(el){
+        return el ? { frame: "#shopFrame", element: el } : null;
+      }
+
+      const steps = [
+        { title: "Einführung", body: `
+            <div>Du klickst dich einmal durch die Oberfläche. Ziel: Du weißt, wo du was findest und wie du Shop‑Buttons per SQL freischaltest.</div>
+            <div style="margin-top:8px; opacity:.85;">Bedienung: <code>Weiter</code>/<code>Zurück</code>, <code>Esc</code> beendet.</div>
+          `, target: null },
+
+        { title: "Topbar", body: `Oben: Modus‑Titel, Vollbild, optional Name und Zeit.`, target: ".topbar" },
+        { title: "Vollbild", body: `Schaltet in den Präsentationsmodus.`, target: "#fsBtn" },
+        { title: "Zeit", body: `Countdown (im Tutorial nicht persistent gespeichert).`, target: "#pillTimer" },
+
+        { title: "Shop (links)", body: `Links ist der Shop. Gesperrte Buttons öffnen rechts die passende Aufgabe.`, target: "#shopFrame" },
+
+        { title: "Suche (Shop)", body: `Produktsuche. In FreeMode erst aktiv nach Freischaltung der Suche‑Aufgabe.`, target: frameTargetBySelector("#searchInput") },
+
+        { title: "Sortierung (Shop)", body: `Sortierung (z. B. Preis/Beliebtheit). Auch diese Optionen können als Aufgaben gesperrt sein.`, target: frameTargetBySelector("#sortDropdown") },
+
+        { title: "Filter: Kategorie", body: `Kategorie‑Filter. Jede Filter‑Option kann als eigener Button/Task gesperrt sein.`, target: () => {
+            const el = findInFrame(doc => doc.querySelector('[data-task^="cat-"]'));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Filter: Preis", body: `Preis‑Filter (z. B. bis 50 €). Auch das sind Task‑Buttons.`, target: () => {
+            const el = findInFrame(doc => doc.querySelector('[data-task^="price-"]'));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Filter: Bewertung", body: `Bewertungs‑Filter (z. B. ≥4 Sterne).`, target: () => {
+            const el = findInFrame(doc => doc.querySelector('[data-task^="rating-"]'));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Warenkorb", body: `Warenkorb öffnen und Aktionen wie „Aktualisieren“ oder „Gesamtpreis“. In FreeMode können diese Controls gesperrt sein.`, target: () => {
+            const el = findInFrame(doc => doc.querySelector('[data-task="open-cart"]')) ||
+                      findInFrame(doc => Array.from(doc.querySelectorAll('.profile')).find(p => (p.textContent || '').includes('Warenkorb')));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Konto & Listen", body: `Konto‑Panel (Login/Bestellungen/Top‑Produkte). Wird auch für die SQL‑Injection‑Bonusaufgabe genutzt.`, target: () => {
+            const el = findInFrame(doc => Array.from(doc.querySelectorAll('.profile')).find(p => (p.textContent || '').includes('Konto'))) ||
+                      findInFrame(doc => doc.getElementById('accountPanel'));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Beispiel‑Button: „Alle Produkte anzeigen“", body: `
+            <div>Typischer gesperrter Shop‑Button (Task‑ID <code>all</code>).</div>
+            <div style="margin-top:8px; opacity:.85;">Optional: Klicke den Button jetzt – dann öffnet sich rechts die Aufgabe.</div>
+          `, target: () => {
+            const el = findInFrame(doc => doc.querySelector('[data-task="all"]'));
+            return frameTargetByElement(el) || frameTargetBySelector("#shopFrame");
+          } },
+
+        { title: "Aufgaben‑Ansicht (rechts)", before: () => {
+            try {
+              if (window.currentMode && typeof window.currentMode.onShopSelect === "function") {
+                window.currentMode.onShopSelect("all");
+              }
+            } catch(_) {}
+          }, body: `Rechts: Aufgabe + SQL‑Editor. Du arbeitest immer hier; der Shop ist nur die UI.`, target: "#taskView" },
+
+        { title: "Aufgabenbeschreibung", body: `Ziel/Anforderung der Aufgabe.`, target: "#taskBody" },
+
+        { title: "SQL‑Editor", body: `
+            <div>Hier schreibst du deine Query.</div>
+            <div style="margin-top:6px;">Beispiel für „Alle Produkte anzeigen“:</div>
+            <pre><code>SELECT * FROM produkte;</code></pre>
+            <div style="margin-top:8px; opacity:.85;">In Schulazon sind nur <code>SELECT</code>-Queries erlaubt.</div>
+          `, target: "#sqlInput" },
+
+        { title: "Prüfen", body: `<code>Prüfen</code> führt die Query aus und vergleicht sie automatisch mit der Referenz.`, target: "#runBtn" },
+
+        { title: "Freischalten", body: `Wenn korrekt: <code>Freischalten</code>. Danach ist der Shop‑Button entsperrt.`, target: "#unlockBtn" },
+
+        { title: "Fortschritt", body: `Erledigt/gesamt (Gamification/Orientierung).`, target: "#progressCount" },
+
+        { title: "Score", body: `Score steigt durch gelöste Aufgaben; manche Aktionen kosten Punkte.`, target: "#scoreEl" },
+
+        { title: "Tipp", body: `Tipp öffnen (ggf. Score‑Abzug nach Bestätigung).`, target: "#hintBtn" },
+
+        { title: "DB‑Schema", body: `Tabellen/Spalten: wichtigste Referenz für korrekte Queries.`, target: "#btnSchema" },
+
+        { title: "Theorie‑Spicker", body: `Kurzreferenz: SELECT/WHERE/ORDER BY/LIMIT/JOIN/GROUP BY.`, target: "#btnSpicker" },
+
+        { title: "Lösungen", body: `Nur für bereits freigeschaltete Aufgaben (kein Komplett‑Spoiler).`, target: "#btnSolutions" },
+
+        { title: "Zusatzaufgabe", body: `Zusatzaufgaben (z. B. Security) werden später freigeschaltet.`, target: "#btnBonus" },
+
+        { title: "Fertig", body: `
+            <div>Startbereit. Das Tutorial hat keinen Fortschritt gespeichert.</div>
+            <div style="margin-top:10px;"><button class="tour-btn primary" id="startNow" type="button">Jetzt in den Free‑Modus wechseln</button></div>
+          `, target: null, onShow: () => {
+            const b = document.getElementById("startNow");
+            if (b) {
+              b.onclick = () => {
+                try { sessionStorage.setItem("schulazon_free_startedAt_v1", String(Date.now())); } catch(_) {}
+                window.location.href = "free.html" + window.location.search;
+              };
+            }
+          } }
+      ];
+
+      let idx = 0;
+      let active = false;
+      let currentResolved = null;
+
+      function show(i){
+        idx = clamp(i, 0, steps.length-1);
+        const step = steps[idx];
+
+        try { if (typeof step.before === "function") step.before(); } catch (_) {}
+
+        ui.title.textContent = step.title || "—";
+        ui.meta.textContent = `${idx+1}/${steps.length}`;
+        ui.body.innerHTML = step.body || "";
+
+        ui.back.disabled = (idx === 0);
+        ui.next.textContent = (idx === steps.length-1) ? "Fertig" : "Weiter";
+
+        currentResolved = resolve(step);
+        setHole(currentResolved ? currentResolved.rect : null);
+        placeTooltip(currentResolved ? currentResolved.rect : null);
+
+        try { if (typeof step.onShow === "function") step.onShow(); } catch (_) {}
+      }
+
+      function open(){
+        active = true;
+        ui.badge.classList.add("show");
+        ui.mask.style.display = "block";
+        ui.tip.style.display = "block";
+        show(0);
+      }
+
+      function close(){
+        active = false;
+        ui.badge.classList.remove("show");
+        ui.mask.style.display = "none";
+        ui.hl.style.display = "none";
+        ui.tip.style.display = "none";
+      }
+
+      function next(){
+        if (idx === steps.length-1) { close(); return; }
+        show(idx+1);
+      }
+
+      function back(){
+        show(idx-1);
+      }
+
+      function restart(){
+        show(0);
+      }
+
+      function refreshLayout(){
+        if (!active) return;
+        currentResolved = resolve(steps[idx]);
+        setHole(currentResolved ? currentResolved.rect : null);
+        placeTooltip(currentResolved ? currentResolved.rect : null);
+      }
+
+      ui.next.addEventListener("click", next);
+      ui.back.addEventListener("click", back);
+      ui.skip.addEventListener("click", close);
+      ui.restart.addEventListener("click", restart);
+
+      window.addEventListener("resize", refreshLayout);
+      window.addEventListener("scroll", refreshLayout, { passive: true });
+
+      window.addEventListener("keydown", (e) => {
+        if (!active) return;
+        if (e.key === "Escape") { e.preventDefault(); close(); }
+        if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); next(); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); back(); }
+      });
+
+      (async function boot(){
+        await waitFor(() => !!window.currentMode && !!document.getElementById("btnSchema"));
+        await waitFor(() => {
+          const d = getFrameDoc();
+          return d && (d.readyState === "complete" || d.readyState === "interactive");
+        }, 15000);
+
+        // Make timer label less confusing during tutorial
+        try {
+          const pill = document.getElementById("pillTimer");
+          const lbl = pill && pill.querySelector("span");
+          if (lbl) lbl.textContent = "Tutorial";
+          const tag = document.getElementById("timerTag");
+          if (tag) tag.textContent = "—";
+        } catch(_) {}
+
+        open();
+      })();
+    })();
+  </script>
+</body>
+</html>
