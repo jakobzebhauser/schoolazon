@@ -1,24 +1,49 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="shell.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schulazon – Freier Modus</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="shell.css" />
 </head>
-
 <body data-mode="free">
-  <div class="mode-shell">
-    <iframe class="shop-frame" id="shopFrame" src="shop.html"></iframe>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="appIcon" aria-hidden="true"></div>
+        <div>
+          <div class="logo">schul<span>azon</span></div>
+          <div class="sub" id="subline">Freier Modus (60 Minuten)</div>
+        </div>
+      </div>
 
+      <div class="status">
+        <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
 
-    <main class="mode-right">
-      <div id="modeRoot"></div>
-    </main>
+        <div class="pill" id="pillName" style="display:none;">
+          <span>Hi, <b id="nameTag"></b></span>
+        </div>
+
+        <div class="pill" id="pillTimer">
+          <span>Zeit</span> <b id="timerTag">60:00</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-shell">
+      <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
+      <main class="mode-right" id="modeRoot"></main>
+    </div>
   </div>
 
+  <!-- sql.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <!-- Mode Logic -->
   <script src="modes.js"></script>
-
 </body>
 </html>

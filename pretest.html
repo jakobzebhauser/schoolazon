@@ -1,0 +1,1602 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schulazon – Bewerbungsgespräch</title>
+
+  <!-- Shop-Font (wie im Shop) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* Apple-ish system colors */
+      --blue:   #007AFF;
+      --purple: #AF52DE;
+      --teal:   #34C759;
+      --amber:  #FF9500;
+      --pink:   #FF2D55;
+
+      --bg0: #F5F5F7;
+      --bg1: #EEF1F7;
+      --text: #0B0F18;
+      --muted: rgba(11,15,24,.62);
+
+      --hair: rgba(10, 15, 24, .08);
+      --hair2: rgba(10, 15, 24, .05);
+
+      --shadow: 0 24px 70px rgba(10,15,24,.10);
+      --shadow2: 0 12px 30px rgba(10,15,24,.08);
+
+      --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.62);
+      --glass3: rgba(255,255,255,.46);
+
+      --focus: 0 0 0 6px rgba(0,122,255,.22);
+
+      --radiusLg: 26px;
+      --radiusMd: 18px;
+      --radiusSm: 14px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Helvetica, Arial;
+
+      --base: clamp(18px, 1.35vw + 12px, 21px);
+      --small: clamp(14px, 0.95vw + 10px, 16px);
+      --h1: clamp(22px, 1.9vw + 14px, 30px);
+      --sql: clamp(14px, 1.05vw + 10px, 16px);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      font-family: var(--sans);
+      font-size: var(--base);
+      color: var(--text);
+      background:
+        radial-gradient(900px 520px at 16% 10%, rgba(0,122,255,.14), transparent 62%),
+        radial-gradient(900px 520px at 86% 12%, rgba(175,82,222,.12), transparent 62%),
+        radial-gradient(980px 680px at 60% 92%, rgba(255,45,85,.08), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg0));
+    }
+
+    .shell{
+      width: min(1240px, 94vw);
+      margin: 0 auto;
+      padding: 16px 14px 26px;
+    }
+
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 12px; margin-bottom: 12px;
+      padding: 10px 10px;
+      border-radius: var(--radiusLg);
+      background: var(--glass3);
+      border: 1px solid var(--hair2);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 10px 34px rgba(10,15,24,.06);
+    }
+
+    .brand{display:flex; align-items:center; gap:12px;}
+    .appIcon{
+      width: 44px; height: 44px;
+      border-radius: 16px;
+      background:
+        radial-gradient(18px 18px at 30% 28%, rgba(255,255,255,.88), transparent 58%),
+        linear-gradient(180deg, rgba(0,122,255,.96), rgba(175,82,222,.70));
+      box-shadow: 0 16px 34px rgba(0,122,255,.18);
+      border: 1px solid rgba(255,255,255,.38);
+    }
+
+
+    /* Shop-Wordmark (wie im Shop) */
+    .logo{
+      font-family: "Roboto", var(--sans);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: 0;
+      color: rgba(11,15,24,.92);
+    }
+    .logo span{color:#f08804}
+    .brand h1{font-size: 15px; margin:0; font-weight: 900; letter-spacing: .2px; line-height: 1.05;}
+    .brand .sub{font-size: var(--small); color: var(--muted); margin-top:2px; line-height: 1.15;}
+
+    .status{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
+
+    .pill, .pillBtn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--hair2);
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 10px 22px rgba(10,15,24,.06);
+      font-size: var(--small);
+      color: var(--muted);
+      user-select:none;
+      white-space: nowrap;
+    }
+    .pill b{color: var(--text); font-weight: 900}
+
+    .pillBtn{
+      cursor:pointer;
+      color: rgba(11,15,24,.92);
+      font-weight: 900;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
+    .pillBtn:active{transform: translateY(0px)}
+    .pillBtn:focus{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
+
+    .card{
+      background: var(--glass2);
+      border: 1px solid var(--hair2);
+      border-radius: var(--radiusLg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow:hidden;
+    }
+    .cardInner{padding: 22px 22px 18px;}
+
+    .qTitle{
+      font-size: var(--h1);
+      font-weight: 950;
+      margin: 0 0 10px;
+      letter-spacing: .15px;
+      line-height: 1.12;
+    }
+    .qContext{
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: var(--small);
+    }
+
+    /* Theory: Apple-like card + minimal highlights */
+    .theory{
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      margin: 12px 0 14px;
+    }
+    .theoryHead{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 12px;
+      background:
+        linear-gradient(180deg, rgba(0,122,255,.10), rgba(255,255,255,.00));
+      border-bottom: 1px solid rgba(0,122,255,.10);
+      font-size: var(--small);
+      color: rgba(11,15,24,.86);
+      font-weight: 950;
+    }
+    .theoryBody{
+      padding: 12px 14px;
+      font-size: var(--small);
+      line-height: 1.65;
+      color: rgba(11,15,24,.88);
+    }
+    .theoryBody p{margin:0}
+    .theoryBody p + p{margin-top:10px}
+    .theoryBody ul{margin: 8px 0 0 18px; padding:0}
+    .theoryBody li{margin: 6px 0}
+
+    /* Minimal highlight set */
+    .hi{
+      font-weight: 900;
+      color: rgba(11,15,24,.92);
+      background: rgba(175,82,222,.10);
+      border: 1px solid rgba(175,82,222,.14);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+    .hiCode{
+      font-family: var(--mono);
+      font-weight: 900;
+      color: rgba(0,122,255,.96);
+      background: rgba(0,122,255,.10);
+      border: 1px solid rgba(0,122,255,.14);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+
+    .schemaWrap{margin: 12px 0 14px;}
+    .schemaLabel{
+      --tone: var(--blue);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--tone) 14%, white);
+      border: 1px solid color-mix(in srgb, var(--tone) 22%, white);
+      color: rgba(11,15,24,.86);
+      font-size: var(--small);
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+    .tone-blue{--tone: var(--blue)}
+    .tone-purple{--tone: var(--purple)}
+    .tone-teal{--tone: var(--teal)}
+    .tone-amber{--tone: var(--amber)}
+    .tone-pink{--tone: var(--pink)}
+
+    .codeBox{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      overflow:auto;
+      box-shadow: var(--shadow2);
+    }
+    pre.sql{
+      margin:0;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      line-height: 1.7;
+      white-space: pre;
+      color: rgba(11,15,24,.92);
+    }
+    .kw{color: rgba(0,122,255,.96); font-weight: 900}
+    .cm{color: rgba(91,101,118,.92);}
+    .id{color: rgba(11,15,24,.86); font-weight: 750;}
+    .num{color: rgba(11,15,24,.86); font-weight: 900;}
+    .op{color: rgba(11,15,24,.86); font-weight: 900;}
+
+    /* Tables: cleaner, with subtle color */
+    .tableGroup{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin: 10px 0 0;
+    }
+    .miniTable{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.80);
+      font-size: var(--small);
+      box-shadow: var(--shadow2);
+    }
+    .miniTable th, .miniTable td{
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--hair2);
+      vertical-align: top;
+      color: rgba(11,15,24,.88);
+    }
+    .miniTable th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-weight: 950;
+      color: rgba(11,15,24,.92);
+      background: rgba(10,15,24,.03);
+    }
+    .miniTable tr:last-child td{border-bottom:none}
+    .miniTable tr:nth-child(even) td{background: rgba(10,15,24,.012)}
+    .miniTable tr:hover td{background: rgba(0,122,255,.055)}
+    .miniTable code{font-family: var(--mono); font-size: 0.95em}
+
+    /* DISTINCT Visual */
+    .distinctViz{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.68);
+      border-radius: var(--radiusMd);
+      padding: 12px;
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      --d: 0;
+    }
+    .rangeRow{
+      display:flex; align-items:center; gap:12px;
+      margin: 2px 0 10px;
+    }
+    .rangeRow label{
+      font-size: var(--small);
+      font-weight: 950;
+      color: rgba(11,15,24,.86);
+      white-space: nowrap;
+    }
+    .rangeRow .val{
+      font-size: var(--small);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    input[type="range"]{
+      -webkit-appearance:none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(10,15,24,.10);
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(175,82,222,1), rgba(0,122,255,.85));
+      box-shadow: 0 12px 24px rgba(175,82,222,.16);
+      border: 2px solid rgba(255,255,255,.90);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb{
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      background: rgba(175,82,222,.96);
+      border: 2px solid rgba(255,255,255,.90);
+      cursor: pointer;
+    }
+    .distinctRaw .dup{
+      opacity: calc(1 - var(--d));
+      filter: blur(calc(var(--d) * 0.7px));
+    }
+    .distinctOut{
+      opacity: var(--d);
+      transform: translateY(calc((1 - var(--d)) * 6px));
+      transition: opacity .12s ease, transform .12s ease;
+    }
+
+    .taskCard{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      margin-top: 10px;
+      box-shadow: var(--shadow2);
+      position: relative;
+      overflow:hidden;
+    }
+    .taskCard::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width: 6px;
+      background: linear-gradient(180deg, rgba(0,122,255,.85), rgba(175,82,222,.70));
+    }
+
+    .blank input{
+      height: 40px;
+      border-radius: var(--radiusSm);
+      border: 1px dashed rgba(0,122,255,.55);
+      background: rgba(0,122,255,.06);
+      padding: 0 10px;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      outline:none;
+      text-transform: uppercase;
+      min-width: 160px;
+    }
+    .blank input:focus{
+      box-shadow: var(--focus);
+      border-style: solid;
+      background: rgba(255,255,255,.90);
+    }
+
+    .feedback{
+      margin-top: 10px;
+      padding: 12px 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.80);
+      color: rgba(11,15,24,.86);
+      font-size: var(--small);
+      line-height: 1.45;
+      display:none;
+      box-shadow: var(--shadow2);
+    }
+    .feedback.ok{
+      border-color: rgba(52,199,89,.22);
+      background: linear-gradient(180deg, rgba(52,199,89,.10), rgba(255,255,255,.76));
+    }
+    .feedback.bad{
+      border-color: rgba(255,149,0,.22);
+      background: linear-gradient(180deg, rgba(255,149,0,.10), rgba(255,255,255,.76));
+    }
+    .feedback.show{display:block}
+
+    .matchGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .matchCol{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.72);
+      border-radius: var(--radiusMd);
+      padding: 12px;
+      box-shadow: var(--shadow2);
+    }
+    .matchTitle{
+      font-size: var(--small);
+      font-weight: 950;
+      color: rgba(11,15,24,.88);
+      margin: 2px 0 10px;
+    }
+    .chip{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      user-select:none;
+      font-size: var(--small);
+      color: rgba(11,15,24,.92);
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
+      margin-bottom: 10px;
+      outline:none;
+    }
+    .chip:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
+    .chip:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
+    .chip.selected{
+      border-color: rgba(0,122,255,.38);
+      background: rgba(0,122,255,.08);
+    }
+    .chip .tag{
+      font-family: var(--mono);
+      font-weight: 900;
+      color: rgba(0,122,255,.92);
+      white-space:nowrap;
+    }
+
+    .btnRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top: 16px;
+    }
+    .btn{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      color: rgba(11,15,24,.92);
+      padding: 12px 14px;
+      border-radius: var(--radiusMd);
+      font-weight: 950;
+      font-size: var(--small);
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
+    .btn:active{transform: translateY(0px)}
+    .btn:focus{outline:none; box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
+    .btn.primary{
+      border-color: rgba(0,122,255,.22);
+      background: linear-gradient(180deg, rgba(0,122,255,.14), rgba(175,82,222,.06));
+    }
+    .btn.ghost{background: rgba(255,255,255,.66);}
+    .btn.disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none !important;
+      box-shadow:none !important;
+    }
+
+    .progressWrap{
+      padding: 14px 22px;
+      border-top: 1px solid var(--hair2);
+      background: rgba(255,255,255,.44);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .progress{
+      flex:1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(10,15,24,.08);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(0,122,255,1), rgba(175,82,222,.90), rgba(255,45,85,.75));
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .stepTxt{font-size: var(--small); color: var(--muted)}
+    .stepTxt b{color: var(--text); font-weight: 950}
+
+    @media (prefers-reduced-motion: reduce){
+      .btn, .chip, .pillBtn, .bar{transition:none !important}
+      .btn:hover, .chip:hover, .pillBtn:hover{transform:none !important}
+      .distinctOut{transition:none !important}
+    }
+
+    @media (max-width: 560px){
+      .shell{padding: 14px 10px 22px}
+      .cardInner{padding: 18px}
+      .progressWrap{padding: 12px 18px}
+      .matchGrid{grid-template-columns: 1fr;}
+      .topbar{padding: 10px}
+    }
+
+    /* ---------- Pretest: zusätzliche UI-Bausteine im Tutorial-Look ---------- */
+
+    .hidden{display:none !important;}
+
+    /* Typografie-Überschriften (Pretest nutzt h2 in hero) */
+    .hero{display:flex; gap: 14px; align-items:flex-start;}
+    .hero h2{
+      margin:0 0 10px;
+      font-size: var(--h1);
+      font-weight: 950;
+      letter-spacing: .15px;
+      line-height: 1.12;
+    }
+    .hero p{margin:0 0 10px; color: var(--muted); line-height: 1.55; font-size: var(--small);}
+    .hero p b{color: rgba(11,15,24,.92); font-weight: 950;}
+
+    .hint{
+      margin-top: 12px;
+      padding: 12px 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: linear-gradient(180deg, rgba(0,122,255,.10), rgba(255,255,255,.74));
+      box-shadow: var(--shadow2);
+      color: rgba(11,15,24,.88);
+      font-size: var(--small);
+      line-height: 1.55;
+    }
+    .hintBig{ padding: 14px 14px; }
+
+    
+    .startForm{
+      margin-top: 14px;
+      padding: 14px 14px;
+      border-radius: var(--radiusLg);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.62);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+.row{display:flex; gap:12px; flex-wrap:wrap; margin-top: 14px}
+    .field{flex: 1 1 340px; display:flex; flex-direction:column; gap:8px;}
+    label{font-size: var(--small); color: var(--muted);}
+
+    input[type="text"]{
+      height: 52px;
+      padding: 0 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      outline:none;
+      font-size: var(--base);
+      transition: box-shadow .2s ease, transform .12s ease, border-color .2s ease;
+      text-transform: uppercase;
+    }
+    input[type="text"]::placeholder{ text-transform:none; }
+    input[type="text"]:focus{ box-shadow: var(--focus); border-color: rgba(0,122,255,.28); transform: translateY(-1px); }
+
+    .checkRow{
+      display:flex;
+      align-items:flex-start;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow2);
+    }
+    .checkRow input[type="checkbox"]{
+      transform: scale(1.15);
+      margin-top: 3px;
+      accent-color: var(--blue);
+    }
+    .checkRow .txt{font-size: var(--small); color: rgba(11,15,24,.86); line-height: 1.45}
+
+    /* Prompt/Schema-Karten (Pretest) */
+    .promptCard{
+      margin: 0 0 12px;
+      padding: 12px 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow2);
+    }
+    .qPrompt{
+      margin: 0;
+      color: rgba(11,15,24,.92);
+      line-height: 1.55;
+      font-size: var(--base);
+      font-weight: 950;
+      letter-spacing: .12px;
+    }
+
+    .schemaWrap{margin: 12px 0 14px;}
+    .schemaLabel{
+      --tone: var(--blue);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--tone) 14%, white);
+      border: 1px solid color-mix(in srgb, var(--tone) 22%, white);
+      color: rgba(11,15,24,.86);
+      font-size: var(--small);
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+    .schemaBox{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      box-shadow: var(--shadow2);
+      overflow:auto;
+      white-space: pre-wrap;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      color: rgba(11,15,24,.92);
+      line-height: 1.7;
+    }
+
+    /* Multiple-Choice (Pretest) */
+    .choices{display:grid; gap:12px; margin-top: 10px;}
+    .choice{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.78);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      display:flex; align-items:flex-start; gap:12px;
+      user-select:none;
+      outline:none;
+    }
+    .choice:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08);}
+    .choice:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08);}
+    .bullet{
+      width: 20px; height: 20px; border-radius: 999px;
+      border: 2px solid rgba(11,15,24,.22);
+      margin-top: 2px;
+      flex: 0 0 20px;
+      position:relative;
+    }
+    .choice.selected{border-color: rgba(0,122,255,.38); background: rgba(0,122,255,.08);}
+    .choice.selected .bullet{border-color: rgba(0,122,255,.70);}
+    .choice.selected .bullet::after{content:""; position:absolute; inset:3px; border-radius:999px; background: rgba(0,122,255,.92);}
+
+    .sql{
+      font-family: var(--mono);
+      font-size: var(--sql);
+      color: rgba(11,15,24,.92);
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Fill-In (Pretest) */
+    .fillWrap{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px;
+      box-shadow: var(--shadow2);
+    }
+    .fillCode{
+      font-family: var(--mono);
+      font-size: var(--sql);
+      color: rgba(11,15,24,.92);
+      white-space: pre-wrap;
+      line-height: 1.7;
+      margin: 0;
+    }
+    .blank{
+      display:inline-block;
+      min-width: 150px;
+      padding: 3px 6px;
+      border-radius: var(--radiusSm);
+      border: 1px dashed rgba(0,122,255,.55);
+      background: rgba(0,122,255,.06);
+      vertical-align: baseline;
+    }
+    /* tutorial.css definiert .blank input bereits; hier nur kleine Kompatibilität */
+    .blank input{ width: min(320px, 60vw); }
+
+    /* Likert (Pretest) */
+    .likert{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .likertBtn{
+      text-align:center;
+      padding: 14px 8px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.78);
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      font-weight: 950;
+      color: rgba(11,15,24,.92);
+      user-select:none;
+      font-size: var(--small);
+      outline:none;
+    }
+    .likertBtn:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08);}
+    .likertBtn:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08);}
+    .likertBtn.selected{border-color: rgba(0,122,255,.38); background: rgba(0,122,255,.08);}
+
+    /* Timeout-Overlay */
+    .overlay{
+      position: fixed; inset:0;
+      background: rgba(11,15,24,.35);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .overlay.show{display:flex;}
+    .modal{
+      width: min(680px, 96vw);
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--hair2);
+      border-radius: var(--radiusLg);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .modal h3{margin: 4px 0 6px; font-size: var(--h1); font-weight: 950;}
+    .modal p{margin:0; color: var(--muted); line-height:1.55; font-size: var(--base);}
+
+    /* Mobile: Sticky Nav (nur Pretest) */
+    @media (max-width: 700px){
+      .cardInner{ padding-bottom: 96px; }
+      .btnRow.navRow{
+        position: sticky;
+        bottom: 10px;
+        padding: 10px;
+        background: rgba(255,255,255,.88);
+        border: 1px solid var(--hair2);
+        border-radius: var(--radiusMd);
+        box-shadow: var(--shadow2);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        z-index: 5;
+      }
+      .btnRow.navRow .btn{
+        flex: 1 1 0;
+        min-height: 44px;
+      }
+    }
+
+    @media (max-width: 560px){
+      .likert{grid-template-columns: repeat(2, 1fr);}
+    }
+
+    @media (max-width: 680px){
+      .hero{flex-direction:column;}
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="appIcon" aria-hidden="true"></div>
+        <div>
+          <div class="logo">schul<span>azon</span></div>
+          <div class="sub" id="subline">Bewerbungsgespräch (6 Minuten)</div>
+        </div>
+      </div>
+
+      <div class="status">
+        <button class="pillBtn" id="fsBtn" type="button" >Vollbild</button>
+
+        <div class="pill" id="pillName" style="display:none;">
+          <span>Hi, <b id="nameTag"></b></span>
+        </div>
+        <div class="pill" id="pillStep" style="display:none;">
+          <span>Frage</span> <b id="stepTag">1/10</b>
+        </div>
+        <div class="pill" id="pillTimer" style="display:none;">
+          <span>Zeit</span> <b id="timerTag">06:00</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="appCard">
+      <div class="cardInner" id="screen"></div>
+
+      <div class="progressWrap" id="progressWrap" style="display:none;">
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+        <div class="stepTxt"><b id="stepSmall">1</b> / <span id="stepTotal">10</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3>Zeit ist um.</h3>
+      <p>Wir geben das Bewerbungsgespräch jetzt automatisch ab.</p>
+    </div>
+  </div>
+
+<script>
+  const TOTAL_SEC = 6 * 60;
+
+  const baseQuestions = [
+    { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Gib alle Spalten und alle Datensätze der Tabelle „produkte“ aus.",
+      options:["SELECT name FROM produkte;","SELECT * FROM produkte;","SELECT produkte FROM *;","GET * FROM produkte;"],
+      correctIndex: 1
+    },
+    { id:"q2", type:"mc", title:"Produkte unter 20 €",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Zeige alle Produkte mit einem Preis kleiner als 20 €.",
+      options:["SELECT * FROM produkte WHERE preis < 20;","SELECT preis < 20 FROM produkte;","SELECT * produkte preis < 20;","FILTER preis < 20 FROM produkte;"],
+      correctIndex: 0
+    },
+    { id:"q3", type:"mc", title:"Durchschnittspreis berechnen",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Berechne den durchschnittlichen Preis aller Produkte.",
+      options:["SELECT AVG(preis) FROM produkte;","SELECT MEAN(preis) FROM produkte;","SELECT COUNT(preis)/SUM(preis) FROM produkte;","SELECT MID(preis) FROM produkte;"],
+      correctIndex: 0
+    },
+    { id:"q4", type:"mc", title:"Nur unterschiedliche Lieferzeiten",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Gib jede Lieferzeit nur einmal (ohne Duplikate) aus.",
+      options:["SELECT DISTINCT liefertage FROM produkte;","SELECT UNIQUE liefertage FROM produkte;","SELECT GROUP liefertage FROM produkte;","SELECT ALL liefertage FROM produkte;"],
+      correctIndex: 0
+    },
+    { id:"q5", type:"fill", title:"Sortieren nach Preis",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Ergänze das fehlende Schlüsselwort, damit alle Produkte nach Preis aufsteigend sortiert werden.",
+      template:"SELECT * FROM produkte ______ preis ASC;",
+      correct:["ORDER BY"]
+    },
+    { id:"q6", type:"fill", title:"Zwei Bedingungen (UND)",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
+      prompt:"Ergänze den fehlenden Operator, damit beide Bedingungen gleichzeitig gelten.",
+      template:"SELECT *\nFROM produkte\nWHERE preis < 50 ______ lagerbestand > 0;",
+      correct:["AND"]
+    },
+    { id:"q7", type:"fill", title:"Produkt und Kategorie verbinden",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"],
+      prompt:"Ergänze die fehlende Bedingung, damit jedes Produkt mit seiner passenden Kategorie verknüpft wird.",
+      template:"SELECT produkte.name, kategorien.name\nFROM produkte, kategorien\nWHERE ____________________________;",
+      correct:[   "produkte.kategorie_id = kategorien.id",
+  "kategorien.id = produkte.kategorie_id",
+  "produkte.kategorie_id == kategorien.id",
+  "kategorien.id == produkte.kategorie_id" ]
+    },
+    { id:"q8", type:"fill", title:"Produkte im Warenkorb",
+      schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","warenkorb(produkt_id, menge, nutzer_id)"],
+      prompt:"Ergänze die fehlende Tabelle, damit Produkte mit dem Warenkorb verknüpft werden.",
+      template:"SELECT produkte.name\nFROM produkte, ________\nWHERE produkte.id = warenkorb.produkt_id;",
+      correct:["warenkorb"]
+    },
+    { id:"r1", type:"likert", title:"Realweltbezug",
+      schema:[],
+      prompt:"Ich verstehe, wofür SQL in realen digitalen Systemen eingesetzt wird (z. B. Online-Shops, Apps, Unternehmenssoftware)."
+    },
+    { id:"r2", type:"likert", title:"Realweltbezug",
+      schema:[],
+      prompt:"Ich kann mehrere konkrete Beispiele nennen, in welchen realen Systemen SQL genutzt wird, und kurz erklären, wofür."
+    }
+  ];
+
+  let questions = [];
+
+  const state = {
+    name: "",
+    step: 0,
+    startedAt: null,
+    endedAt: null,
+    timer: null,
+    remainingSec: TOTAL_SEC,
+    answers: {},
+    likert: { r1:null, r2:null },
+    lastResult: null,
+    contractSigned: false,
+    nextMode: null
+  };
+
+  const el = (id) => document.getElementById(id);
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function fmtMMSS(sec){
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${pad2(m)}:${pad2(s)}`;
+  }
+
+  function normalize(str){
+    return (str ?? "").toString().trim().replace(/;$/,"").replace(/\s+/g," ").toLowerCase();
+  }
+  function normalizeNoSpace(str){
+    return (str ?? "").toString().trim().replace(/;$/,"").replace(/\s+/g,"").toLowerCase();
+  }
+
+  function escapeHtml(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function escapeAttr(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+
+  
+  function goToGuidedTutorial(){
+    const n = (state.name || "").toString().trim();
+    if(n){
+      try{ sessionStorage.setItem("schulazon_name", n); }catch{}
+      try{ localStorage.setItem("schulazon_name", n); }catch{}
+      try{ window.SCHULAZON_NAME = n; }catch{}
+    }
+    const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    window.location.href = url;
+  }
+
+function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function formatName(raw){
+    const s = (raw ?? "").toString().trim();
+    if(!s) return "";
+    const cleaned = s.replace(/\s+/g, " ");
+
+    // Wenn kurz (z.B. "JK"), dann eher als Kürzel behandeln
+    if(cleaned.length <= 3) return cleaned.toUpperCase();
+
+    // Wenn Ziffern/Sonderzeichen drin: nicht "kaputt-formatieren"
+    if(/[^A-Za-zÀ-ÖØ-öø-ÿÄÖÜäöüß \-]/.test(cleaned)) return cleaned;
+
+    // Title-Case je Wort, aber nur wenn nicht bewusst schon gemischt geschrieben
+    const hasUpper = /[A-ZÄÖÜ]/.test(cleaned);
+    const hasLower = /[a-zäöüß]/.test(cleaned);
+
+    // Wenn komplett lower oder "normal": Title Case
+    if(!hasUpper && hasLower){
+      return cleaned
+        .split(/(\s+|\-)/)
+        .map(part=>{
+          if(part.trim()==="" || part==="-" ) return part;
+          const first = part.charAt(0).toUpperCase();
+          const rest = part.slice(1).toLowerCase();
+          return first + rest;
+        })
+        .join("");
+    }
+
+    // sonst wie eingegeben (z.B. "McDonald", "Max")
+    return cleaned;
+  }
+
+  function hashStr(s){
+  // deterministische Auswahl für variierende, aber stabile Gesprächs-Phrasen pro Frage
+  let h = 2166136261;
+  for(let i=0;i<s.length;i++){
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function pickVariant(key, variants){
+  const h = hashStr(String(key));
+  return variants[h % variants.length];
+}
+
+
+function promptWithName(q){
+  return q.prompt;
+}
+
+
+
+
+  function renderStart(){
+    el("progressWrap").style.display = "none";
+    el("pillName").style.display = "none";
+    el("pillStep").style.display = "none";
+    el("pillTimer").style.display = "none";
+    el("subline").textContent = "Bewerbungsgespräch (6 Minuten)";
+
+    el("screen").innerHTML = `
+      <div class="hero">
+        <div style="flex:1">
+          <h2>Hi – schön, dass du dich bei Schulazon beworben hast.</h2>
+          <p>Stell dir vor, du bist gerade in einem kurzen Online‑Call mit unserem <b>Shop‑Engineering</b>. Du schlüpfst in die Rolle der Entwickler:in, die unseren Online‑Shop mit aufbaut.</p>
+          <p>Wir machen jetzt einen schnellen SQL‑Check im Shop‑Kontext: <b>Produkte abfragen</b>, <b>sortieren/filtern</b> und <b>Tabellen sinnvoll verknüpfen</b>. Das ist genau das, was du später bei der <b>Implementierung</b> brauchst.</p>
+
+          <div class="hint hintBig"><b>Wozu das Ganze?</b> Damit wir dich im Projekt passend einplanen können. Du hast <b>6 Minuten</b>; danach geben wir automatisch ab. Am Ende bekommst du deinen Code für <b>„Pretest-Code“</b>. Wenn das passt, geht’s danach mit dem Schulazon‑Lab und echten Shop‑Aufgaben weiter.</div>
+
+          <div class="btnRow navRow" id="introCtaRow">
+            <div></div>
+            <button class="btn primary" id="introContinue">Okay – lass starten</button>
+          </div>
+
+          <div id="startForm" class="startForm hidden">
+            <div class="row">
+              <div class="field">
+                <label for="nameInput">Wie sollen wir dich ansprechen?</label>
+                <input id="nameInput" type="text" placeholder="Vorname oder Kürzel" autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="btnRow navRow">
+              <div></div>
+              <button class="btn primary disabled" id="startBtn">Los geht’s</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const nameInput = el("nameInput");
+    const startBtn = el("startBtn");
+    const introContinue = el("introContinue");
+    const startForm = el("startForm");
+    const introCtaRow = el("introCtaRow");
+
+    introContinue.addEventListener("click", ()=>{
+      startForm.classList.remove("hidden");
+      introCtaRow.classList.add("hidden");
+      // Fokus direkt ins Eingabefeld (fühlt sich wie „weiter im Gespräch“ an)
+      setTimeout(()=> nameInput.focus(), 0);
+    });
+
+    nameInput.addEventListener("input", ()=>{
+      const v = nameInput.value.trim();
+      startBtn.classList.toggle("disabled", v.length === 0);
+    });
+
+    startBtn.addEventListener("click", ()=>{
+      const v = nameInput.value.trim();
+      if(!v) return;
+      state.name = formatName(v); // wichtig: sauber formatiert speichern
+      startTest();
+    });
+  }
+
+  function renderQuestion(){
+    const idx = state.step;
+    const total = questions.length;
+    const q = questions[idx];
+
+    el("pillName").style.display = "flex";
+    el("pillStep").style.display = "flex";
+    el("pillTimer").style.display = "flex";
+    el("nameTag").textContent = state.name;
+    el("stepTag").textContent = `${idx+1}/${total}`;
+    el("timerTag").textContent = fmtMMSS(state.remainingSec);
+
+    el("progressWrap").style.display = "flex";
+    el("stepSmall").textContent = String(idx+1);
+    el("stepTotal").textContent = String(total);
+    el("bar").style.width = `${((idx)/ (total-1))*100}%`;
+
+    const schemaHTML = (q.schema && q.schema.length)
+      ? `
+        <div class="schemaWrap">
+          <div class="schemaLabel">Schema</div>
+          <div class="schemaBox">${q.schema.map(s=>escapeHtml(s)).join("\n")}</div>
+        </div>
+      `
+      : "";
+
+    let bodyHTML = "";
+
+    if(q.type === "mc"){
+      const selected = state.answers[q.id] ?? null;
+      bodyHTML = `
+        ${schemaHTML}
+        <div class="choices" role="list">
+          ${q.options.map((opt, i)=>`
+            <div class="choice ${selected===i ? "selected":""}" data-i="${i}" role="listitem" tabindex="0">
+              <div class="bullet" aria-hidden="true"></div>
+              <div class="sql">${escapeHtml(["A","B","C","D"][i] + ") " + opt)}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    if(q.type === "fill"){
+      const ans = state.answers[q.id] ?? "";
+      const parts = q.template.split("______");
+      const before = parts[0] ?? "";
+      const after  = parts[1] ?? "";
+      bodyHTML = `
+        ${schemaHTML}
+        <div class="fillWrap">
+          <pre class="fillCode">${escapeHtml(before)}<span class="blank"><input id="blankInput" type="text" value="${escapeAttr(ans)}" placeholder="..." /></span>${escapeHtml(after)}</pre>
+        </div>
+      `;
+    }
+
+    if(q.type === "likert"){
+      const current = state.likert[q.id] ?? null;
+      bodyHTML = `
+        <div class="schemaWrap">
+          <div class="schemaLabel">Skala</div>
+          <div class="schemaBox" style="font-family:var(--sans);">
+            1 = stimme gar nicht zu · 2 = eher nicht · 3 = teils/teils · 4 = eher zu · 5 = stimme voll zu
+          </div>
+        </div>
+        <div class="likert" role="group" aria-label="Likert-Auswahl">
+          ${[1,2,3,4,5].map(n=>`
+            <div class="likertBtn ${current===n ? "selected":""}" data-n="${n}" tabindex="0">${n}</div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    const isLast = idx === total - 1;
+
+    el("screen").innerHTML = `
+      <div class="hero" style="align-items:flex-start;">
+        <div style="flex:1">
+          <div class="promptCard">
+            <p class="qPrompt">${escapeHtml(promptWithName(q))}</p>
+          </div>
+          ${bodyHTML}
+          <div class="btnRow">
+            <button class="btn disabled" aria-disabled="true">Zurück</button>
+            <button class="btn primary disabled" id="nextBtn">${isLast ? "Abgeben" : "Weiter"}</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const nextBtn = el("nextBtn");
+
+    if(q.type === "mc"){
+      const nodes = [...document.querySelectorAll(".choice")];
+      nodes.forEach((node, idxNode)=>{
+        const pick = ()=>{
+          const i = Number(node.dataset.i);
+          state.answers[q.id] = i;
+          nodes.forEach(n=>n.classList.remove("selected"));
+          node.classList.add("selected");
+          nextBtn.classList.remove("disabled");
+        };
+        node.addEventListener("click", pick);
+        node.addEventListener("keydown", (e)=>{
+          if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); return; }
+          if(e.key === "ArrowDown" || e.key === "ArrowRight"){
+            e.preventDefault();
+            nodes[Math.min(idxNode+1, nodes.length-1)].focus();
+            return;
+          }
+          if(e.key === "ArrowUp" || e.key === "ArrowLeft"){
+            e.preventDefault();
+            nodes[Math.max(idxNode-1, 0)].focus();
+            return;
+          }
+        });
+      });
+      if(typeof state.answers[q.id] === "number") nextBtn.classList.remove("disabled");
+    }
+
+    if(q.type === "fill"){
+      const inp = el("blankInput");
+      const update = ()=>{
+        const v = inp.value;
+        state.answers[q.id] = v;
+        nextBtn.classList.toggle("disabled", v.trim().length === 0);
+      };
+      inp.addEventListener("input", update);
+      update();
+      setTimeout(()=>inp.focus(), 30);
+    }
+
+    if(q.type === "likert"){
+      const btns = [...document.querySelectorAll(".likertBtn")];
+      const setSel = (n)=>{
+        state.likert[q.id] = n;
+        btns.forEach(b=>b.classList.toggle("selected", Number(b.dataset.n)===n));
+        nextBtn.classList.remove("disabled");
+      };
+      btns.forEach((b, idxBtn)=>{
+        const pick = ()=> setSel(Number(b.dataset.n));
+        b.addEventListener("click", pick);
+        b.addEventListener("keydown",(e)=>{
+          if(e.key==="Enter" || e.key===" "){ e.preventDefault(); pick(); return; }
+          if(e.key === "ArrowRight"){
+            e.preventDefault();
+            btns[Math.min(idxBtn+1, btns.length-1)].focus();
+            return;
+          }
+          if(e.key === "ArrowLeft"){
+            e.preventDefault();
+            btns[Math.max(idxBtn-1, 0)].focus();
+            return;
+          }
+        });
+      });
+      if(state.likert[q.id] != null) nextBtn.classList.remove("disabled");
+    }
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      if(isLast) submit("manual");
+      else { state.step++; renderQuestion(); }
+    });
+  }
+
+  function scoreAndAnalyze(){
+    const contentIds = ["q1","q2","q3","q4","q5","q6","q7","q8"];
+    const correctMap = {};
+    let score = 0;
+
+    ["q1","q2","q3","q4"].forEach(id=>{
+      const q = baseQuestions.find(x=>x.id===id);
+      const a = state.answers[id];
+      const ok = (q && typeof a === "number" && a === q.correctIndex);
+      correctMap[id] = !!ok;
+      if(ok) score++;
+    });
+
+    ["q5","q6","q7","q8"].forEach(id=>{
+      const q = baseQuestions.find(x=>x.id===id);
+      const a = state.answers[id] ?? "";
+      let ok = false;
+      if(q){
+        ok = q.correct.some(c=>{
+          if(id === "q7") return normalizeNoSpace(a) === normalizeNoSpace(c);
+          return normalize(a) === normalize(c);
+        });
+      }
+      correctMap[id] = !!ok;
+      if(ok) score++;
+    });
+
+    const wrongIds = contentIds.filter(id => !correctMap[id]);
+    const specialSet = new Set(["q3","q7","q8"]);
+    const onlySpecialWrong = wrongIds.length > 0 && wrongIds.every(id => specialSet.has(id));
+
+    return { score, correctMap, wrongIds, onlySpecialWrong };
+  }
+
+  function makeCode(score, r1, r2, elapsedSec){
+    return `PRE-S${score}-R${r1}${r2}-T${elapsedSec}`;
+  }
+
+  function renderResult(result){
+    el("progressWrap").style.display = "none";
+    el("pillStep").style.display = "none";
+    el("subline").textContent = "Bewerbungsgespräch – Code";
+
+    const expectedMode = (result.score < 5 || result.onlySpecialWrong) ? "diff" : "free";
+    state.nextMode = expectedMode;
+
+    const modeLabel = (expectedMode === "free") ? "Freier Modus" : "Diff‑Modus (Guided)";
+    const freeStyle = (expectedMode === "free")
+      ? "color: var(--accent); font-weight: 920;"
+      : "color: var(--text); font-weight: 820; opacity:.85;";
+    const diffStyle = (expectedMode === "diff")
+      ? "color: var(--accent); font-weight: 920;"
+      : "color: var(--text); font-weight: 820; opacity:.85;";
+
+    el("screen").innerHTML = `
+      <div class="hero">
+        <div style="flex:1">
+          <h2>Danke, ${escapeHtml(state.name)}.</h2>
+          <p>Das Bewerbungsgespräch ist abgeschlossen. Trage diesen Code auf deinem Blatt bei <b>„Pretest‑Code“</b> ein:</p>
+
+          <div class="schemaWrap" style="margin-top:14px;">
+            <div class="schemaLabel">Pretest‑Code</div>
+            <div class="schemaBox" style="font-size: clamp(17px, 1.25vw + 14px, 20px);">
+              ${escapeHtml(result.code)}
+            </div>
+          </div>
+
+          <div class="schemaWrap" style="margin-top:16px;">
+            <div class="schemaLabel">Auf deinem Blatt</div>
+
+            <div class="promptCard" style="margin: 0 0 12px;">
+              <p class="qPrompt" style="font-weight: 820; margin:0;">
+                Auf deinem Auswertungsblatt bei <b>„Modus“</b> ankreuzen: <b>${modeLabel}</b>.
+              </p>
+              <p style="margin:8px 0 0; color: var(--muted); font-size: var(--small); line-height: 1.5;">
+                Danach unten kurz bestätigen – dann bist du fertig.
+              </p>
+            </div>
+
+            <div class="checkRow" style="margin-top:14px;">
+              <input id="paperAck" type="checkbox" />
+              <div class="txt">Ich habe Code und Modus auf meinem Blatt eingetragen.</div>
+            </div>
+          </div>
+
+          <div class="btnRow">
+            <div></div>
+            <button class="btn primary disabled" id="ackBtn">Bestätigen & weiter</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const nextBtn = el("ackBtn");
+    const paperAck = el("paperAck");
+
+    const sync = ()=>{
+      nextBtn.classList.toggle("disabled", !paperAck.checked);
+    };
+    paperAck.addEventListener("change", sync);
+    sync();
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      renderFeedback();
+    });
+  }
+
+  function renderFeedback(){
+    const res = state.lastResult;
+    if(!res){ renderStart(); return; }
+
+    el("progressWrap").style.display = "none";
+    el("pillStep").style.display = "none";
+    el("pillTimer").style.display = "none";
+    el("subline").textContent = "Bewerbungsgespräch – Feedback";
+
+    const score = res.score;
+
+    if(score < 5){
+      el("screen").innerHTML = `
+        <div class="hero">
+          <div style="flex:1">
+            <h2>Danke, ${escapeHtml(state.name)}.</h2>
+            <p>Kein Stress – da sind noch ein paar kleine Lücken. Wir wiederholen kurz die Grundlagen, dann kannst du bei uns starten.</p>
+            <div class="hint">Nächster Schritt: Grundlagen-Training.</div>
+            <div class="btnRow">
+              <div></div>
+              <button class="btn primary" id="toBasicsBtn">Weiter zu den Grundlagen</button>
+            </div>
+          </div>
+        </div>
+      `;
+      el("toBasicsBtn").addEventListener("click", ()=>{
+        goToGuidedTutorial();
+      });
+      return;
+    }
+
+    if(res.onlySpecialWrong){
+      el("screen").innerHTML = `
+        <div class="hero">
+          <div style="flex:1">
+            <h2>Schon ziemlich gut, ${escapeHtml(state.name)}.</h2>
+            <p>Die Basics sitzen. Nur bei <b>Aggregatfunktionen</b> (z. B. AVG) und/oder <b>Verbundabfragen</b> (zwei Tabellen) sollten wir kurz nachschärfen.</p>
+            <div class="hint">Kurz wiederholen, dann geht’s direkt weiter.</div>
+            <div class="btnRow">
+              <div></div>
+              <button class="btn primary" id="toBasicsBtn">Weiter zu den Grundlagen</button>
+            </div>
+          </div>
+        </div>
+      `;
+      el("toBasicsBtn").addEventListener("click", ()=>{
+        goToGuidedTutorial();
+      });
+      return;
+    }
+
+    renderContract();
+  }
+
+  function renderContract(){
+    el("pillTimer").style.display = "none";
+    el("subline").textContent = "Bewerbungsgespräch – Vertrag";
+
+    el("screen").innerHTML = `
+      <div class="hero">
+        <div style="flex:1">
+          <h2>Glückwunsch, ${escapeHtml(state.name)}.</h2>
+          <p>Wir stellen dich ein. Vertrag kurz abhaken – dann geht’s los.</p>
+
+          <div class="schemaWrap" style="margin-top:14px;">
+            <div class="schemaLabel">Kurzvertrag</div>
+            <div class="schemaBox" style="font-family: var(--sans);">
+              <b>Schulazon – Entwicklervertrag</b><br>
+              Rolle: Normaler Entwickler · Start: sofort · Team: Shop-Engineering<br>
+              Aufgabe: Du hilfst uns dabei, fehlende Buttons im Shop zu implementieren.<br><br>
+              Unterschrift: <b>${escapeHtml(state.name)}</b>
+            </div>
+          </div>
+
+          <div class="checkRow">
+            <input id="sigCheck" type="checkbox" />
+            <div class="txt"><b>X</b> Ich unterschreibe den Vertrag als <b>${escapeHtml(state.name)}</b>.</div>
+          </div>
+
+          <div class="btnRow">
+            <div></div>
+            <button class="btn primary disabled" id="signBtn">Vertrag unterschreiben</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const sigCheck = el("sigCheck");
+    const signBtn = el("signBtn");
+
+    const update = ()=>{
+      const ok = sigCheck.checked;
+      signBtn.classList.toggle("disabled", !ok);
+    };
+
+    sigCheck.addEventListener("change", update);
+    update();
+
+    signBtn.addEventListener("click", ()=>{
+      if(signBtn.classList.contains("disabled")) return;
+      state.contractSigned = true;
+      renderOnboarding();
+    });
+  }
+
+  function renderOnboarding(){
+    el("subline").textContent = "Schulazon – Onboarding";
+
+    el("screen").innerHTML = `
+      <div class="hero">
+        <div style="flex:1">
+          <h2>Eingestellt.</h2>
+          <p>Du bist als normaler Entwickler im Team. Du kannst jetzt direkt helfen, fehlende Buttons in unserem Shop zu programmieren.</p>
+
+          <div class="hint">Nächster Schritt: Shop-Projekt starten.</div>
+
+          <div class="btnRow">
+            <div></div>
+            <button class="btn primary disabled" title="Noch nicht implementiert">Starten</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function submit(mode){
+    if(state.endedAt) return;
+    state.endedAt = Date.now();
+    if(state.timer) clearInterval(state.timer);
+
+    const elapsedSec = Math.min(TOTAL_SEC, Math.max(0, Math.round((state.endedAt - state.startedAt)/1000)));
+
+    const { score, correctMap, wrongIds, onlySpecialWrong } = scoreAndAnalyze();
+
+    const r1 = state.likert.r1 ?? 0;
+    const r2 = state.likert.r2 ?? 0;
+
+    const code = makeCode(score, r1, r2, elapsedSec);
+
+    state.lastResult = { score, r1, r2, elapsedSec, code, correctMap, wrongIds, onlySpecialWrong, mode };
+
+    el("overlay").classList.remove("show");
+    renderResult(state.lastResult);
+  }
+
+  function startTimer(){
+    state.timer = setInterval(()=>{
+      state.remainingSec -= 1;
+      if(state.remainingSec < 0) state.remainingSec = 0;
+      if(el("timerTag")) el("timerTag").textContent = fmtMMSS(state.remainingSec);
+
+      if(state.remainingSec === 0){
+        clearInterval(state.timer);
+        el("overlay").classList.add("show");
+        setTimeout(()=>submit("timeout"), 650);
+      }
+    }, 1000);
+  }
+
+  function startTest(){
+    questions = shuffle(baseQuestions);
+
+    state.startedAt = Date.now();
+    state.endedAt = null;
+    state.step = 0;
+    state.remainingSec = TOTAL_SEC;
+    state.answers = {};
+    state.likert = { r1:null, r2:null };
+    state.lastResult = null;
+    state.contractSigned = false;
+
+    el("pillName").style.display = "flex";
+    el("pillTimer").style.display = "flex";
+    el("pillStep").style.display = "flex";
+    el("nameTag").textContent = state.name;
+
+    startTimer();
+    renderQuestion();
+  }
+
+  async function toggleFullscreen(){
+    try{
+      if(!document.fullscreenElement){
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    }catch{}
+  }
+  el("fsBtn").addEventListener("click", toggleFullscreen);
+  document.addEventListener("fullscreenchange", ()=>{
+    el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+  });
+
+  // Global: Enter = Weiter/Abgeben, ohne die Struktur zu verändern
+  document.addEventListener("keydown", (e)=>{
+    if(e.key !== "Enter") return;
+
+    // Start-Screen: Enter startet, wenn möglich
+    const startBtn = document.getElementById("startBtn");
+    if(startBtn && !startBtn.classList.contains("disabled")){
+      e.preventDefault();
+      startBtn.click();
+      return;
+    }
+
+    // Fragen-Screen: Enter klickt "Weiter/Abgeben"
+    const nextBtn = document.getElementById("nextBtn");
+    if(nextBtn && !nextBtn.classList.contains("disabled")){
+      e.preventDefault();
+      nextBtn.click();
+      return;
+    }
+
+    // Code-Screen: Enter bestätigt, wenn möglich
+    const ackBtn = document.getElementById("ackBtn");
+    if(ackBtn && !ackBtn.classList.contains("disabled")){
+      e.preventDefault();
+      ackBtn.click();
+      return;
+    }
+
+    // Vertrag: Enter unterschreibt, wenn möglich
+    const signBtn = document.getElementById("signBtn");
+    if(signBtn && !signBtn.classList.contains("disabled")){
+      e.preventDefault();
+      signBtn.click();
+      return;
+    }
+  });
+
+
+  renderStart();
+</script>
+</body>
+</html>

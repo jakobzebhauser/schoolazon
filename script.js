@@ -116,6 +116,25 @@ async function init() {
 
 // ---------- UI Binding ----------
 function bindUI() {
+  // If the shop runs inside an iframe (Free/Guided mode), start fully locked to avoid a race
+  // before the parent sends SET_LOCK messages.
+  const inIframe = (window.parent && window.parent !== window);
+  if (inIframe) {
+    document.querySelectorAll("[data-task]").forEach((el) => {
+      el.setAttribute("data-locked", "true");
+      el.setAttribute("aria-disabled", "true");
+    });
+
+    // Special-case: search should not accept input while locked
+    const input = document.getElementById("searchInput");
+    const clear = document.getElementById("searchClear");
+    if (input) {
+      input.readOnly = true;
+      input.style.pointerEvents = "none";
+      try { input.blur(); } catch (_) {}
+    }
+    if (clear) clear.style.pointerEvents = "none";
+  }
   // Ensure cart action buttons participate in the lock/task system.
   // In FreeMode, locked controls must stay clickable so the parent can open the editor.
   const _btnShowCart = document.getElementById("btnShowCart");

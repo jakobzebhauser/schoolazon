@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schulazon – Grundlagen-Refresh</title>
+
+  <!-- Shop-Font (wie im Shop) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Apple-ish system colors */
+      --blue:   #007AFF;
+      --purple: #AF52DE;
+      --teal:   #34C759;
+      --amber:  #FF9500;
+      --pink:   #FF2D55;
+
+      --bg0: #F5F5F7;
+      --bg1: #EEF1F7;
+      --text: #0B0F18;
+      --muted: rgba(11,15,24,.62);
+
+      --hair: rgba(10, 15, 24, .08);
+      --hair2: rgba(10, 15, 24, .05);
+
+      --shadow: 0 24px 70px rgba(10,15,24,.10);
+      --shadow2: 0 12px 30px rgba(10,15,24,.08);
+
+      --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.62);
+      --glass3: rgba(255,255,255,.46);
+
+      --focus: 0 0 0 6px rgba(0,122,255,.22);
+
+      --radiusLg: 26px;
+      --radiusMd: 18px;
+      --radiusSm: 14px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Helvetica, Arial;
+
+      --base: clamp(18px, 1.35vw + 12px, 21px);
+      --small: clamp(14px, 0.95vw + 10px, 16px);
+      --h1: clamp(22px, 1.9vw + 14px, 30px);
+      --sql: clamp(14px, 1.05vw + 10px, 16px);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      font-family: var(--sans);
+      font-size: var(--base);
+      color: var(--text);
+      background:
+        radial-gradient(900px 520px at 16% 10%, rgba(0,122,255,.14), transparent 62%),
+        radial-gradient(900px 520px at 86% 12%, rgba(175,82,222,.12), transparent 62%),
+        radial-gradient(980px 680px at 60% 92%, rgba(255,45,85,.08), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg0));
+    }
+
+    .shell{
+      width: min(1240px, 94vw);
+      margin: 0 auto;
+      padding: 16px 14px 26px;
+    }
+
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 12px; margin-bottom: 12px;
+      padding: 10px 10px;
+      border-radius: var(--radiusLg);
+      background: var(--glass3);
+      border: 1px solid var(--hair2);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 10px 34px rgba(10,15,24,.06);
+    }
+
+    .brand{display:flex; align-items:center; gap:12px;}
+    .appIcon{
+      width: 44px; height: 44px;
+      border-radius: 16px;
+      background:
+        radial-gradient(18px 18px at 30% 28%, rgba(255,255,255,.88), transparent 58%),
+        linear-gradient(180deg, rgba(0,122,255,.96), rgba(175,82,222,.70));
+      box-shadow: 0 16px 34px rgba(0,122,255,.18);
+      border: 1px solid rgba(255,255,255,.38);
+    }
+
+
+    /* Shop-Wordmark (wie im Shop) */
+    .logo{
+      font-family: "Roboto", var(--sans);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: 0;
+      color: rgba(11,15,24,.92);
+    }
+    .logo span{color:#f08804}
+    .brand h1{font-size: 15px; margin:0; font-weight: 900; letter-spacing: .2px; line-height: 1.05;}
+    .brand .sub{font-size: var(--small); color: var(--muted); margin-top:2px; line-height: 1.15;}
+
+    .status{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
+
+    .pill, .pillBtn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--hair2);
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 10px 22px rgba(10,15,24,.06);
+      font-size: var(--small);
+      color: var(--muted);
+      user-select:none;
+      white-space: nowrap;
+    }
+    .pill b{color: var(--text); font-weight: 900}
+
+    .pillBtn{
+      cursor:pointer;
+      color: rgba(11,15,24,.92);
+      font-weight: 900;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
+    .pillBtn:active{transform: translateY(0px)}
+    .pillBtn:focus{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
+
+    .card{
+      background: var(--glass2);
+      border: 1px solid var(--hair2);
+      border-radius: var(--radiusLg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow:hidden;
+    }
+    .cardInner{padding: 22px 22px 18px;}
+
+    .qTitle{
+      font-size: var(--h1);
+      font-weight: 950;
+      margin: 0 0 10px;
+      letter-spacing: .15px;
+      line-height: 1.12;
+    }
+    .qContext{
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: var(--small);
+    }
+
+    /* Theory: Apple-like card + minimal highlights */
+    .theory{
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      margin: 12px 0 14px;
+    }
+    .theoryHead{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 12px;
+      background:
+        linear-gradient(180deg, rgba(0,122,255,.10), rgba(255,255,255,.00));
+      border-bottom: 1px solid rgba(0,122,255,.10);
+      font-size: var(--small);
+      color: rgba(11,15,24,.86);
+      font-weight: 950;
+    }
+    .theoryBody{
+      padding: 12px 14px;
+      font-size: var(--small);
+      line-height: 1.65;
+      color: rgba(11,15,24,.88);
+    }
+    .theoryBody p{margin:0}
+    .theoryBody p + p{margin-top:10px}
+    .theoryBody ul{margin: 8px 0 0 18px; padding:0}
+    .theoryBody li{margin: 6px 0}
+
+    /* Minimal highlight set */
+    .hi{
+      font-weight: 900;
+      color: rgba(11,15,24,.92);
+      background: rgba(175,82,222,.10);
+      border: 1px solid rgba(175,82,222,.14);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+    .hiCode{
+      font-family: var(--mono);
+      font-weight: 900;
+      color: rgba(0,122,255,.96);
+      background: rgba(0,122,255,.10);
+      border: 1px solid rgba(0,122,255,.14);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+
+    .schemaWrap{margin: 12px 0 14px;}
+    .schemaLabel{
+      --tone: var(--blue);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--tone) 14%, white);
+      border: 1px solid color-mix(in srgb, var(--tone) 22%, white);
+      color: rgba(11,15,24,.86);
+      font-size: var(--small);
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+    .tone-blue{--tone: var(--blue)}
+    .tone-purple{--tone: var(--purple)}
+    .tone-teal{--tone: var(--teal)}
+    .tone-amber{--tone: var(--amber)}
+    .tone-pink{--tone: var(--pink)}
+
+    .codeBox{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      overflow:auto;
+      box-shadow: var(--shadow2);
+    }
+    pre.sql{
+      margin:0;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      line-height: 1.7;
+      white-space: pre;
+      color: rgba(11,15,24,.92);
+    }
+    .kw{color: rgba(0,122,255,.96); font-weight: 900}
+    .cm{color: rgba(91,101,118,.92);}
+    .id{color: rgba(11,15,24,.86); font-weight: 750;}
+    .num{color: rgba(11,15,24,.86); font-weight: 900;}
+    .op{color: rgba(11,15,24,.86); font-weight: 900;}
+
+    /* Tables: cleaner, with subtle color */
+    .tableGroup{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin: 10px 0 0;
+    }
+    .miniTable{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.80);
+      font-size: var(--small);
+      box-shadow: var(--shadow2);
+    }
+    .miniTable th, .miniTable td{
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--hair2);
+      vertical-align: top;
+      color: rgba(11,15,24,.88);
+    }
+    .miniTable th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-weight: 950;
+      color: rgba(11,15,24,.92);
+      background: rgba(10,15,24,.03);
+    }
+    .miniTable tr:last-child td{border-bottom:none}
+    .miniTable tr:nth-child(even) td{background: rgba(10,15,24,.012)}
+    .miniTable tr:hover td{background: rgba(0,122,255,.055)}
+    .miniTable code{font-family: var(--mono); font-size: 0.95em}
+
+    /* DISTINCT Visual */
+    .distinctViz{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.68);
+      border-radius: var(--radiusMd);
+      padding: 12px;
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      --d: 0;
+    }
+    .rangeRow{
+      display:flex; align-items:center; gap:12px;
+      margin: 2px 0 10px;
+    }
+    .rangeRow label{
+      font-size: var(--small);
+      font-weight: 950;
+      color: rgba(11,15,24,.86);
+      white-space: nowrap;
+    }
+    .rangeRow .val{
+      font-size: var(--small);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    input[type="range"]{
+      -webkit-appearance:none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(10,15,24,.10);
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(175,82,222,1), rgba(0,122,255,.85));
+      box-shadow: 0 12px 24px rgba(175,82,222,.16);
+      border: 2px solid rgba(255,255,255,.90);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb{
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      background: rgba(175,82,222,.96);
+      border: 2px solid rgba(255,255,255,.90);
+      cursor: pointer;
+    }
+    .distinctRaw .dup{
+      opacity: calc(1 - var(--d));
+      filter: blur(calc(var(--d) * 0.7px));
+    }
+    .distinctOut{
+      opacity: var(--d);
+      transform: translateY(calc((1 - var(--d)) * 6px));
+      transition: opacity .12s ease, transform .12s ease;
+    }
+
+    .taskCard{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.74);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      margin-top: 10px;
+      box-shadow: var(--shadow2);
+      position: relative;
+      overflow:hidden;
+    }
+    .taskCard::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width: 6px;
+      background: linear-gradient(180deg, rgba(0,122,255,.85), rgba(175,82,222,.70));
+    }
+
+    .blank input{
+      height: 40px;
+      border-radius: var(--radiusSm);
+      border: 1px dashed rgba(0,122,255,.55);
+      background: rgba(0,122,255,.06);
+      padding: 0 10px;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      outline:none;
+      text-transform: uppercase;
+      min-width: 160px;
+    }
+    .blank input:focus{
+      box-shadow: var(--focus);
+      border-style: solid;
+      background: rgba(255,255,255,.90);
+    }
+
+    .feedback{
+      margin-top: 10px;
+      padding: 12px 12px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.80);
+      color: rgba(11,15,24,.86);
+      font-size: var(--small);
+      line-height: 1.45;
+      display:none;
+      box-shadow: var(--shadow2);
+    }
+    .feedback.ok{
+      border-color: rgba(52,199,89,.22);
+      background: linear-gradient(180deg, rgba(52,199,89,.10), rgba(255,255,255,.76));
+    }
+    .feedback.bad{
+      border-color: rgba(255,149,0,.22);
+      background: linear-gradient(180deg, rgba(255,149,0,.10), rgba(255,255,255,.76));
+    }
+    .feedback.show{display:block}
+
+    .matchGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .matchCol{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.72);
+      border-radius: var(--radiusMd);
+      padding: 12px;
+      box-shadow: var(--shadow2);
+    }
+    .matchTitle{
+      font-size: var(--small);
+      font-weight: 950;
+      color: rgba(11,15,24,.88);
+      margin: 2px 0 10px;
+    }
+    .chip{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      border-radius: var(--radiusMd);
+      padding: 12px 12px;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      user-select:none;
+      font-size: var(--small);
+      color: rgba(11,15,24,.92);
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
+      margin-bottom: 10px;
+      outline:none;
+    }
+    .chip:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
+    .chip:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
+    .chip.selected{
+      border-color: rgba(0,122,255,.38);
+      background: rgba(0,122,255,.08);
+    }
+    .chip .tag{
+      font-family: var(--mono);
+      font-weight: 900;
+      color: rgba(0,122,255,.92);
+      white-space:nowrap;
+    }
+
+    .btnRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top: 16px;
+    }
+    .btn{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      color: rgba(11,15,24,.92);
+      padding: 12px 14px;
+      border-radius: var(--radiusMd);
+      font-weight: 950;
+      font-size: var(--small);
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
+    .btn:active{transform: translateY(0px)}
+    .btn:focus{outline:none; box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
+    .btn.primary{
+      border-color: rgba(0,122,255,.22);
+      background: linear-gradient(180deg, rgba(0,122,255,.14), rgba(175,82,222,.06));
+    }
+    .btn.ghost{background: rgba(255,255,255,.66);}
+    .btn.disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none !important;
+      box-shadow:none !important;
+    }
+
+    .progressWrap{
+      padding: 14px 22px;
+      border-top: 1px solid var(--hair2);
+      background: rgba(255,255,255,.44);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .progress{
+      flex:1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(10,15,24,.08);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(0,122,255,1), rgba(175,82,222,.90), rgba(255,45,85,.75));
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .stepTxt{font-size: var(--small); color: var(--muted)}
+    .stepTxt b{color: var(--text); font-weight: 950}
+
+    @media (prefers-reduced-motion: reduce){
+      .btn, .chip, .pillBtn, .bar{transition:none !important}
+      .btn:hover, .chip:hover, .pillBtn:hover{transform:none !important}
+      .distinctOut{transition:none !important}
+    }
+
+    @media (max-width: 560px){
+      .shell{padding: 14px 10px 22px}
+      .cardInner{padding: 18px}
+      .progressWrap{padding: 12px 18px}
+      .matchGrid{grid-template-columns: 1fr;}
+      .topbar{padding: 10px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="appIcon" aria-hidden="true"></div>
+        <div>
+          <div class="logo">schul<span>azon</span></div>
+          <div class="sub" id="subline">Grundlagen-Refresh</div>
+        </div>
+      </div>
+
+      <div class="status">
+        <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
+        <div class="pill" id="pillName" style="display:none;">
+          <span>Hi, <b id="nameTag"></b></span>
+        </div>
+        <div class="pill">
+          <span>Seite</span> <b id="stepTag">1/1</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardInner" id="screen"></div>
+
+      <div class="progressWrap">
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+        <div class="stepTxt"><b id="stepSmall">1</b> / <span id="stepTotal">1</span></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const el = (id) => document.getElementById(id);
+
+  function escapeHtml(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function escapeAttr(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;").replaceAll('"',"&quot;")
+      .replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+  function normalize(str){
+    return (str ?? "").toString().trim()
+      .replace(/;$/,"")
+      .replace(/\s+/g," ")
+      .toLowerCase();
+  }
+
+  function getName(){
+    const qp = new URLSearchParams(location.search);
+    const fromQuery = qp.get("name") || "";
+    const fromGlobal = (window.SCHULAZON_NAME || "").toString();
+    const fromSession = (sessionStorage.getItem("schulazon_name") || "");
+    const fromLocal = (localStorage.getItem("schulazon_name") || "");
+    return (fromGlobal || fromSession || fromLocal || fromQuery).trim();
+  }
+
+  const state = { name: getName(), i: 0 };
+
+  // Name best-effort speichern, damit Free Mode ihn übernehmen kann
+  if(state.name){
+    try{ sessionStorage.setItem("schulazon_name", state.name); }catch{}
+    try{ localStorage.setItem("schulazon_name", state.name); }catch{}
+    try{ window.SCHULAZON_NAME = state.name; }catch{}
+  }
+
+
+  function withName(s){
+    if(!state.name) return s;
+    return `${state.name}, ${s}`;
+  }
+  function addNamePrefixText(text){
+    if(!state.name) return text;
+    const n = state.name.toLowerCase();
+
+    if(Array.isArray(text)){
+      if(!text.length) return text;
+      const first = (text[0] ?? "").toString();
+      if(first.trim().toLowerCase().startsWith(n)) return text;
+      return [ `${state.name}, ${first}`, ...text.slice(1) ];
+    }
+    if(typeof text === "string"){
+      const t = text.trim();
+      if(!t) return text;
+      if(t.toLowerCase().startsWith(n)) return text;
+      return `${state.name}, ${text}`;
+    }
+    return text;
+  }
+
+  function updateNamePill(){
+    if(state.name){
+      el("pillName").style.display = "flex";
+      el("nameTag").textContent = state.name;
+    } else {
+      el("pillName").style.display = "none";
+    }
+  }
+
+  /* ---------- SQL Highlighting (robust) ---------- */
+  const KW_SET = new Set([
+    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT",
+    "COUNT","SUM","AVG","MIN","MAX","AS","AND","OR","NOT"
+  ]);
+
+  function isNumberToken(t){ return /^\d+$/.test(t); }
+  function isOpToken(t){ return /^(<=|>=|<>|=|<|>)$/.test(t); }
+  function isWordToken(t){ return /^[A-Za-z_][A-Za-z0-9_]*$/.test(t); }
+
+  function highlightSqlLine(line){
+    const raw = (line ?? "").toString();
+    if(raw.trim().startsWith("--")) return `<span class="cm">${escapeHtml(raw)}</span>`;
+
+    const re = /(\bORDER\s+BY\b|\bGROUP\s+BY\b|<=|>=|<>|=|<|>|\b\d+\b|\b[A-Za-z_][A-Za-z0-9_]*\b|\s+|.)/gi;
+    const out = [];
+    let m;
+
+    while((m = re.exec(raw)) !== null){
+      const tok = m[0];
+
+      if(/^\s+$/.test(tok)){ out.push(escapeHtml(tok)); continue; }
+      if(isOpToken(tok)){ out.push(`<span class="op">${escapeHtml(tok)}</span>`); continue; }
+      if(isNumberToken(tok)){ out.push(`<span class="num">${escapeHtml(tok)}</span>`); continue; }
+
+      const up = tok.toUpperCase().replace(/\s+/g, " ");
+      if(KW_SET.has(up)){ out.push(`<span class="kw">${escapeHtml(tok)}</span>`); continue; }
+
+      if(isWordToken(tok) && tok.toUpperCase() !== "NULL"){
+        out.push(`<span class="id">${escapeHtml(tok)}</span>`);
+        continue;
+      }
+
+      out.push(escapeHtml(tok));
+    }
+
+    return out.join("");
+  }
+
+  function renderSql(lines, toneClass="tone-blue"){
+    if(!lines || !lines.length) return "";
+    return `
+      <div class="schemaWrap">
+        <div class="schemaLabel ${toneClass}">SQL</div>
+        <div class="codeBox"><pre class="sql">${lines.map(highlightSqlLine).join("\n")}</pre></div>
+      </div>
+    `;
+  }
+
+  /* ---------- Theory highlighting (ONLY key terms) ---------- */
+  const THEORY_CODE = new Set([
+    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","AND","OR","NOT",
+    "COUNT","SUM","AVG","MIN","MAX","AS"
+  ]);
+
+  const THEORY_RE = new RegExp(
+    [
+      "\\bORDER\\s+BY\\b",
+      "\\bGROUP\\s+BY\\b",
+      "\\bSELECT\\b","\\bFROM\\b","\\bWHERE\\b","\\bHAVING\\b","\\bDISTINCT\\b",
+      "\\bCOUNT\\b","\\bSUM\\b","\\bAVG\\b","\\bMIN\\b","\\bMAX\\b","\\bAS\\b",
+      "\\bAND\\b","\\bOR\\b","\\bNOT\\b",
+      "\\bPrimärschlüssel\\b",
+      "\\bFremdschlüssel\\b",
+      "\\bBeziehungstabelle\\b",
+      "personenbezogene Daten",
+      "Datenschutz\\-Grundverordnung",
+      "\\b1:n\\b","\\bn:m\\b"
+    ].join("|"),
+    "gi"
+  );
+
+  function highlightTheoryText(escapedText){
+    return escapedText.replace(THEORY_RE, (match)=>{
+      const norm = match.toUpperCase().replace(/\s+/g, " ");
+      const isCode = THEORY_CODE.has(norm);
+      return isCode ? `<span class="hiCode">${match}</span>` : `<span class="hi">${match}</span>`;
+    });
+  }
+
+  function renderTheory(text, head="Theorie"){
+    if(!text) return "";
+    const body = Array.isArray(text)
+      ? text.map(p=>`<p>${highlightTheoryText(escapeHtml(p))}</p>`).join("")
+      : `<p>${highlightTheoryText(escapeHtml(text))}</p>`;
+
+    return `
+      <section class="theory" aria-label="${escapeAttr(head)}">
+        <div class="theoryHead">${escapeHtml(head)}</div>
+        <div class="theoryBody">${body}</div>
+      </section>
+    `;
+  }
+
+  function renderStory(lines){
+    if(!lines) return "";
+    const html = Array.isArray(lines)
+      ? lines.map(x=>`<p>${escapeHtml(x)}</p>`).join("")
+      : `<p>${escapeHtml(lines)}</p>`;
+    return `
+      <section class="theory" aria-label="Kontext">
+        <div class="theoryHead">Kontext</div>
+        <div class="theoryBody">${html}</div>
+      </section>
+    `;
+  }
+
+  function renderRecap(html){
+    if(!html) return "";
+    return `
+      <section class="theory" aria-label="Übersicht">
+        <div class="theoryHead">Übersicht</div>
+        <div class="theoryBody">${html}</div>
+      </section>
+    `;
+  }
+
+  /* ---------- DISTINCT Visual ---------- */
+  function renderDistinctViz(){
+    const raw = [2,3,3,5,5,5];
+    const distinct = [2,3,5];
+
+    const seen = new Set();
+    const mkRaw = raw.map((v, i)=>{
+      const isDup = seen.has(v);
+      seen.add(v);
+      return `<tr class="${isDup ? "dup" : ""}"><td>${i+1}</td><td>${v}</td></tr>`;
+    }).join("");
+
+    const mkDistinct = distinct.map((v, i)=>`<tr><td>${i+1}</td><td>${v}</td></tr>`).join("");
+
+    return `
+      <div class="schemaWrap">
+        <div class="schemaLabel tone-purple">DISTINCT</div>
+
+        <div class="distinctViz" id="distinctViz" style="--d: 0;">
+          <div class="rangeRow">
+            <label for="distinctSlider">Duplikate ausblenden</label>
+            <input id="distinctSlider" type="range" min="0" max="100" value="0" />
+            <div class="val" id="distinctVal">0%</div>
+          </div>
+
+          <div class="tableGroup">
+            <div class="distinctRaw">
+              <table class="miniTable" aria-label="Beispiel-Tabelle">
+                <thead><tr><th>#</th><th>liefertage</th></tr></thead>
+                <tbody>${mkRaw}</tbody>
+              </table>
+            </div>
+
+            <div class="distinctOut">
+              <table class="miniTable" aria-label="Ergebnis DISTINCT">
+                <thead><tr><th>#</th><th>liefertage</th></tr></thead>
+                <tbody>${mkDistinct}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindDistinctSlider(){
+    const box = document.getElementById("distinctViz");
+    const slider = document.getElementById("distinctSlider");
+    const val = document.getElementById("distinctVal");
+    if(!box || !slider || !val) return;
+
+    const apply = ()=>{
+      const v = Number(slider.value || 0);
+      val.textContent = `${v}%`;
+      box.style.setProperty("--d", String(v/100));
+    };
+    slider.addEventListener("input", apply);
+    apply();
+  }
+
+  /* ---------- Pages ---------- */
+  const pages = [
+    {
+      id:"story_1",
+      title:"Dein Auftrag",
+      context: withName("kurze Mission, klare Schritte."),
+      story: [
+        "Du bist gerade zurück im Schulazon-HQ: Im Shop sind einige Buttons noch gesperrt, weil dafür saubere SQL-Abfragen nötig sind.",
+        "Wir machen jetzt einen schnellen Grundlagen-Check – damit du danach wieder sicher abfragen, filtern und sortieren kannst."
+      ]
+    },
+    {
+      id:"story_2",
+      title:"Was du gleich wieder drauf hast",
+      context: "Alles in kleinen Portionen – pro Seite genau ein Thema.",
+      recapHtml: `
+        <p style="margin:0; font-weight:900; color: rgba(11,15,24,.88);">Heute wiederholen wir:</p>
+        <ul>
+          <li>Bausteine: <code>SELECT</code>, <code>FROM</code>, <code>WHERE</code>, <code>ORDER BY</code></li>
+          <li><code>DISTINCT</code> (Duplikate entfernen)</li>
+          <li>Bedingungen: Operatoren, <code>AND</code>/<code>OR</code>/<code>NOT</code></li>
+          <li>Aggregatfunktionen + Alias (<code>AS</code>)</li>
+          <li><code>GROUP BY</code> und <code>HAVING</code></li>
+          <li>Beziehungen (1:n, n:m) und personenbezogene Daten</li>
+        </ul>
+      `
+    },
+
+    {
+      id:"intro",
+      title:"Einleitung",
+      context: withName("gut, dass du dranbleibst. Wir wiederholen die wichtigsten SQL-Grundlagen – Schritt für Schritt."),
+      nameInTheory: true,
+      theory: ["SQL ist die Standardsprache, um Daten aus einer Datenbank abzufragen. Eine SQL-Abfrage besteht aus festen Bausteinen (z. B. SELECT, FROM, WHERE), die du je nach Ziel kombinierst."]
+    },
+    {
+      id:"blocks",
+      title:"Bausteine einer SQL-Abfrage",
+      context: "Wenn du die Bausteine kennst, kannst du Abfragen zuverlässig zusammensetzen.",
+      theory: "Das sind die wichtigsten Bausteine und wofür du sie brauchst.",
+      table: `
+        <div class="schemaWrap">
+          <div class="schemaLabel tone-blue">Bausteine</div>
+          <div class="tableGroup">
+            <table class="miniTable" aria-label="SQL-Bausteine">
+              <thead><tr><th>Baustein</th><th>Zweck (kurz)</th></tr></thead>
+              <tbody>
+                <tr><td><code>SELECT</code></td><td>Welche Spalten sollen angezeigt werden</td></tr>
+                <tr><td><code>FROM</code></td><td>Aus welcher(n) Tabelle(n) kommen die Daten</td></tr>
+                <tr><td><code>WHERE</code></td><td>Welche Zeilen sollen ausgewählt werden (Bedingungen)</td></tr>
+                <tr><td><code>ORDER BY</code></td><td>Sortierung der Ergebnistabelle</td></tr>
+                <tr><td>Aggregat / <code>GROUP BY</code> / <code>HAVING</code></td><td>Zusammenfassen und Filtern von Gruppen</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `
+    },
+    {
+      id:"task_match_blocks",
+      type:"match",
+      title:"Aufgabe 1/7: Zuordnen",
+      context: "kurz zum Warmwerden: ordne Baustein → Zweck zu.",
+      nameInPrompt: true,
+      theory: "Klicke zuerst links (Baustein), dann rechts (Zweck). Wenn alles richtig ist, kannst du weiter.",
+      left: [{key:"SELECT",label:"SELECT"},{key:"FROM",label:"FROM"},{key:"WHERE",label:"WHERE"},{key:"ORDER BY",label:"ORDER BY"}],
+      right: [
+        {key:"SELECT",label:"Welche Spalten sollen angezeigt werden"},
+        {key:"FROM",label:"Aus welcher Tabelle kommen die Daten"},
+        {key:"WHERE",label:"Welche Zeilen werden gefiltert"},
+        {key:"ORDER BY",label:"Wie wird sortiert"}
+      ]
+    },
+    {
+      id:"keys",
+      title:"Schlüssel",
+      context: "Schlüssel sorgen dafür, dass Datensätze eindeutig sind und Tabellen verbunden werden können.",
+      theory: ["Eine Datenbank speichert Daten in Tabellen, in denen jede Zeile ein Datensatz ist und jede Spalte ein Attribut. Ein Primärschlüssel identifiziert einen Datensatz eindeutig; ein Fremdschlüssel verweist auf den Primärschlüssel einer anderen Tabelle, um Tabellen zu verbinden."],
+      sqlTone: "tone-blue",
+      sql: ["-- Beispiel (Shop-DB)","produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"]
+    },
+    {
+      id:"select",
+      title:"SELECT … FROM …",
+      context: "Damit legst du fest, welche Spalten du aus welcher Tabelle sehen willst.",
+      theory: ["* bedeutet „alle Spalten“, und DISTINCT sorgt dafür, dass gleiche Werte in der Ergebnisspalte nur einmal vorkommen."],
+      sqlTone: "tone-blue",
+      sql: [
+        "-- alle Spalten, alle Datensätze",
+        "SELECT *",
+        "FROM produkte;",
+        "",
+        "-- nur eine Spalte",
+        "SELECT liefertage",
+        "FROM produkte;",
+        "",
+        "-- ohne Duplikate",
+        "SELECT DISTINCT liefertage",
+        "FROM produkte;"
+      ],
+      distinctViz: true
+    },
+    {
+      id:"task_distinct",
+      type:"fill",
+      title:"Aufgabe 2/7: Lücke",
+      context:"20 Sekunden: das Wort muss sitzen.",
+      nameInPrompt: true,
+      prompt:"Liefert jede Lieferzeit nur einmal:",
+      template:["SELECT ",{blank:"DISTINCT"}," liefertage","\nFROM produkte;"],
+      feedbackOk:"Richtig. DISTINCT entfernt Duplikate.",
+      feedbackNo:"Nicht ganz. Gesucht ist DISTINCT."
+    },
+    {
+      id:"where",
+      title:"WHERE",
+      context: "Mit WHERE wählst du die passenden Zeilen aus.",
+      nameInTheory: true,
+      theory: ["WHERE filtert Zeilen: Nur Datensätze, die die Bedingung erfüllen, kommen ins Ergebnis. Mehrere Bedingungen kannst du mit AND und OR verknüpfen; NOT kehrt eine Bedingung um."],
+      table: `
+        <div class="schemaWrap">
+          <div class="schemaLabel tone-teal">Operatoren & Logik</div>
+          <div class="tableGroup">
+            <table class="miniTable" aria-label="Operatoren">
+              <thead><tr><th>Operator</th><th>Bedeutung</th></tr></thead>
+              <tbody>
+                <tr><td><code>=</code></td><td>gleich</td></tr>
+                <tr><td><code>&lt; / &lt;=</code></td><td>kleiner / kleiner-gleich</td></tr>
+                <tr><td><code>&gt; / &gt;=</code></td><td>größer / größer-gleich</td></tr>
+              </tbody>
+            </table>
+            <table class="miniTable" aria-label="Logik">
+              <thead><tr><th>Logik</th><th>Wirkung</th></tr></thead>
+              <tbody>
+                <tr><td><code>AND</code></td><td>beide Bedingungen müssen wahr sein</td></tr>
+                <tr><td><code>OR</code></td><td>mindestens eine Bedingung muss wahr sein</td></tr>
+                <tr><td><code>NOT</code></td><td>macht „wahr“ zu „falsch“ (und umgekehrt)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `,
+      sqlTone: "tone-teal",
+      sql: ["SELECT *","FROM produkte","WHERE preis < 20 AND lagerbestand > 0;"]
+    },
+    {
+      id:"task_where",
+      type:"fill",
+      title:"Aufgabe 3/7: Lücke",
+      context:"sauber lesen: beide Bedingungen gleichzeitig.",
+      prompt:"„Preis unter 20 und auf Lager“:",
+      template:["SELECT *","\nFROM produkte","\nWHERE preis < 20 ",{blank:"AND"}," lagerbestand > 0;"],
+      feedbackOk:"Richtig. AND = beide müssen gelten.",
+      feedbackNo:"Nicht ganz. Gesucht ist AND."
+    },
+    {
+      id:"task_not",
+      type:"fill",
+      title:"Aufgabe 4/7: NOT",
+      context:"kurz: eine Bedingung verneinen.",
+      nameInPrompt: true,
+      prompt:"„Nicht Kategorie 2“:",
+      template:["SELECT *","\nFROM produkte","\nWHERE ",{blank:"NOT"}," kategorie_id = 2;"],
+      feedbackOk:"Richtig. NOT kehrt die Bedingung um.",
+      feedbackNo:"Nicht ganz. Gesucht ist NOT."
+    },
+    {
+      id:"order",
+      title:"ORDER BY",
+      context: "ORDER BY sortiert die Ergebnistabelle.",
+      theory: ["ORDER BY sortiert die Ergebnistabelle nach einer oder mehreren Spalten. Du kannst aufsteigend (ASC) oder absteigend (DESC) sortieren."],
+      sqlTone: "tone-blue",
+      sql: ["-- billigste Produkte zuerst","SELECT *","FROM produkte","ORDER BY preis ASC;"]
+    },
+    {
+      id:"task_order",
+      type:"fill",
+      title:"Aufgabe 5/7: Lücke",
+      context:"teuer → billig: ein Wort.",
+      nameInPrompt: true,
+      prompt:"Sortiere teuer → billig:",
+      template:["SELECT *","\nFROM produkte","\nORDER BY preis ",{blank:"DESC"},";"],
+      feedbackOk:"Richtig. DESC sortiert absteigend.",
+      feedbackNo:"Nicht ganz. Gesucht ist DESC."
+    },
+
+    {
+      id:"agg",
+      title:"Aggregat & AS",
+      context: "Aggregatfunktionen fassen viele Zeilen zusammen; AS benennt Ergebnis-Spalten um.",
+      theory: ["Aggregatfunktionen fassen viele Zeilen zu einem Ergebniswert zusammen (z. B. Anzahl, Minimum, Durchschnitt). Mit AS gibst du Spalten im Ergebnis einen verständlichen Namen (Alias)."],
+      table: `
+        <div class="schemaWrap">
+          <div class="schemaLabel tone-amber">Aggregatfunktionen</div>
+          <div class="tableGroup">
+            <table class="miniTable" aria-label="Aggregatfunktionen">
+              <thead><tr><th>Aggregatfunktion</th><th>Zweck</th></tr></thead>
+              <tbody>
+                <tr><td><code>COUNT(...)</code></td><td>zählt Werte/Zeilen</td></tr>
+                <tr><td><code>SUM(...)</code></td><td>Summe</td></tr>
+                <tr><td><code>AVG(...)</code></td><td>Durchschnitt</td></tr>
+                <tr><td><code>MIN(...)</code></td><td>kleinster Wert</td></tr>
+                <tr><td><code>MAX(...)</code></td><td>größter Wert</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `,
+      sqlTone: "tone-amber",
+      sql: ["SELECT COUNT(*) AS anzahl_produkte","FROM produkte;","","SELECT AVG(preis) AS durchschnittspreis","FROM produkte;"]
+    },
+
+    {
+      id:"task_agg_new",
+      type:"fill_multi",
+      title:"Aufgabe 6/7: Zwei Funktionen",
+      context: "Wähle die passende Aggregatfunktion.",
+      nameInPrompt: true,
+      blocks:[
+        { template:"SELECT ______(lagerbestand) AS gesamtbestand\nFROM produkte;", answer:"SUM" },
+        { template:"SELECT ______(preis) AS teuerster_preis\nFROM produkte;", answer:"MAX" }
+      ],
+      feedbackOk:"Richtig. SUM bildet eine Summe, MAX liefert den größten Wert.",
+      feedbackNo:"Mindestens eine Lücke ist falsch. Gesucht sind SUM und MAX."
+    },
+    {
+      id:"task_count_distinct",
+      type:"fill",
+      title:"Aufgabe 7/7: COUNT DISTINCT",
+      context: "Kategorien ohne Duplikate zählen.",
+      prompt:"Zähle unterschiedliche Kategorien:",
+      template:["SELECT COUNT(",{blank:"DISTINCT"}," kategorie_id) AS anzahl_kategorien","\nFROM produkte;"],
+      feedbackOk:"Richtig. COUNT(DISTINCT ...) zählt eindeutige Werte.",
+      feedbackNo:"Nicht ganz. Gesucht ist DISTINCT."
+    },
+
+    {
+      id:"group",
+      title:"GROUP BY & HAVING",
+      context: "GROUP BY gruppiert Zeilen; HAVING filtert Gruppen.",
+      theory: ["GROUP BY bildet Gruppen von Zeilen mit gleichem Wert in einer Spalte, damit du pro Gruppe Aggregatwerte berechnen kannst. HAVING filtert anschließend Gruppen (nicht einzelne Zeilen)."],
+      sqlTone: "tone-purple",
+      sql: ["SELECT kategorie_id, COUNT(*) AS anzahl","FROM produkte","GROUP BY kategorie_id","HAVING COUNT(*) >= 2;"]
+    },
+    {
+      id:"task_having",
+      type:"fill",
+      title:"Zusatz: HAVING",
+      context: "wenn du das schaffst, sitzt GROUP BY wirklich.",
+      nameInPrompt: true,
+      prompt:"Filtere Gruppen mit mindestens 2 Produkten:",
+      template:["SELECT kategorie_id, COUNT(*) AS anzahl","\nFROM produkte","\nGROUP BY kategorie_id","\n",{blank:"HAVING"}," COUNT(*) >= 2;"],
+      feedbackOk:"Richtig. HAVING filtert Gruppen nach dem GROUP BY.",
+      feedbackNo:"Nicht ganz. Gesucht ist HAVING."
+    },
+
+    {
+      id:"rel_1n",
+      title:"Verbund 1:n",
+      context: "1:n bedeutet: ein Datensatz gehört zu vielen Datensätzen auf der anderen Seite.",
+      theory: ["Eine 1:n-Beziehung bedeutet: Ein Datensatz auf der „1-Seite“ gehört zu vielen Datensätzen auf der „n-Seite“. In Tabellen setzt man das um, indem man den Primärschlüssel der „1-Seite“ als Fremdschlüssel in der Tabelle der „n-Seite“ speichert."],
+      sqlTone: "tone-teal",
+      sql: [
+        "-- Produkte mit Kategorienamen (ohne JOIN)",
+        "SELECT produkte.name, kategorien.name AS kategorie",
+        "FROM produkte, kategorien",
+        "WHERE produkte.kategorie_id = kategorien.id;"
+      ]
+    },
+    {
+      id:"rel_nm",
+      title:"Verbund n:m",
+      context: "n:m bedeutet: viele passen zu vielen – dafür nutzt man eine Beziehungstabelle.",
+      theory: ["Eine n:m-Beziehung bedeutet: Viele Datensätze aus Tabelle A passen zu vielen Datensätze aus Tabelle B. Das setzt man mit einer zusätzlichen Beziehungstabelle um, die die beiden Primärschlüssel als Fremdschlüssel speichert; oft bilden diese beiden Fremdschlüssel zusammen den Primärschlüssel der Beziehungstabelle."],
+      sqlTone: "tone-teal",
+      sql: [
+        "-- Warenkorb mit Nutzer + Produkt (ohne JOIN)",
+        "SELECT nutzer.name, produkte.name, warenkorb.menge",
+        "FROM warenkorb, nutzer, produkte",
+        "WHERE warenkorb.nutzer_id = nutzer.id AND warenkorb.produkt_id = produkte.id;"
+      ]
+    },
+    {
+      id:"task_rel",
+      type:"fill",
+      title:"Zusatz: Verbund-Bedingung",
+      context: "Setze die fehlende Bedingung für den Verbund (n:m).",
+      nameInPrompt: true,
+      prompt:"Ergänze die zweite Verknüpfung (Produkt → Warenkorb):",
+      template:[
+        "SELECT nutzer.name, produkte.name, warenkorb.menge",
+        "\nFROM warenkorb, nutzer, produkte",
+        "\nWHERE warenkorb.nutzer_id = nutzer.id AND ",
+        {blank:"warenkorb.produkt_id = produkte.id||warenkorb.produkt_id=produkte.id||produkte.id = warenkorb.produkt_id||produkte.id=warenkorb.produkt_id"},
+        ";"
+      ],
+      feedbackOk:"Richtig. So verbindest du Tabellen ohne JOIN über FROM ... WHERE ...",
+      feedbackNo:"Nicht ganz. Gesucht ist die Verknüpfung zwischen warenkorb.produkt_id und produkte.id."
+    },
+
+    {
+      id:"pii",
+      type:"ack",
+      title:"Personenbezogene Daten",
+      context: withName("das ist nicht „nur Theorie“ – das ist echte Verantwortung."),
+      nameInTheory: true,
+      theory: ["Personenbezogene Daten sind Informationen, die sich direkt oder indirekt auf eine bestimmte Person beziehen (also eine Person erkennbar machen). Sie sind besonders geschützt (u. a. durch Gesetze und die Datenschutz-Grundverordnung);"],
+      ackLabel: "Verstanden",
+      nextLabel: "Weiter"
+    },
+
+    {
+      id:"end",
+      title:"Ende",
+      finish: true,
+      context: withName("Tutorial abgeschlossen. Jetzt kannst du im freien Modus starten."),
+      theory: ["Wechsle jetzt in den freien Modus und schalte so viele Buttons frei wie möglich."]
+    }
+  ];
+
+  /* ---------- Answer checking with alternatives (||) ---------- */
+  function isCorrectAnswer(got, wantRaw){
+    const gotN = normalize(got).toUpperCase();
+    const wants = (wantRaw ?? "")
+      .toString()
+      .split("||")
+      .map(x => normalize(x).toUpperCase())
+      .filter(Boolean);
+    return wants.includes(gotN);
+  }
+
+  function updateHeader(){
+    const total = pages.length;
+    el("stepTag").textContent = `${state.i+1}/${total}`;
+    el("stepSmall").textContent = String(state.i+1);
+    el("stepTotal").textContent = String(total);
+    const denom = Math.max(1, total - 1);
+    el("bar").style.width = `${(state.i / denom) * 100}%`;
+    updateNamePill();
+  }
+
+  /* ---------- Renderers ---------- */
+  function renderFill(p){
+    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
+    const prompt = p.nameInPrompt ? addNamePrefixText(p.prompt) : p.prompt;
+
+    const tpl = p.template.map(part=>{
+      if(typeof part === "string") return escapeHtml(part);
+      return `<span class="blank"><input data-answer="${escapeAttr(part.blank)}" type="text" placeholder="..." autocomplete="off" spellcheck="false"/></span>`;
+    }).join("");
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
+      ${renderTheory(prompt)}
+      <div class="taskCard"><pre class="sql">${tpl}</pre></div>
+      <button class="btn" id="checkBtn" style="margin-top:12px;">Prüfen</button>
+      <div class="feedback" id="fb"></div>
+      <div class="btnRow">
+        <button class="btn ghost" id="backBtn">Zurück</button>
+        <button class="btn primary disabled" id="nextBtn">Verstanden</button>
+      </div>
+    `;
+
+    const input = document.querySelector(".blank input");
+    const fb = el("fb");
+    const nextBtn = el("nextBtn");
+
+    el("backBtn").addEventListener("click", ()=>{ state.i--; render(); });
+
+    el("checkBtn").addEventListener("click", ()=>{
+      const ok = isCorrectAnswer(input.value, input.dataset.answer);
+      fb.textContent = ok ? p.feedbackOk : p.feedbackNo;
+      fb.classList.add("show");
+      fb.classList.toggle("ok", ok);
+      fb.classList.toggle("bad", !ok);
+      nextBtn.classList.toggle("disabled", !ok);
+      if(ok) nextBtn.focus(); else input.focus();
+    });
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      state.i++; render();
+    });
+
+    setTimeout(()=>input.focus(), 30);
+  }
+
+  function renderFillMulti(p){
+    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
+      ${renderTheory(p.nameInPrompt ? addNamePrefixText("Fülle beide Lücken korrekt.") : "Fülle beide Lücken korrekt.")}
+      ${p.blocks.map((b, idx)=>{
+        const parts = b.template.split("______");
+        const before = escapeHtml(parts[0] ?? "");
+        const after  = escapeHtml(parts[1] ?? "");
+        return `
+          <div class="taskCard" style="margin-bottom:12px;">
+            <pre class="sql">${before}<span class="blank"><input data-idx="${idx}" data-answer="${escapeAttr(b.answer)}" type="text" placeholder="..." autocomplete="off" spellcheck="false"/></span>${after}</pre>
+          </div>
+        `;
+      }).join("")}
+      <button class="btn" id="checkBtn">Prüfen</button>
+      <div class="feedback" id="fb"></div>
+      <div class="btnRow">
+        <button class="btn ghost" id="backBtn">Zurück</button>
+        <button class="btn primary disabled" id="nextBtn">Verstanden</button>
+      </div>
+    `;
+
+    const inputs = [...document.querySelectorAll('.taskCard input')];
+    const fb = el("fb");
+    const nextBtn = el("nextBtn");
+
+    el("backBtn").addEventListener("click", ()=>{ state.i--; render(); });
+
+    el("checkBtn").addEventListener("click", ()=>{
+      const ok = inputs.every(inp => isCorrectAnswer(inp.value, inp.dataset.answer));
+      fb.textContent = ok ? p.feedbackOk : p.feedbackNo;
+      fb.classList.add("show");
+      fb.classList.toggle("ok", ok);
+      fb.classList.toggle("bad", !ok);
+      nextBtn.classList.toggle("disabled", !ok);
+      if(!ok){
+        const firstBad = inputs.find(inp => !isCorrectAnswer(inp.value, inp.dataset.answer));
+        firstBad?.focus();
+      } else nextBtn.focus();
+    });
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      state.i++; render();
+    });
+
+    setTimeout(()=>inputs[0]?.focus(), 30);
+  }
+
+  function renderMatch(p){
+    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
+    const theory = p.nameInPrompt ? addNamePrefixText(p.theory) : p.theory;
+
+    const right = p.right.slice();
+    for(let i=right.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [right[i], right[j]] = [right[j], right[i]];
+    }
+
+    const pairs = new Map();
+    let selL = null, selR = null;
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
+      ${renderTheory(theory)}
+      <div class="matchGrid">
+        <div class="matchCol">
+          <div class="matchTitle">Baustein</div>
+          ${p.left.map(x=>`
+            <div class="chip" data-side="L" data-key="${escapeAttr(x.key)}" tabindex="0">
+              <span class="tag">${escapeHtml(x.label)}</span>
+              <span style="opacity:.62">wählen</span>
+            </div>
+          `).join("")}
+        </div>
+        <div class="matchCol">
+          <div class="matchTitle">Zweck</div>
+          ${right.map(x=>`
+            <div class="chip" data-side="R" data-key="${escapeAttr(x.key)}" tabindex="0">
+              <span>${escapeHtml(x.label)}</span>
+              <span style="opacity:.62">wählen</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="schemaWrap">
+        <div class="schemaLabel tone-blue">Status</div>
+        <div class="codeBox" id="statusBox"></div>
+      </div>
+      <div class="btnRow">
+        <button class="btn ghost" id="backBtn">Zurück</button>
+        <button class="btn primary disabled" id="nextBtn">Verstanden</button>
+      </div>
+    `;
+
+    const statusBox = el("statusBox");
+    const nextBtn = el("nextBtn");
+
+    function draw(){
+      statusBox.innerHTML = p.left.map(item=>{
+        const rk = pairs.get(item.key);
+        const ok = rk && rk === item.key;
+        const rightLabel = rk ? (p.right.find(x=>x.key===rk)?.label || "") : "—";
+        return `<div style="display:flex; gap:10px; align-items:center; padding:10px 10px; border-radius:14px; border:1px solid rgba(10,15,24,.06); background: rgba(10,15,24,.02); margin-bottom:8px;">
+          <div style="width:10px;height:10px;border-radius:999px;background:${ok ? "rgba(52,199,89,.92)" : "rgba(10,15,24,.22)"}"></div>
+          <div style="flex:1; font-weight:950">${escapeHtml(item.label)}</div>
+          <div style="flex:2; color: rgba(11,15,24,.76)">${escapeHtml(rightLabel)}</div>
+        </div>`;
+      }).join("");
+
+      const allSet = p.left.every(x => pairs.get(x.key));
+      const allOk = p.left.every(x => pairs.get(x.key) === x.key);
+      nextBtn.classList.toggle("disabled", !(allSet && allOk));
+    }
+
+    function setSelected(side, key){
+      document.querySelectorAll(`.chip[data-side="${side}"]`).forEach(n=>{
+        n.classList.toggle("selected", n.dataset.key === key);
+      });
+    }
+
+    function pick(side, key){
+      if(side==="L"){ selL = key; setSelected("L", key); }
+      else { selR = key; setSelected("R", key); }
+
+      if(selL && selR){
+        pairs.set(selL, selR);
+        selL = null; selR = null;
+        setSelected("L","");
+        setSelected("R","");
+        draw();
+      }
+    }
+
+    document.querySelectorAll(".chip").forEach(node=>{
+      const handler = ()=> pick(node.dataset.side, node.dataset.key);
+      node.addEventListener("click", handler);
+      node.addEventListener("keydown",(e)=>{
+        if(e.key==="Enter" || e.key===" "){ e.preventDefault(); handler(); }
+      });
+    });
+
+    el("backBtn").addEventListener("click", ()=>{ state.i--; render(); });
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      state.i++; render();
+    });
+
+    draw();
+  }
+
+  function renderAck(p){
+    const ctx = p.context || "";
+    const theoryText = p.nameInTheory ? addNamePrefixText(p.theory) : p.theory;
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
+      ${theoryText ? renderTheory(theoryText) : ``}
+
+      <button class="btn primary" id="ackBtn" style="width:100%; margin-top: 6px;">${escapeHtml(p.ackLabel || "Verstanden")}</button>
+
+      <div class="btnRow">
+        <button class="btn ghost ${state.i===0 ? "disabled":""}" id="backBtn">Zurück</button>
+        <button class="btn disabled" id="nextBtn">${escapeHtml(p.nextLabel || "Weiter")}</button>
+      </div>
+    `;
+
+    const nextBtn = el("nextBtn");
+    const ackBtn = el("ackBtn");
+
+    el("backBtn").addEventListener("click", ()=>{
+      if(state.i===0) return;
+      state.i--; render();
+    });
+
+    ackBtn.addEventListener("click", ()=>{
+      ackBtn.classList.add("disabled");
+      ackBtn.textContent = (p.ackLabel || "Verstanden") + " ✓";
+      nextBtn.classList.remove("disabled");
+      nextBtn.classList.add("primary");
+      nextBtn.focus();
+    });
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      state.i++;
+      if(state.i >= pages.length) state.i = pages.length-1;
+      render();
+    });
+  }
+
+  function renderInfo(p){
+    const story = p.story ? renderStory(p.story) : "";
+    const recap = p.recapHtml ? renderRecap(p.recapHtml) : "";
+    const theoryText = p.theory ? (p.nameInTheory ? addNamePrefixText(p.theory) : p.theory) : null;
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${p.context ? `<p class="qContext">${escapeHtml(p.context)}</p>` : ``}
+      ${story}
+      ${recap}
+      ${theoryText ? renderTheory(theoryText) : ``}
+      ${p.table ? p.table : ``}
+      ${p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue") : ``}
+      ${p.distinctViz ? renderDistinctViz() : ``}
+      <div class="btnRow">
+        <button class="btn ghost ${state.i===0 ? "disabled":""}" id="backBtn">Zurück</button>
+        <button class="btn primary" id="nextBtn">Verstanden</button>
+      </div>
+    `;
+
+    el("backBtn").addEventListener("click", ()=>{
+      if(state.i===0) return;
+      state.i--; render();
+    });
+    el("nextBtn").addEventListener("click", ()=>{
+      state.i++;
+      if(state.i >= pages.length) state.i = pages.length-1;
+      render();
+    });
+
+
+    if(p.finish){
+      const btn = el("nextBtn");
+      if(btn){
+        const clone = btn.cloneNode(true);
+        clone.textContent = "Zum freien Modus";
+        clone.classList.add("primary");
+        clone.classList.remove("disabled");
+        btn.parentNode.replaceChild(clone, btn);
+        clone.addEventListener("click", goToFreeMode);
+      }
+    }
+
+    if(p.distinctViz) bindDistinctSlider();
+  }
+
+  function render(){
+    updateHeader();
+    const p = pages[state.i];
+
+    if(p.type === "match"){ renderMatch(p); return; }
+    if(p.type === "fill"){ renderFill(p); return; }
+    if(p.type === "fill_multi"){ renderFillMulti(p); return; }
+    if(p.type === "ack"){ renderAck(p); return; }
+
+    renderInfo(p);
+  }
+
+
+  function goToFreeMode(){
+    const n = (state.name || "").toString().trim();
+    if(n){
+      try{ sessionStorage.setItem("schulazon_name", n); }catch{}
+      try{ localStorage.setItem("schulazon_name", n); }catch{}
+      try{ window.SCHULAZON_NAME = n; }catch{}
+    }
+    const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    window.location.href = url;
+  }
+
+  async function toggleFullscreen(){
+    try{
+      if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    }catch{}
+  }
+
+  el("fsBtn").addEventListener("click", toggleFullscreen);
+  document.addEventListener("fullscreenchange", ()=>{
+    el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+  });
+
+  updateNamePill();
+  render();
+</script>
+</body>
+</html>
