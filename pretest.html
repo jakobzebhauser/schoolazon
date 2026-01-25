@@ -793,6 +793,8 @@
       .hero{flex-direction:column;}
     }
 
+  
+    .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
   </style>
 </head>
 
@@ -811,7 +813,7 @@
         <button class="pillBtn" id="fsBtn" type="button" >Vollbild</button>
 
         <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b></span>
+          <span>Hi, <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
         </div>
         <div class="pill" id="pillStep" style="display:none;">
           <span>Frage</span> <b id="stepTag">1/10</b>
@@ -907,7 +909,7 @@
   let questions = [];
 
   const state = {
-    name: "",
+    name: getNameFromQuery(),
     step: 0,
     startedAt: null,
     endedAt: null,
@@ -921,6 +923,19 @@
   };
 
   const el = (id) => document.getElementById(id);
+
+  // Back-Button im Browser deaktivieren (verhindert Rücksprung zur Namenseingabe)
+  (function disableBackNavigation(){
+    try{
+      history.pushState({__noBack:true}, "", location.href);
+      window.addEventListener("popstate", ()=>{ history.pushState({__noBack:true}, "", location.href); });
+    }catch(_){}
+  })();
+
+  function getNameFromQuery(){
+    const qp = new URLSearchParams(location.search);
+    return (qp.get("name") || "").trim();
+  }
 
   function pad2(n){ return String(n).padStart(2,"0"); }
   function fmtMMSS(sec){
@@ -954,11 +969,6 @@
   
   function goToGuidedTutorial(){
     const n = (state.name || "").toString().trim();
-    if(n){
-      try{ sessionStorage.setItem("schulazon_name", n); }catch{}
-      try{ localStorage.setItem("schulazon_name", n); }catch{}
-      try{ window.SCHULAZON_NAME = n; }catch{}
-    }
     const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
     window.location.href = url;
   }
@@ -1028,7 +1038,8 @@ function promptWithName(q){
 
   function renderStart(){
     el("progressWrap").style.display = "none";
-    el("pillName").style.display = "none";
+    el("pillName").style.display = state.name ? "flex" : "none";
+    el("nameTag").textContent = state.name || "";
     el("pillStep").style.display = "none";
     el("pillTimer").style.display = "none";
     el("subline").textContent = "Bewerbungsgespräch (6 Minuten)";
@@ -1036,7 +1047,7 @@ function promptWithName(q){
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Hi – schön, dass du dich bei Schulazon beworben hast.</h2>
+          <h2>Hi, <span id="introName"></span> – schön, dass du dich bei Schulazon beworben hast.</h2>
           <p>Stell dir vor, du bist gerade in einem kurzen Online‑Call mit unserem <b>Shop‑Engineering</b>. Du schlüpfst in die Rolle der Entwickler:in, die unseren Online‑Shop mit aufbaut.</p>
           <p>Wir machen jetzt einen schnellen SQL‑Check im Shop‑Kontext: <b>Produkte abfragen</b>, <b>sortieren/filtern</b> und <b>Tabellen sinnvoll verknüpfen</b>. Das ist genau das, was du später bei der <b>Implementierung</b> brauchst.</p>
 
@@ -1046,46 +1057,21 @@ function promptWithName(q){
             <div></div>
             <button class="btn primary" id="introContinue">Okay – lass starten</button>
           </div>
-
-          <div id="startForm" class="startForm hidden">
-            <div class="row">
-              <div class="field">
-                <label for="nameInput">Wie sollen wir dich ansprechen?</label>
-                <input id="nameInput" type="text" placeholder="Vorname oder Kürzel" autocomplete="off" />
-              </div>
             </div>
 
-            <div class="btnRow navRow">
-              <div></div>
-              <button class="btn primary disabled" id="startBtn">Los geht’s</button>
-            </div>
           </div>
         </div>
       </div>
     `;
 
-    const nameInput = el("nameInput");
-    const startBtn = el("startBtn");
+    if(state.name){
+      const introName = document.getElementById("introName");
+      if(introName) introName.textContent = state.name;
+    }
+
     const introContinue = el("introContinue");
-    const startForm = el("startForm");
-    const introCtaRow = el("introCtaRow");
-
     introContinue.addEventListener("click", ()=>{
-      startForm.classList.remove("hidden");
-      introCtaRow.classList.add("hidden");
-      // Fokus direkt ins Eingabefeld (fühlt sich wie „weiter im Gespräch“ an)
-      setTimeout(()=> nameInput.focus(), 0);
-    });
-
-    nameInput.addEventListener("input", ()=>{
-      const v = nameInput.value.trim();
-      startBtn.classList.toggle("disabled", v.length === 0);
-    });
-
-    startBtn.addEventListener("click", ()=>{
-      const v = nameInput.value.trim();
-      if(!v) return;
-      state.name = formatName(v); // wichtig: sauber formatiert speichern
+      if(!state.name){ window.location.href = "index.html"; return; }
       startTest();
     });
   }

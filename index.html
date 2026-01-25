@@ -1,14 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Schulazon – Start</title>
-
-  <!-- Shop-Font (wie im Shop) -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Schulazon – Start</title>
+<!-- Shop-Font (wie im Shop) -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
     :root{
       /* Apple-ish system colors */
       --blue:   #007AFF;
@@ -280,89 +279,175 @@
       .cardInner{padding: 18px}
       .topbar{padding: 10px}
     }
-  </style>
+  
+
+    /* Name-Gate (Apple-ish modal) */
+    .srOnly{
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+      clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+    .gate{
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .gateBackdrop{
+      position:absolute;
+      inset:0;
+      background: rgba(7,10,16,.36);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .gateCard{
+      position: relative;
+      width: min(520px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.40);
+      background: rgba(255,255,255,.76);
+      box-shadow: 0 22px 50px rgba(10,15,24,.22);
+      overflow: hidden;
+    }
+    .gateInner{
+      padding: 18px 18px 16px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .gateIcon{
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      background: radial-gradient(120% 120% at 30% 20%, rgba(0,122,255,.45), rgba(175,82,222,.25) 55%, rgba(52,199,89,.18) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    .gateInner h2{
+      margin: 0;
+      font-size: 22px;
+      font-weight: 850;
+      letter-spacing: .1px;
+    }
+    .gateSub{
+      margin: 0;
+      color: var(--muted);
+      font-size: var(--small);
+      line-height: 1.45;
+    }
+    #nameForm{
+      display:flex;
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 2px;
+    }
+    #nameInput{
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.82);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+      font-size: 15px;
+      outline: none;
+      transition: box-shadow .2s ease, border-color .2s ease, transform .08s ease;
+    }
+    #nameInput:focus{
+      border-color: rgba(0,122,255,.55);
+      box-shadow: 0 0 0 4px rgba(0,122,255,.18);
+    }
+    .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
+</style>
 </head>
-
 <body>
-  <div class="shell">
-    <div class="topbar">
-      <div class="brand">
-        <div class="appIcon" aria-hidden="true"></div>
-        <div>
-          <div class="logo">schul<span>azon</span></div>
-          <div class="sub" id="subline">Start</div>
-        </div>
-      </div>
+<div class="shell">
+<div class="topbar">
+<div class="brand">
+<div aria-hidden="true" class="appIcon"></div>
+<div>
+<div class="logo">schul<span>azon</span></div>
+<div class="sub" id="subline">Start</div>
+</div>
+</div>
+<div class="status">
+<button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
+<div class="pill" id="pillName" style="display:none;"><span>Hi <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span></div>
+</div>
+</div>
+<div class="card">
+<div class="cardInner">
+<section aria-label="Start" class="hero">
+<h1>Willkommen bei Schulazon</h1>
+<p>Wähle deinen Einstieg. Du kannst jederzeit wechseln.</p>
+</section>
+<section aria-label="Modus-Auswahl" class="modes" id="modesSection">
+<a class="modeCard tone-amber" data-pass-name="1" href="pretest.html">
+<h2 class="modeTitle">Bewerbungsgespräch</h2>
+<p class="modeDesc">Kurzer Einstiegstest im Schulazon-HQ. Danach weißt du, welche Aufgaben zu dir passen.</p>
+<div class="btnRow">
 
-      <div class="status">
-        <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
-        <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b></span>
-        </div>
-      </div>
-    </div>
+<span aria-hidden="true" class="btn primary">Starten</span>
+</div>
+</a>
+<a class="modeCard tone-teal" data-pass-name="1" href="free.html">
+<h2 class="modeTitle">Freier Modus</h2>
+<p class="modeDesc">Direkt loslegen: Shop erkunden, SQL-Abfragen testen, Buttons freischalten.</p>
+<div class="btnRow">
 
-    <div class="card">
-      <div class="cardInner">
-        <section class="hero" aria-label="Start">
-          <h1>Willkommen bei Schulazon</h1>
-          <p>Wähle deinen Einstieg. Du kannst jederzeit wechseln.</p>
-        </section>
+<span aria-hidden="true" class="btn primary">Öffnen</span>
+</div>
+</a>
+<a class="modeCard tone-purple" data-pass-name="1" href="tutorial.html">
+<h2 class="modeTitle">Tutorial</h2>
+<p class="modeDesc">Grundlagen-Refresh in kleinen Schritten: SELECT, WHERE, ORDER BY, DISTINCT und mehr.</p>
+<div class="btnRow">
 
-        <section class="modes" aria-label="Modus-Auswahl">
-          <a class="modeCard tone-amber" href="pretest.html" data-pass-name="1">
-            <h2 class="modeTitle">Bewerbungsgespräch</h2>
-            <p class="modeDesc">Kurzer Einstiegstest im Schulazon-HQ. Danach weißt du, welche Aufgaben zu dir passen.</p>
-            <div class="btnRow">
-              <span class="tag">ca. 6 Minuten</span>
-              <span class="btn primary" aria-hidden="true">Starten</span>
-            </div>
-          </a>
+<span aria-hidden="true" class="btn primary">Starten</span>
+</div>
+</a>
+</section>
 
-          <a class="modeCard tone-teal" href="free.html" data-pass-name="1">
-            <h2 class="modeTitle">Freier Modus</h2>
-            <p class="modeDesc">Direkt loslegen: Shop erkunden, SQL-Abfragen testen, Buttons freischalten.</p>
-            <div class="btnRow">
-              <span class="tag">ohne Vorwissen ok</span>
-              <span class="btn primary" aria-hidden="true">Öffnen</span>
-            </div>
-          </a>
+</div>
+</div>
+</div>
 
-          <a class="modeCard tone-purple" href="tutorial.html" data-pass-name="1">
-            <h2 class="modeTitle">Tutorial</h2>
-            <p class="modeDesc">Grundlagen-Refresh in kleinen Schritten: SELECT, WHERE, ORDER BY, DISTINCT und mehr.</p>
-            <div class="btnRow">
-              <span class="tag">kurz & strukturiert</span>
-              <span class="btn primary" aria-hidden="true">Starten</span>
-            </div>
-          </a>
-        </section>
-
-        <div class="foot" role="note">
-          Tipp: Wenn du bereits einen Namen gespeichert hast, wird er automatisch übernommen (Query <code>?name=</code> oder <code>localStorage</code>/<code>sessionStorage</code> <code>schulazon_name</code>).
-        </div>
-      </div>
-    </div>
-  </div>
-
+<div aria-labelledby="gateTitle" aria-modal="true" class="gate" id="nameGate" role="dialog" style="display:none;">
+<div aria-hidden="true" class="gateBackdrop"></div>
+<div class="gateCard">
+<div class="gateInner">
+<div aria-hidden="true" class="gateIcon"></div>
+<h2 id="gateTitle">Wie heißt du?</h2>
+<p class="gateSub">Bitte gib deinen Namen ein, damit Schulazon dich begrüßen kann.</p>
+<form autocomplete="off" id="nameForm">
+<label class="srOnly" for="nameInput">Name</label>
+<input id="nameInput" inputmode="text" maxlength="40" name="name" placeholder="Dein Name" type="text"/>
+<button class="btn primary" type="submit">Weiter</button>
+</form>
+</div>
+</div>
+</div>
 <script>
   const el = (id) => document.getElementById(id);
 
+  // Immer neu starten: Name wird pro Seitenaufruf neu abgefragt.
+  try{ localStorage.removeItem("schulazon_name"); }catch(_){}
+  try{ sessionStorage.removeItem("schulazon_name"); }catch(_){}
+  try{ delete window.SCHULAZON_NAME; }catch(_){}
+
   function getName(){
-    const qp = new URLSearchParams(location.search);
-    const fromQuery = qp.get("name") || "";
-    const fromGlobal = (window.SCHULAZON_NAME || "").toString();
-    const fromSession = (sessionStorage.getItem("schulazon_name") || "");
-    const fromLocal = (localStorage.getItem("schulazon_name") || "");
-    return (fromGlobal || fromSession || fromLocal || fromQuery).trim();
+    return "";
   }
 
   const state = { name: getName() };
 
   function updateNamePill(){
+    const pill = el("pillName");
+    if(!pill) return;
     if(state.name){
-      el("pillName").style.display = "flex";
+      pill.style.display = "flex";
       el("nameTag").textContent = state.name;
+    } else {
+      pill.style.display = "none";
+      el("nameTag").textContent = "";
     }
   }
 
@@ -376,6 +461,49 @@
           a.setAttribute("href", url.pathname + "?" + url.searchParams.toString());
         }
       }catch(_){}
+    });
+  }
+
+  function showNameGate(){
+    const gate = el("nameGate");
+    const modes = el("modesSection");
+    if(modes) modes.style.display = "none";
+    if(gate){
+      gate.style.display = "grid";
+      const input = el("nameInput");
+      if(input){
+        input.value = "";
+        setTimeout(()=>input.focus(), 0);
+      }
+    }
+  }
+
+  function hideNameGate(){
+    const gate = el("nameGate");
+    const modes = el("modesSection");
+    if(gate) gate.style.display = "none";
+    if(modes) modes.style.display = "";
+  }
+
+  function setName(raw){
+    const name = (raw || "").toString().trim();
+    if(!name) return false;
+
+    state.name = name;
+updateNamePill();
+    passNameToLinks();
+    hideNameGate();
+    return true;
+  }
+
+  function bindNameGate(){
+    const form = el("nameForm");
+    const input = el("nameInput");
+    if(!form || !input) return;
+
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      setName(input.value);
     });
   }
 
@@ -402,10 +530,17 @@
     });
   }
 
-  updateNamePill();
-  passNameToLinks();
-  bindFullscreen();
-</script>
 
+
+  bindNameGate();
+  bindFullscreen();
+
+  if(state.name){
+    updateNamePill();
+    passNameToLinks();
+  } else {
+    showNameGate();
+  }
+</script>
 </body>
 </html>

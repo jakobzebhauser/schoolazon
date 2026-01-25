@@ -27,6 +27,10 @@
   --radiusMd: 18px;
   --radiusSm: 14px;
 
+  /* Right pane layout raster */
+  --rightPad: 18px;
+  --rightGap: 16px;
+
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Helvetica, Arial;
 
@@ -166,7 +170,26 @@ body{
   /* More opaque so scroll looks “stable” */
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
-  padding: 8px;
+  padding: 0;
+}
+
+/* ===============================
+   Right pane layout raster (Level 1 container)
+   =============================== */
+.right-wrap{
+  display:flex;
+  flex-direction:column;
+  gap: var(--rightGap);
+  padding: var(--rightPad);
+  min-height: 0;
+}
+
+/* Level 1 view container: no visible frame, only spacing */
+.page-shell{
+  display:flex;
+  flex-direction:column;
+  gap: var(--rightGap);
+  min-height: 0;
 }
 
 /* Utility */
@@ -589,6 +612,19 @@ body{
   gap: 10px;
 }
 
+
+/* Locked overlay (Bonus-Sperre): kompakter als Standard-Modal */
+.locked-modal{
+  width: min(420px, 92vw);
+  padding: 14px 14px 12px;
+}
+.locked-modal p{
+  margin: 0 0 12px;
+}
+.locked-modal .row{
+  justify-content: flex-end;
+}
+
 body.timeup #pillTimer{
   border-color: rgba(255,45,85,.26);
 }
@@ -749,7 +785,7 @@ body.timeup #pillTimer{
     grid-template-columns: 1fr;
     grid-template-rows: 55vh 45vh;
   }
-  .mode-right{ padding: 8px; }
+  .mode-right{ padding: 0; }
   .lab-progress{ width: 100%; }
 }
 
@@ -1058,4 +1094,500 @@ body.timeup #pillTimer{
 
 .spicker-table tbody tr:nth-child(2n) td{
   background: rgba(245,245,247,.75);
+}
+
+/* ===============================
+   Theorie-Spicker: Highlights & Codeblöcke
+   =============================== */
+.spicker-block{
+  margin: 10px 0 14px 0;
+  border-radius: 16px;
+  border: 3px solid rgba(10,15,24,.14);
+  background: rgba(245,245,247,.78);
+  padding: 12px;
+  box-shadow: 0 12px 26px rgba(10,15,24,.06);
+}
+.spicker-block-title{
+  font-weight: 950;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  letter-spacing: .01em;
+}
+.spicker-code{
+  margin: 0;
+  border-radius: 14px;
+  border: 3px solid rgba(0,122,255,.22);
+  background: rgba(255,255,255,.98);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: var(--sql);
+  line-height: 1.6;
+  overflow: auto;
+  white-space: pre;
+  box-shadow: 0 12px 26px rgba(10,15,24,.06);
+}
+
+/* ===============================
+   DB-Schema View
+   =============================== */
+.schema-view{
+  display:flex;
+  flex-direction:column;
+  gap: 14px;
+}
+.schema-grid{
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+}
+.schema-card{
+  border-radius: var(--radiusMd);
+  border: 3px solid rgba(10,15,24,.18);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 14px 34px rgba(10,15,24,.06);
+  padding: 12px;
+}
+.schema-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.schema-name{
+  font-weight: 950;
+  font-size: 15px;
+  letter-spacing: .01em;
+}
+.schema-badges{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content:flex-end;
+}
+.schema-badge{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 3px solid rgba(0,122,255,.18);
+  background: rgba(0,122,255,.08);
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.schema-badge-fk{
+  border-color: rgba(175,82,222,.22);
+  background: rgba(175,82,222,.08);
+}
+.schema-rel-list{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.schema-rel-item{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 3px solid rgba(10,15,24,.12);
+  background: rgba(255,255,255,.96);
+  font-weight: 750;
+}
+
+/* ===== Hotfix: ensure header action buttons are always clickable (above overlays/iframes) ===== */
+.lab-header{ isolation: isolate; }
+.lab-header-actions{ position: relative; z-index: 50; }
+.lab-header-actions .btn{ position: relative; z-index: 60; }
+
+
+
+/* ===============================
+   Task UI v3 (nur Aufgabenbereich neu, zurückhaltender Stil)
+   =============================== */
+
+/* Backwards-compat: JS nutzt teils .open */
+.overlay.open{ display:flex; }
+
+.task-view.task-v3{
+  display:flex;
+  flex-direction:column;
+  gap: 22px;
+}
+
+/* Header */
+.task-view.task-v3 .task3-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: var(--radiusMd);
+  border: 1px solid rgba(10,15,24,.14);
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 10px 28px rgba(10,15,24,.06);
+}
+
+.task-view.task-v3 .task3-headerLeft{ min-width:0; }
+.task-view.task-v3 .task3-kicker{
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: rgba(11,15,24,.55);
+}
+.task-view.task-v3 .task3-title{
+  margin: 6px 0 0 0;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: .01em;
+}
+
+.task-view.task-v3 .task3-headerRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.task-view.task-v3 .task3-difficulty{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(10,15,24,.14);
+  background: rgba(245,245,247,.90);
+  min-width: 140px;
+}
+
+.task-view.task-v3 .task3-diffLabel{
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: rgba(11,15,24,.55);
+}
+
+.task-view.task-v3 .task3-diffMeter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.task-view.task-v3 .task3-hintBtn{
+  border: 1px solid rgba(10,15,24,.18);
+  background: rgba(255,255,255,.72);
+}
+
+.task-view.task-v3 .task3-closeBtn{
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Cards */
+.task-view.task-v3 .task3-card{
+  border-radius: var(--radiusMd);
+  border: 1px solid rgba(10,15,24,.14);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 10px 28px rgba(10,15,24,.05);
+  padding: 16px 18px;
+}
+
+.task-view.task-v3 .task3-cardHead{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.task-view.task-v3 .task3-cardTitle{
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: .02em;
+  color: rgba(11,15,24,.90);
+}
+
+.task-view.task-v3 .task3-cardMeta{
+  font-size: var(--small);
+  font-weight: 500;
+  color: rgba(11,15,24,.62);
+}
+
+/* Aufgabenstellung */
+.task-view.task-v3 .task3-body{
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.65;
+  color: rgba(11,15,24,.92);
+  white-space: pre-wrap;
+}
+
+/* Editor */
+.task-view.task-v3 .task3-editor{
+  width: 100%;
+  min-height: 230px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(10,15,24,.16);
+  padding: 14px 14px;
+  font-family: var(--mono);
+  font-size: var(--sql);
+  line-height: 1.65;
+  outline: none;
+  background: rgba(245,245,247,.88);
+  color: rgba(11,15,24,.95);
+  caret-color: rgba(0,122,255,.90);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.70);
+}
+
+.task-view.task-v3 .task3-editor:focus{
+  border-color: rgba(0,122,255,.45);
+  box-shadow: var(--focus), inset 0 1px 0 rgba(255,255,255,.70);
+  background: rgba(255,255,255,.94);
+}
+
+.task-view.task-v3 .task3-actions{
+  margin-top: 14px;
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Output */
+.task-view.task-v3 .task3-output{
+  border: 1px solid rgba(10,15,24,.14);
+  border-left: 6px solid rgba(10,15,24,.20);
+  background: rgba(245,245,247,.86);
+  padding: 14px;
+  min-height: 150px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* Hint output inside overlay */
+.task3-hintOutput{
+  border: 1px solid rgba(10,15,24,.14);
+  border-left: 6px solid rgba(0,122,255,.35);
+  background: rgba(255,255,255,.92);
+}
+@media (max-width: 720px){
+  .task-view.task-v3 .task3-header{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .task-view.task-v3 .task3-headerRight{
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  .task-view.task-v3 .task3-difficulty{
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+}
+
+
+
+.task-view.task-v3 .task3-surface{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;            /* hier gewünschter Abstand */
+}
+
+
+/* ===============================
+   Task UI v3.1 – Rahmen in „DB‑Spicker“-Blau, rote Schließen‑Action,
+   Tipp als Icon, einheitliche Action‑Höhen, Tipp als Card (kein Fullscreen)
+   =============================== */
+
+.task-view.task-v3{
+  --task3-action-h: 44px;
+}
+
+/* Blau wie DB‑Spicker */
+.task-view.task-v3 .task3-header,
+.task-view.task-v3 .task3-card{
+  border: 2px solid rgba(0,122,255,.22);
+}
+
+/* Header actions: gleiche Höhe */
+.task-view.task-v3 .task3-headerRight{
+  align-items: center;
+}
+
+.task-view.task-v3 .task3-difficulty,
+.task-view.task-v3 .task3-hintBtn,
+.task-view.task-v3 .task3-closeBtn{
+  height: var(--task3-action-h);
+}
+
+/* Difficulty als kompakte Pill (eine Zeile) */
+.task-view.task-v3 .task3-difficulty{
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: rgba(0,122,255,.06);
+  border: 2px solid rgba(0,122,255,.22);
+  min-width: 0;
+  box-shadow: 0 10px 22px rgba(10,15,24,.06);
+}
+
+.task-view.task-v3 .task3-diffLabel{
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(11,15,24,.62);
+  white-space: nowrap;
+}
+
+.task-view.task-v3 .difficulty-dots{
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.task-view.task-v3 .difficulty-dots .dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: transparent;
+  border: 2px solid rgba(0,122,255,.28);
+}
+
+.task-view.task-v3 .difficulty-dots .dot.active{
+  background: rgba(255,149,0,.95);
+  border-color: rgba(255,149,0,.95);
+}
+
+.task-view.task-v3 .difficulty-text{
+  font-size: 13px;
+  font-weight: 750;
+  color: rgba(11,15,24,.90);
+  white-space: nowrap;
+}
+
+/* Tipp-Button als Icon */
+.task-view.task-v3 .task3-hintBtn{
+  width: var(--task3-action-h);
+  padding: 0;
+  border-radius: 14px;
+  border: 2px solid rgba(0,122,255,.22);
+  background: rgba(0,122,255,.06);
+  color: rgba(0,122,255,.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 22px rgba(10,15,24,.06);
+}
+
+.task-view.task-v3 .task3-hintBtn:hover{
+  background: rgba(0,122,255,.10);
+}
+
+.task-view.task-v3 .task3-hintBtn svg{
+  display: block;
+}
+
+/* Schließen rot */
+.task-view.task-v3 .task3-closeBtn{
+  width: var(--task3-action-h);
+  padding: 0;
+  border-radius: 14px;
+  border: 2px solid rgba(255,45,85,.38);
+  background: rgba(255,45,85,.10);
+  color: rgba(180,0,25,.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 22px rgba(255,45,85,.10);
+}
+
+.task-view.task-v3 .task3-closeBtn:hover{
+  background: rgba(255,45,85,.14);
+}
+
+/* Editor + Output: Rahmen ebenfalls blau */
+.task-view.task-v3 .task3-editor{
+  border: 2px solid rgba(0,122,255,.22);
+  background: rgba(245,245,247,.88);
+}
+
+.task-view.task-v3 .task3-editor:focus{
+  border-color: rgba(0,122,255,.55);
+}
+
+.task-view.task-v3 .task3-output{
+  border: 2px solid rgba(0,122,255,.22);
+  border-left: 6px solid rgba(0,122,255,.40);
+  background: rgba(0,122,255,.04);
+}
+
+/* Tipp als Card innerhalb der Aufgabe */
+.task-view.task-v3 .task3-hintCard{
+  display: none;
+  border-color: rgba(0,122,255,.22);
+  background: rgba(0,122,255,.04);
+}
+
+.task-view.task-v3 .task3-hintCard.show,
+.task-view.task-v3 .task3-hintCard.open{
+  display: block;
+}
+
+.task-view.task-v3 .task3-hintHead{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.task-view.task-v3 .task3-hintClose{
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 12px;
+  border: 2px solid rgba(255,45,85,.30);
+  background: rgba(255,45,85,.08);
+  color: rgba(180,0,25,.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-view.task-v3 .task3-hintBody{
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(11,15,24,.90);
+}
+
+.task-view.task-v3 .task3-hintActions{
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+
+
+
+
+/* Aux views (Spicker/Schema/Solutions/Bonus) should not inherit the task card frame */
+.aux-shell{
+  display:flex;
+  flex-direction:column;
+  gap: var(--rightGap);
+  min-height: 0;
 }

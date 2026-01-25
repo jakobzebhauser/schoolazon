@@ -528,6 +528,8 @@
       .matchGrid{grid-template-columns: 1fr;}
       .topbar{padding: 10px}
     }
+  
+    .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
   </style>
 </head>
 
@@ -545,7 +547,7 @@
       <div class="status">
         <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
         <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b></span>
+          <span>Hi, <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
         </div>
         <div class="pill">
           <span>Seite</span> <b id="stepTag">1/1</b>
@@ -585,22 +587,10 @@
 
   function getName(){
     const qp = new URLSearchParams(location.search);
-    const fromQuery = qp.get("name") || "";
-    const fromGlobal = (window.SCHULAZON_NAME || "").toString();
-    const fromSession = (sessionStorage.getItem("schulazon_name") || "");
-    const fromLocal = (localStorage.getItem("schulazon_name") || "");
-    return (fromGlobal || fromSession || fromLocal || fromQuery).trim();
+    return (qp.get("name") || "").trim();
   }
 
   const state = { name: getName(), i: 0 };
-
-  // Name best-effort speichern, damit Free Mode ihn übernehmen kann
-  if(state.name){
-    try{ sessionStorage.setItem("schulazon_name", state.name); }catch{}
-    try{ localStorage.setItem("schulazon_name", state.name); }catch{}
-    try{ window.SCHULAZON_NAME = state.name; }catch{}
-  }
-
 
   function withName(s){
     if(!state.name) return s;
@@ -1456,11 +1446,6 @@
 
   function goToFreeMode(){
     const n = (state.name || "").toString().trim();
-    if(n){
-      try{ sessionStorage.setItem("schulazon_name", n); }catch{}
-      try{ localStorage.setItem("schulazon_name", n); }catch{}
-      try{ window.SCHULAZON_NAME = n; }catch{}
-    }
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
     window.location.href = url;
   }

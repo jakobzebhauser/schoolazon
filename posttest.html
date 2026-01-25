@@ -1284,9 +1284,19 @@
         <div style="flex:1">
           <h2>Fertig.</h2>
           <p>Danke für deine Teilnahme.</p>
+
+          <div class="btnRow" style="margin-top:14px;">
+            <div></div>
+            <button class="btn" id="homeBtn" type="button">Zur Startseite</button>
+          </div>
         </div>
       </div>
     `;
+
+    const homeBtn = document.getElementById("homeBtn");
+    if(homeBtn){
+      homeBtn.addEventListener("click", ()=>{ window.location.href = "index.html"; });
+    }
   }
 
   function submit(mode){
