@@ -447,6 +447,7 @@ class FreeMode {
       }
 
       this.sqliDone = localStorage.getItem('schulazon_sqli_done_v1') === 'true';
+      this.spickerUsed = localStorage.getItem('schulazon_spicker_used_v1') === 'true';
     } catch (_) {
       // ignore
     }
@@ -458,6 +459,7 @@ class FreeMode {
       localStorage.setItem('schulazon_hint_used_v1', JSON.stringify(this.hintUsed || {}));
       localStorage.setItem('schulazon_solution_sql_v1', JSON.stringify(this.solutionSql || {}));
       localStorage.setItem('schulazon_sqli_done_v1', this.sqliDone ? 'true' : 'false');
+      localStorage.setItem('schulazon_spicker_used_v1', this.spickerUsed ? 'true' : 'false');
     } catch (_) {
       // ignore
     }
@@ -1258,6 +1260,8 @@ renderShell() {
 
     // Confirm modal
     this.confirmOverlayEl = this.root.querySelector('#confirmOverlay');
+    this.confirmTitleEl = this.root.querySelector('#confirmTitle');
+    this.confirmTextEl = this.root.querySelector('#confirmText');
     this.confirmCloseBtn = this.root.querySelector('#confirmClose');
     this.confirmNoBtn = this.root.querySelector('#confirmNo');
     this.confirmYesBtn = this.root.querySelector('#confirmYes');
@@ -1270,6 +1274,8 @@ renderShell() {
     this.lockedMsgEl = this.root.querySelector('#lockedMsg');
 
     this._pendingHintTaskId = null;
+    this._confirmAction = null;
+    this.spickerUsed = false;
 
     // Hint overlay (Tipp‑Popup)
     this.hintOverlayEl = this.root.querySelector('#hintOverlay');
@@ -1305,7 +1311,11 @@ this.hintTextEl = this.root.querySelector('#hintText');
         this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
 this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     this.confirmNoBtn.addEventListener('click', () => this.closeConfirm());
-    this.confirmYesBtn.addEventListener('click', () => this.confirmHint());
+    this.confirmYesBtn.addEventListener('click', () => {
+      const fn = this._confirmAction;
+      this.closeConfirm();
+      if (typeof fn === 'function') fn();
+    });
     this.confirmOverlayEl.addEventListener('click', (e) => {
       if (e.target === this.confirmOverlayEl) this.closeConfirm();
     });
@@ -1321,7 +1331,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
 
     this.btnSchema.addEventListener('click', () => { this.openSchema(); });
-    this.btnSpicker.addEventListener('click', () => this.openSpicker());
+    this.btnSpicker.addEventListener('click', () => this.requestSpicker());
     this.btnSolutions.addEventListener('click', () => this.openSolutions());
     this.btnBonus.addEventListener('click', () => this.openBonus());
     this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
@@ -1696,8 +1706,8 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
 
     const title = t.title || tid;
     const cat = this.getCategoryLabel(tid);
-    const diff = t.difficulty || '';
     const sql = (this.solutionSql && this.solutionSql[tid]) ? String(this.solutionSql[tid]) : '';
+    const taskText = this.sanitizeTaskText(t.task || '').replace(/^aufgabe:\s*/i, '').trim();
 
     let sqlBlock = '';
     if (sql && sql.trim()) {
@@ -1717,13 +1727,14 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       `;
     }
 
+    const showCat = (cat && cat !== 'Aufgabe');
     const head = `
       <div class="spicker-block">
         <div class="spicker-block-title">Aufgabe</div>
-        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-          <span class="badge">${this.escapeHtml(cat)}</span>
-          ${diff ? `<span class="badge">${this.escapeHtml(diff)}</span>` : ``}
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;">
+          ${showCat ? `<span class="badge">${this.escapeHtml(cat)}</span>` : ``}
         </div>
+        <div class="muted" style="white-space:pre-wrap;">${this.escapeHtml(taskText)}</div>
       </div>
     `;
 
@@ -1894,45 +1905,17 @@ setEmptyState(isEmpty) {
     const can = pct >= BONUS_MIN_PCT;
 
     if (!can) {
-      const missing = this.getMissingForPct(BONUS_MIN_PCT);
       this.pulseLocked(this.btnBonus);
 
-      // Kein Pop-up: gesperrte Bonus-Ansicht inline im rechten Panel anzeigen.
+      // Nur das Bonus-Header-Fenster anzeigen (ohne weitere Karten/Buttons).
       this.hideHint();
       this.closeAllSideViews();
 
       this.currentSideView = 'sqli-locked';
       if (this.sideTitleEl) this.sideTitleEl.textContent = 'Hacking‑Aufgabe';
-      if (this.sideMetaEl) this.sideMetaEl.textContent = `Gesperrt • ab ${BONUS_MIN_PCT}% Fortschritt`;
-
-      const safePct = Math.max(0, Math.min(100, Number(pct) || 0));
-      const body = `
-        <div class="task3-card">
-          <div class="task3-cardHead">
-            <div class="task3-cardTitle">Noch nicht verfügbar</div>
-            <div class="task3-cardMeta">Aktueller Fortschritt: ${safePct}% • Es fehlen ${missing} Aufgabe(n)</div>
-          </div>
-          <div class="task3-body">
-            Diese Bonus‑Aufgabe wird ab <strong>${BONUS_MIN_PCT}%</strong> freigeschaltet.
-            Löse dafür weitere Aufgaben im Shop (links), bis du die Schwelle erreicht hast.
-          </div>
-          <div class="progress-bar" style="height:10px; margin-top:14px;">
-            <div class="progress-fill" style="width:${safePct}%;"></div>
-          </div>
-        </div>
-
-        <div class="task3-card" style="display:flex; justify-content:flex-end; gap:10px;">
-          <button class="btn btn-ghost" id="bonusLockedOk" type="button">Verstanden</button>
-        </div>
-      `;
-
-      if (this.sideBodyEl) this.sideBodyEl.innerHTML = body;
+      if (this.sideMetaEl) this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox) • ab 10% verfügbar';
+      if (this.sideBodyEl) this.sideBodyEl.innerHTML = '';
       this.showBonusView();
-
-      // One-shot handler (Body wird neu gerendert)
-      const ok = this.root.querySelector('#bonusLockedOk');
-      ok?.addEventListener('click', () => this.closeBonus(), { once: true });
-
       return;
     }
 
@@ -2225,6 +2208,26 @@ async unlockCurrent() {
 
   /* ---------- Tipp-System (mit Score-Abzug) ---------- */
 
+  requestSpicker() {
+    if (this.spickerUsed) {
+      this.openSpicker();
+      return;
+    }
+
+    const score = this.computeScore();
+    this.openConfirmOverlay({
+      title: 'SQL‑Spicker öffnen?',
+      text: `Wenn du den SQL‑Spicker öffnest, verlierst du 1 Score‑Punkt. Aktueller Score: ${score}. Trotzdem öffnen?`,
+      yesLabel: 'Spicker öffnen (-1)',
+      onConfirm: () => {
+        this.spickerUsed = true;
+        this.persistProgressState();
+        this.updateProgressUI();
+        this.openSpicker();
+      }
+    });
+  }
+
   requestHint() {
     if (!this.currentId) return;
     const id = this.currentId;
@@ -2259,14 +2262,28 @@ async unlockCurrent() {
     this.openHintOverlay(msg, { mode: 'confirm' });
   }
 
-  openConfirm() {
+  openConfirmOverlay(opts = {}) {
     if (!this.confirmOverlayEl) return;
+    const title = String(opts.title || 'Bestätigen');
+    const text = String(opts.text || '');
+    const yesLabel = String(opts.yesLabel || 'OK');
+
+    if (this.confirmTitleEl) this.confirmTitleEl.textContent = title;
+    if (this.confirmTextEl) this.confirmTextEl.textContent = text;
+    if (this.confirmYesBtn) this.confirmYesBtn.textContent = yesLabel;
+
+    this._confirmAction = (typeof opts.onConfirm === 'function') ? opts.onConfirm : null;
     this.confirmOverlayEl.classList.add('show', 'open');
     this.confirmOverlayEl.setAttribute('aria-hidden', 'false');
   }
 
+  openConfirm() {
+    this.openConfirmOverlay({});
+  }
+
   closeConfirm() {
     this._pendingHintTaskId = null;
+    this._confirmAction = null;
     if (!this.confirmOverlayEl) return;
     this.confirmOverlayEl.classList.remove('show', 'open');
     this.confirmOverlayEl.setAttribute('aria-hidden', 'true');
@@ -2398,7 +2415,8 @@ if (H[taskId]) return H[taskId];
     const base = ids.reduce((acc, id) => acc + (this.unlocked?.[id] ? this.getTaskPoints(id) : 0), 0);
     const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
     const bonus = this.sqliDone ? 10 : 0;
-    return Math.max(0, base + bonus - hints);
+    const spickerPenalty = this.spickerUsed ? 1 : 0;
+    return Math.max(0, base + bonus - hints - spickerPenalty);
   }
 
   pulseLocked(el) {
