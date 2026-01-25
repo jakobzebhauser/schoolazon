@@ -63,6 +63,16 @@ const ALL_TASK_IDS = [
   try {
     const isFree = (document.body && document.body.dataset && document.body.dataset.mode) === "free";
     if (!isFree) return;
+    const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
+    const skipReset = safeGet(sessionStorage, "schulazon_skip_reset_v1") === "true";
+    if (skipReset) {
+      // In der Einführung nicht konsumieren, damit der Rücksprung in den Free‑Modus
+      // keinen Reset auslöst.
+      if (!isTutorial) {
+        try { sessionStorage.removeItem("schulazon_skip_reset_v1"); } catch (_) {}
+      }
+      return;
+    }
     const keys = [
       "schulazon_name",
       "schulazon_unlocked_v1",
@@ -182,6 +192,7 @@ HAVING COUNT(*) >= 3;`
 
 const FREE_TIMER_TOTAL_SEC = 60 * 60;
 const FREE_TIMER_KEY = "schulazon_free_startedAt_v1";
+const FREE_HEADER_COLLAPSE_KEY = "schulazon_free_header_collapsed_v1";
 
 
 const BONUS_MIN_PCT = 10;
@@ -283,13 +294,38 @@ function initTopbarChrome() {
 
   // 3b) Exit -> Posttest (name bleibt erhalten)
   const exitBtn = document.getElementById("exitBtn");
+  const helpBtn = document.getElementById("helpBtn");
+  const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
   const goPosttest = () => {
     const name = getStudentName();
     if (name) persistStudentName(name);
     const url = "posttest.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
     try { window.location.assign(url); } catch (_) { window.location.href = url; }
   };
-  if (exitBtn) exitBtn.addEventListener("click", goPosttest);
+  if (exitBtn && !isTutorial) exitBtn.addEventListener("click", goPosttest);
+
+  const goHelpIntro = () => {
+    try {
+      const cm = window.currentMode;
+      if (cm && cm.currentId) {
+        const payload = { taskId: cm.currentId, sql: (cm.sqlEl?.value || "") };
+        sessionStorage.setItem("schulazon_free_resume_v1", JSON.stringify(payload));
+      } else {
+        sessionStorage.removeItem("schulazon_free_resume_v1");
+      }
+      sessionStorage.setItem("schulazon_help_return_v1", "true");
+      sessionStorage.setItem("schulazon_skip_reset_v1", "true");
+    } catch (_) {}
+    const name = getStudentName();
+    if (name) persistStudentName(name);
+    const url = "shopintroduction.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
+    try { window.location.assign(url); } catch (_) { window.location.href = url; }
+  };
+  if (helpBtn && !isTutorial) helpBtn.addEventListener("click", goHelpIntro);
+  if (helpBtn && isTutorial) {
+    helpBtn.setAttribute("aria-disabled", "true");
+    helpBtn.setAttribute("title", "Du bist bereits in der Einführung");
+  }
 
   // 4) 60-min countdown (session-persisted)
   const timerTag = document.getElementById("timerTag");
@@ -432,6 +468,8 @@ class FreeMode {
     this.shop.onSqliSuccess?.(() => this.onSqliSuccess());
 
     this.currentId = null;
+    this.headerCollapsed = false;
+    this.headerEditMode = false;
   }
 
   loadProgressState() {
@@ -970,18 +1008,22 @@ LIMIT 2;`,
 
   // Best-effort: Name aktualisieren
   this.syncStudentName();
+
+  // Resume task after help/tutorial (optional)
+  this.resumeTaskIfAny();
 }
 
 renderShell() {
     this.root.innerHTML = `
       <div class="right-wrap">
         <header class="lab-header">
-          <div id="scoreEl" class="score-corner" aria-label="Score">🏆 0</div>
-          <div class="lab-header-top">
+          <div class="lab-header-collapsible" id="labHeaderCollapsible">
+            <div class="lab-header-top">
             <div class="lab-title">
               <h2>Freier Bereich</h2>
               <div class="lab-sub" id="labStudent">Schüler: — • Modus: Freier Bereich</div>
             </div>
+            <div id="scoreEl" class="score-corner" aria-label="Score">🏆 0</div>
 
             <div class="lab-progress" aria-label="Fortschritt">
               <div class="lab-progress-meta">
@@ -1008,6 +1050,7 @@ renderShell() {
           </div>
 
           <div id="labHint" class="lab-hint" style="display:none;"></div>
+          </div>
         </header>
 
 
@@ -1210,6 +1253,11 @@ renderShell() {
     // Header
     this.studentEl = this.root.querySelector('#labStudent');
     this.hintEl = this.root.querySelector('#labHint');
+    this.headerEl = this.root.querySelector('.lab-header');
+    this.headerCollapsibleEl = this.root.querySelector('#labHeaderCollapsible');
+    this.headerToggleBtn = document.getElementById('labHeaderToggle');
+    this.headerToggleTextEl = document.getElementById('labHeaderToggleText');
+    this.initHeaderCollapse();
 
     // Progress
     this.progressCountEl = this.root.querySelector('#progressCount');
@@ -1309,6 +1357,7 @@ this.hintTextEl = this.root.querySelector('#hintText');
     this.currentSideView = null;
 
     // Handlers
+    this.headerToggleBtn?.addEventListener('click', () => this.toggleHeaderCollapse());
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
@@ -1410,6 +1459,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       if (this.taskViewEl) this.taskViewEl.style.display = 'none';
       if (this.emptyEl) this.emptyEl.style.display = '';
     }
+    this.setHeaderEditMode(!!this.currentId);
   }
 
   openSpickerIndex() {
@@ -1498,6 +1548,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       if (this.taskViewEl) this.taskViewEl.style.display = 'none';
       if (this.emptyEl) this.emptyEl.style.display = '';
     }
+    this.setHeaderEditMode(!!this.currentId);
   }
 
   async ensureDbForSchema() {
@@ -1682,6 +1733,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       if (this.taskViewEl) this.taskViewEl.style.display = 'none';
       if (this.emptyEl) this.emptyEl.style.display = '';
     }
+    this.setHeaderEditMode(!!this.currentId);
   }
 
   openSolutionsIndex() {
@@ -1876,6 +1928,49 @@ WHERE username = '<span class="muted">EINGABE_USER</span>'
   showAuxShell() {
     if (this.taskShellEl) this.taskShellEl.style.display = 'none';
     if (this.auxShellEl) this.auxShellEl.style.display = '';
+    this.setHeaderEditMode(false);
+  }
+
+  initHeaderCollapse() {
+    if (!this.headerEl || !this.headerToggleBtn) return;
+    this.setHeaderCollapsed(false, { persist: false });
+    this.setHeaderEditMode(false);
+  }
+
+  toggleHeaderCollapse() {
+    this.setHeaderCollapsed(!this.headerCollapsed, { persist: true });
+  }
+
+  setHeaderCollapsed(collapsed, opts = {}) {
+    const { persist = true } = opts;
+    this.headerCollapsed = !!collapsed;
+    if (this.headerEl) this.headerEl.classList.toggle('is-collapsed', this.headerCollapsed);
+    if (this.headerToggleBtn) {
+      this.headerToggleBtn.setAttribute('aria-expanded', this.headerCollapsed ? 'false' : 'true');
+      this.headerToggleBtn.setAttribute('title', this.headerCollapsed ? 'Bereich ausklappen' : 'Bereich einklappen');
+      this.headerToggleBtn.classList.toggle('is-collapsed', this.headerCollapsed);
+    }
+    if (this.headerToggleTextEl) {
+      this.headerToggleTextEl.textContent = this.headerCollapsed ? 'Ausklappen' : 'Einklappen';
+    }
+    if (persist) safeSet(sessionStorage, FREE_HEADER_COLLAPSE_KEY, this.headerCollapsed ? '1' : '0');
+  }
+
+  setHeaderEditMode(isEditing) {
+    const active = !!isEditing;
+    this.headerEditMode = active;
+    if (!this.headerEl || !this.headerToggleBtn) return;
+
+    this.headerEl.classList.toggle('has-toggle', active);
+    this.headerToggleBtn.classList.toggle('is-hidden', !active);
+
+    if (!active) {
+      this.setHeaderCollapsed(false, { persist: false });
+      return;
+    }
+
+    const saved = safeGet(sessionStorage, FREE_HEADER_COLLAPSE_KEY) === '1';
+    this.setHeaderCollapsed(saved, { persist: false });
   }
 
 setEmptyState(isEmpty) {
@@ -1889,12 +1984,14 @@ setEmptyState(isEmpty) {
       this.emptyEl.style.display = 'block';
       this.taskViewEl.style.display = 'none';
       this.bonusViewEl.style.display = 'none';
+      this.setHeaderEditMode(false);
       return;
     }
 
     this.emptyEl.style.display = 'none';
     this.taskViewEl.style.display = 'block';
     this.bonusViewEl.style.display = 'none';
+    this.setHeaderEditMode(true);
   }
 
   showBonusView() {
@@ -2152,6 +2249,22 @@ async applyUnlockedToShop() {
     this.unlockBtn.disabled = true;
     this.unlockBtn.classList.remove('btn-unlock-ready');
     this.unlockBtn.setAttribute('aria-disabled', 'true');
+  }
+
+  resumeTaskIfAny() {
+    try {
+      const raw = sessionStorage.getItem("schulazon_free_resume_v1");
+      if (!raw) return;
+      sessionStorage.removeItem("schulazon_free_resume_v1");
+      const data = JSON.parse(raw);
+      const id = data && data.taskId ? String(data.taskId) : "";
+      if (!id || !this.TASKS?.[id]) return;
+      this.selectTask(id);
+      if (typeof data.sql === "string") {
+        this.sqlEl.value = data.sql;
+        this.onSqlEdited();
+      }
+    } catch (_) {}
   }
 
 

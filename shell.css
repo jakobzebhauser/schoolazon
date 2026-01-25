@@ -137,9 +137,23 @@ body{
   font-weight: 900;
   transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
 }
+.pillBtn.is-hidden{
+  display: none;
+}
 .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
 .pillBtn:active{transform: translateY(0px)}
 .pillBtn:focus{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
+
+#labHeaderToggle::after{
+  content: "v";
+  display: inline-block;
+  font-size: 12px;
+  margin-left: 6px;
+  transition: transform .2s ease;
+}
+#labHeaderToggle[aria-expanded="false"]::after{
+  transform: rotate(-180deg);
+}
 
 /* Main split */
 .mode-shell{
@@ -222,12 +236,31 @@ body{
   box-shadow: 0 10px 34px rgba(10,15,24,.10);
 }
 
+.lab-header-collapsible{
+  overflow: hidden;
+  max-height: 1200px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: max-height .25s ease, opacity .2s ease, transform .2s ease;
+}
+
+.lab-header.is-collapsed{
+  padding-bottom: 6px;
+}
+
+.lab-header.is-collapsed .lab-header-collapsible{
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
 .lab-header-top{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding-right: 86px; /* reserve for score corner */
+  padding-right: 0;
   flex-wrap: wrap; /* prevents overlaps on narrow widths */
 }
 
@@ -289,9 +322,7 @@ body{
   box-shadow: 0 10px 22px rgba(10,15,24,.08);
 }
 .score-corner{
-  position: absolute;
-  top: 6px;
-  right: 6px;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -305,6 +336,8 @@ body{
   white-space: nowrap;
   box-shadow: 0 12px 26px rgba(10,15,24,.10);
   letter-spacing: .01em;
+  margin-left: auto;
+  align-self: flex-start;
 }
 
 .progress-bar{

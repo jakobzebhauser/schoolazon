@@ -134,12 +134,14 @@
         <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
 
         <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b></span>
+          <span>Hi <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
         </div>
 
         <div class="pill" id="pillTimer">
           <span>Zeit</span> <b id="timerTag">60:00</b>
         </div>
+
+        <button class="pillBtn" id="helpBtn" type="button" disabled aria-disabled="true" title="Du bist bereits in der Einführung">Hilfe 🧭</button>
       </div>
     </div>
 
@@ -378,6 +380,7 @@
         { title: "Topbar", body: `Oben: Modus‑Titel, Vollbild, optional Name und Zeit.`, target: ".topbar" },
         { title: "Vollbild", body: `Schaltet in den Präsentationsmodus.`, target: "#fsBtn" },
         { title: "Zeit", body: `Countdown (im Tutorial nicht persistent gespeichert).`, target: "#pillTimer" },
+        { title: "Hilfe", body: `Startet diese Einführung. Nach dem Durchlauf geht es im Free‑Modus genau an der vorherigen Stelle weiter.`, target: "#helpBtn" },
 
         { title: "Shop (links)", body: `Links ist der Shop. Gesperrte Buttons öffnen rechts die passende Aufgabe.`, target: "#shopFrame" },
 
@@ -453,17 +456,16 @@
 
         { title: "Lösungen", body: `Nur für bereits freigeschaltete Aufgaben (kein Komplett‑Spoiler).`, target: "#btnSolutions" },
 
-        { title: "Zusatzaufgabe", body: `Zusatzaufgaben (z. B. Security) werden später freigeschaltet.`, target: "#btnBonus" },
+        { title: "Bonus: Hacking‑Aufgabe", body: `Die Hacking‑Aufgabe wird ab 10% Fortschritt freigeschaltet.`, target: "#btnBonus" },
 
         { title: "Fertig", body: `
-            <div>Startbereit. Das Tutorial hat keinen Fortschritt gespeichert.</div>
-            <div style="margin-top:10px;"><button class="tour-btn primary" id="startNow" type="button">Jetzt in den Free‑Modus wechseln</button></div>
+            <div>Fertig. Du kehrst jetzt zum vorherigen Stand im Free‑Modus zurück.</div>
+            <div style="margin-top:10px;"><button class="tour-btn primary" id="startNow" type="button">Zurück zum Free‑Modus</button></div>
           `, target: null, onShow: () => {
             const b = document.getElementById("startNow");
             if (b) {
               b.onclick = () => {
-                try { sessionStorage.setItem("schulazon_free_startedAt_v1", String(Date.now())); } catch(_) {}
-                window.location.href = "free.html" + window.location.search;
+                goBack();
               };
             }
           } }
@@ -509,6 +511,33 @@
         ui.tip.style.display = "none";
       }
 
+
+      function goBack(){
+        try { top.__SCHULAZON_TUTORIAL__ = false; } catch(_) { try { window.__SCHULAZON_TUTORIAL__ = false; } catch(_) {} }
+        try { delete top.__SCHULAZON_TUTORIAL__; } catch(_) { try { delete window.__SCHULAZON_TUTORIAL__; } catch(_) {} }
+        const canReturn = (() => {
+          try { return sessionStorage.getItem("schulazon_help_return_v1") === "true"; } catch(_) { return false; }
+        })();
+        if (!canReturn) {
+          const url = "index.html" + window.location.search;
+          try { window.location.assign(url); } catch (_) { window.location.href = url; }
+          return;
+        }
+        try { sessionStorage.removeItem("schulazon_help_return_v1"); } catch(_) {}
+        const n = (() => {
+          try {
+            const qp = new URLSearchParams(window.location.search);
+            const qn = (qp.get("name") || "").toString().trim();
+            if (qn) return qn;
+          } catch(_) {}
+          try { return (localStorage.getItem("schulazon_name") || "").toString().trim(); } catch(_) {}
+          try { return (sessionStorage.getItem("schulazon_name") || "").toString().trim(); } catch(_) {}
+          return "";
+        })();
+        const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+        try { window.location.assign(url); } catch (_) { window.location.href = url; }
+      }
+
       function next(){
         if (idx === steps.length-1) { close(); return; }
         show(idx+1);
@@ -531,7 +560,7 @@
 
       ui.next.addEventListener("click", next);
       ui.back.addEventListener("click", back);
-      ui.skip.addEventListener("click", close);
+      ui.skip.addEventListener("click", goBack);
       ui.restart.addEventListener("click", restart);
 
       window.addEventListener("resize", refreshLayout);
@@ -539,7 +568,7 @@
 
       window.addEventListener("keydown", (e) => {
         if (!active) return;
-        if (e.key === "Escape") { e.preventDefault(); close(); }
+        if (e.key === "Escape") { e.preventDefault(); goBack(); }
         if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); next(); }
         if (e.key === "ArrowLeft") { e.preventDefault(); back(); }
       });
