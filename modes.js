@@ -281,6 +281,16 @@ function initTopbarChrome() {
     });
   }
 
+  // 3b) Exit -> Posttest (name bleibt erhalten)
+  const exitBtn = document.getElementById("exitBtn");
+  const goPosttest = () => {
+    const name = getStudentName();
+    if (name) persistStudentName(name);
+    const url = "posttest.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
+    try { window.location.assign(url); } catch (_) { window.location.href = url; }
+  };
+  if (exitBtn) exitBtn.addEventListener("click", goPosttest);
+
   // 4) 60-min countdown (session-persisted)
   const timerTag = document.getElementById("timerTag");
   const pillTimer = document.getElementById("pillTimer");
@@ -300,6 +310,10 @@ function initTopbarChrome() {
       if (remaining <= 0) {
         timerTag.textContent = "00:00";
         document.body.classList.add("timeup");
+        if (!window.__SCHULAZON_TIMEUP__) {
+          window.__SCHULAZON_TIMEUP__ = true;
+          window.setTimeout(goPosttest, 300);
+        }
         return false;
       }
       return true;

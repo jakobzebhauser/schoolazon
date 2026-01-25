@@ -129,6 +129,7 @@ body{
   white-space: nowrap;
 }
 .pill b{color: var(--text); font-weight: 900}
+.hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
 
 .pillBtn{
   cursor:pointer;

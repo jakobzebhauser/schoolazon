@@ -62,9 +62,9 @@
     }
 
     .shell{
-      width: min(1240px, 94vw);
+      width: min(1920px, 99vw);
       margin: 0 auto;
-      padding: 16px 14px 26px;
+      padding: 6px 4px 8px;
     }
 
     .topbar{
@@ -121,6 +121,7 @@
       white-space: nowrap;
     }
     .pill b{color: var(--text); font-weight: 900}
+    .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
 
     .pillBtn{
       cursor:pointer;
@@ -521,7 +522,7 @@
     }
 
     @media (max-width: 560px){
-      .shell{padding: 14px 10px 22px}
+      .shell{padding: 6px 4px 8px}
       .cardInner{padding: 18px}
       .progressWrap{padding: 12px 18px}
       .matchGrid{grid-template-columns: 1fr;}
@@ -811,7 +812,7 @@
         <button class="pillBtn" id="fsBtn" type="button" >Vollbild</button>
 
         <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b></span>
+          <span>Hi <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
         </div>
         <div class="pill" id="pillStep" style="display:none;">
           <span>Frage</span> <b id="stepTag">1/10</b>
