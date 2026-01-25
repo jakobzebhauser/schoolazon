@@ -531,7 +531,7 @@ Tipp: liefertage = 1 (genau).`,
         starter: "SELECT * FROM produkte WHERE liefertage = 1;",
         refSql: "SELECT * FROM produkte WHERE liefertage = 1;",
         sqlRules: {
-          require: ["liefertage=1", "tablecol:produkte:liefertage"],
+          require: ["cmp:liefertage:=:1", "tablecol:produkte:liefertage"],
           message: "Filtere exakt mit liefertage = 1."
         },
         mode: "rows_set"
@@ -589,7 +589,7 @@ FROM produkte
 WHERE lagerbestand >= 1
 AND lagerbestand <= 5;`,
         sqlRules: {
-          require: ["lagerbestand>=1", "lagerbestand<=5", "tablecol:produkte:lagerbestand"],
+          require: ["range:lagerbestand:1:5", "tablecol:produkte:lagerbestand"],
           message: "Nutze den Bereich 1 bis 5 (inklusive)."
         },
         mode: "rows_set"
@@ -730,7 +730,7 @@ Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis < 25;",
         refSql: "SELECT * FROM produkte WHERE preis < 25;",
         sqlRules: {
-          require: ["preis<25", "tablecol:produkte:preis"],
+          require: ["cmp:preis:<:25", "tablecol:produkte:preis"],
           message: "Filtere genau mit preis < 25."
         },
         mode: "rows_set"
@@ -746,7 +746,7 @@ Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         sqlRules: {
-          require: ["preis>=25", "preis<=50", "tablecol:produkte:preis"],
+          require: ["range:preis:25:50", "tablecol:produkte:preis"],
           message: "Nutze den Bereich 25 bis 50 (inklusive)."
         },
         mode: "rows_set"
@@ -762,7 +762,7 @@ Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         sqlRules: {
-          require: ["preis>=50", "preis<=100", "tablecol:produkte:preis"],
+          require: ["range:preis:50:100", "tablecol:produkte:preis"],
           message: "Nutze den Bereich 50 bis 100 (inklusive)."
         },
         mode: "rows_set"
@@ -788,8 +788,8 @@ FROM produkte p, bewertungen b
 WHERE p.id = b.produkt_id
 AND b.sterne = 5;`,
         sqlRules: {
-          require: ["sterne=5", "tablecol:bewertungen:sterne", "eq:produkt_id:id"],
-          any: [["distinct"], ["group by"]],
+          require: ["tablecol:bewertungen:sterne", "eq:produkt_id:id", "dedup"],
+          any: [["cmp:sterne:=:5"], ["invals:sterne:5"], ["range:sterne:5:5"]],
           message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne = 5 und entferne Duplikate (DISTINCT/GROUP BY)."
         },
         mode: "rows_set"
@@ -815,8 +815,8 @@ FROM produkte p, bewertungen b
 WHERE p.id = b.produkt_id
 AND b.sterne >= 4;`,
         sqlRules: {
-          require: ["sterne>=4", "tablecol:bewertungen:sterne", "eq:produkt_id:id"],
-          any: [["distinct"], ["group by"]],
+          require: ["tablecol:bewertungen:sterne", "eq:produkt_id:id", "dedup"],
+          any: [["cmp:sterne:>=:4"], ["invals:sterne:4,5"], ["orcmp:sterne:4:5"], ["range:sterne:4:5"]],
           message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne >= 4 und entferne Duplikate (DISTINCT/GROUP BY)."
         },
         mode: "rows_set"
@@ -2686,6 +2686,83 @@ if (H[taskId]) return H[taskId];
   containsSqlPattern(norm, pattern, aliasMap) {
     const p = String(pattern || "").toLowerCase().trim();
     if (!p) return true;
+    if (p === "dedup") {
+      return /\bdistinct\b|\bgroup\s+by\b/.test(norm.flat);
+    }
+    if (p.startsWith("invals:")) {
+      const parts = p.slice(7).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const col = this.escapeRegExp(parts[0]);
+        const vals = parts.slice(1).join(":").split(",").map(v => v.trim()).filter(Boolean);
+        const colRef = `(?:\\b[^\\s\\.]+\\.)?${col}`;
+        const re = new RegExp(`${colRef}\\s*in\\s*\\(([^\\)]*)\\)`);
+        const m = norm.flat.match(re);
+        if (!m) return false;
+        const list = m[1] || "";
+        return vals.every(v => new RegExp(`\\b${this.escapeRegExp(v)}\\b`).test(list));
+      }
+    }
+    if (p.startsWith("inselect:")) {
+      const parts = p.slice(9).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const col = this.escapeRegExp(parts[0]);
+        const sub = this.escapeRegExp(parts[1]);
+        const colRef = `(?:\\b[^\\s\\.]+\\.)?${col}`;
+        const re = new RegExp(`${colRef}\\s*in\\s*\\(\\s*select\\s+(?:distinct\\s+)?(?:\\b[^\\s\\.]+\\.)?${sub}\\b`);
+        return re.test(norm.flat);
+      }
+    }
+    if (p.startsWith("orcmp:")) {
+      const parts = p.slice(6).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 3) {
+        const col = this.escapeRegExp(parts[0]);
+        const v1 = this.escapeRegExp(parts[1]);
+        const v2 = this.escapeRegExp(parts[2]);
+        const colRef = `(?:\\b[^\\s\\.]+\\.)?${col}`;
+        const a = `${colRef}\\s*={1,2}\\s*${v1}\\s*(?:or|\\bor\\b)\\s*${colRef}\\s*={1,2}\\s*${v2}`;
+        const b = `${colRef}\\s*={1,2}\\s*${v2}\\s*(?:or|\\bor\\b)\\s*${colRef}\\s*={1,2}\\s*${v1}`;
+        const reA = new RegExp(a);
+        const reB = new RegExp(b);
+        return reA.test(norm.flat) || reB.test(norm.flat);
+      }
+    }
+    if (p.startsWith("range:")) {
+      const parts = p.slice(6).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 3) {
+        const col = this.escapeRegExp(parts[0]);
+        const min = this.escapeRegExp(parts[1]);
+        const max = this.escapeRegExp(parts[2]);
+        const colRef = `(?:\\b[^\\s\\.]+\\.)?${col}`;
+        const betweenRe = new RegExp(`${colRef}\\s*between\\s*${min}\\s*and\\s*${max}`);
+        const geLeRe = new RegExp(`${colRef}\\s*>=\\s*${min}\\s*(?:and|\\band\\b)\\s*${colRef}\\s*<=\\s*${max}`);
+        const leGeRe = new RegExp(`${colRef}\\s*<=\\s*${max}\\s*(?:and|\\band\\b)\\s*${colRef}\\s*>=\\s*${min}`);
+        const minFirstRe = new RegExp(`${min}\\s*<=\\s*${colRef}\\s*(?:and|\\band\\b)\\s*${colRef}\\s*<=\\s*${max}`);
+        const notOutRe = new RegExp(`not\\s*\\(\\s*${colRef}\\s*<\\s*${min}\\s*(?:or|\\bor\\b)\\s*${colRef}\\s*>\\s*${max}\\s*\\)`);
+        return betweenRe.test(norm.flat) || geLeRe.test(norm.flat) || leGeRe.test(norm.flat) || minFirstRe.test(norm.flat) || notOutRe.test(norm.flat);
+      }
+    }
+    if (p.startsWith("cmp:")) {
+      const parts = p.slice(4).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 3) {
+        const col = this.escapeRegExp(parts[0]);
+        const op = this.escapeRegExp(parts[1]);
+        const val = this.escapeRegExp(parts[2]);
+        const colRef = `(?:\\b[^\\s\\.]+\\.)?${col}`;
+        const opRe = (parts[1] === "=") ? "={1,2}" : op;
+        const re = new RegExp(`${colRef}\\s*${opRe}\\s*${val}`);
+        const flipOps = { "<": ">", ">": "<", "<=": ">=", ">=": "<=" };
+        const flip = flipOps[parts[1]];
+        if (flip) {
+          const reRev = new RegExp(`${val}\\s*${this.escapeRegExp(flip)}\\s*${colRef}`);
+          return re.test(norm.flat) || reRev.test(norm.flat);
+        }
+        if (parts[1] === "=") {
+          const reRev = new RegExp(`${val}\\s*={1,2}\\s*${colRef}`);
+          return re.test(norm.flat) || reRev.test(norm.flat);
+        }
+        return re.test(norm.flat);
+      }
+    }
     if (p.startsWith("tablecol:")) {
       const parts = p.slice(9).split(":").map(s => s.trim()).filter(Boolean);
       if (parts.length >= 2) {
@@ -2716,8 +2793,8 @@ if (H[taskId]) return H[taskId];
       if (parts.length >= 2) {
         const a = this.escapeRegExp(parts[0]);
         const b = this.escapeRegExp(parts[1]);
-        const re = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${a}\\s*=\\s*(?:\\b[^\\s\\.]+\\.)?${b}`);
-        const reRev = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${b}\\s*=\\s*(?:\\b[^\\s\\.]+\\.)?${a}`);
+        const re = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${a}\\s*={1,2}\\s*(?:\\b[^\\s\\.]+\\.)?${b}`);
+        const reRev = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${b}\\s*={1,2}\\s*(?:\\b[^\\s\\.]+\\.)?${a}`);
         return re.test(norm.flat) || reRev.test(norm.flat);
       }
     }
