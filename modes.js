@@ -393,8 +393,8 @@ class FreeMode {
     this.db = null;
 
     // Progress/Score (Gamification)
-    // UI soll explizit bei x/21 bleiben.
-    this.TOTAL_TASKS = 21;
+    // UI soll explizit bei x/N bleiben (N = Anzahl Aufgaben).
+    this.TOTAL_TASKS = 0;
     this.hintUsed = {};
     this.sqliDone = false;
 
@@ -404,6 +404,7 @@ class FreeMode {
 
     // Aufgaben-Definitionen (auf data-task IDs gemappt)
     this.TASKS = this.buildTasks();
+    this.TOTAL_TASKS = Object.keys(this.TASKS).length;
 
     // unlocked state (persistiert)
     this.unlocked = {};
@@ -479,11 +480,15 @@ class FreeMode {
         task:
 `Aufgabe:
 Ein Nutzer gibt einen Suchbegriff ein. Der Suchbegriff steht als Platzhalter :q zur Verfügung.
-Zeige alle Produkte, deren Name diesen Begriff enthält.
-Gib alle Produktdaten aus.`,
+Zeige alle Produkte, deren Name den Begriff enthält (LIKE mit Wildcards).
+Gib alle Spalten der Tabelle produkte aus.`,
         starter: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
         refSql: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
-        mode: "set"
+        sqlRules: {
+          require: ["like", ":q", "%", "tablecol:produkte:name"],
+          message: "Nutze LIKE mit :q und Wildcards (%) auf dem Produktnamen."
+        },
+        mode: "rows_set"
       },
 
       "all": {
@@ -495,7 +500,7 @@ Zeige alle vorhandenen Produkte.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte;",
         refSql: "SELECT * FROM produkte;",
-        mode: "set"
+        mode: "rows_set"
       },
 
       "express": {
@@ -506,10 +511,14 @@ Gib alle Produktdaten aus.`,
 Zeige alle Produkte, die bereits am nächsten Tag geliefert werden.
 Gib alle Produktdaten aus.
 
-Tipp: liefertage = 1`,
+Tipp: liefertage = 1 (genau).`,
         starter: "SELECT * FROM produkte WHERE liefertage = 1;",
         refSql: "SELECT * FROM produkte WHERE liefertage = 1;",
-        mode: "set"
+        sqlRules: {
+          require: ["liefertage=1", "tablecol:produkte:liefertage"],
+          message: "Filtere exakt mit liefertage = 1."
+        },
+        mode: "rows_set"
       },
 
       "bestseller": {
@@ -521,18 +530,28 @@ Zeige alle Produkte, die insgesamt öfter als 300-mal verkauft wurden.
 Ein Produkt kann mehrfach verkauft worden sein; alle diese Verkäufe sollen zusammengezählt werden.
 Gib alle Produktdaten aus.`,
         starter:
-`SELECT p.id
-FROM produkte p, verkäufe v
-WHERE p.id = v.produkt_id
-GROUP BY p.id
-HAVING SUM(v.anzahl) > 300;`,
+`SELECT p.*
+FROM produkte p
+WHERE p.id IN (
+  SELECT v.produkt_id
+  FROM verkäufe v
+  GROUP BY v.produkt_id
+  HAVING SUM(v.anzahl) > 300
+);`,
         refSql:
-`SELECT p.id
-FROM produkte p, verkäufe v
-WHERE p.id = v.produkt_id
-GROUP BY p.id
-HAVING SUM(v.anzahl) > 300;`,
-        mode: "set"
+`SELECT p.*
+FROM produkte p
+WHERE p.id IN (
+  SELECT v.produkt_id
+  FROM verkäufe v
+  GROUP BY v.produkt_id
+  HAVING SUM(v.anzahl) > 300
+);`,
+        sqlRules: {
+          require: ["sum(", "having"],
+          message: "Für diese Aufgabe brauchst du eine Aggregation mit SUM(...) und eine HAVING-Bedingung."
+        },
+        mode: "rows_set"
       },
 
       "available": {
@@ -542,7 +561,7 @@ HAVING SUM(v.anzahl) > 300;`,
 `Aufgabe:
 Zeige alle Produkte, von denen nur noch wenige Stück auf Lager sind.
 Ein Produkt gilt als „nur noch wenige auf Lager“, wenn der Lagerbestand zwischen 1 und 5 Stück liegt.
-Gib alle Produktdaten aus.`,
+Gib alle Produktdaten aus (1 und 5 sind inklusive).`,
         starter:
 `SELECT *
 FROM produkte
@@ -553,7 +572,11 @@ AND lagerbestand <= 5;`,
 FROM produkte
 WHERE lagerbestand >= 1
 AND lagerbestand <= 5;`,
-        mode: "set"
+        sqlRules: {
+          require: ["lagerbestand>=1", "lagerbestand<=5", "tablecol:produkte:lagerbestand"],
+          message: "Nutze den Bereich 1 bis 5 (inklusive)."
+        },
+        mode: "rows_set"
       },
 
       "priceAsc": {
@@ -565,7 +588,7 @@ Zeige alle Produkte und sortiere sie vom günstigsten zum teuersten.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte ORDER BY preis ASC;",
         refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
-        mode: "order"
+        mode: "rows_order"
       },
 
       "priceDesc": {
@@ -577,7 +600,7 @@ Zeige alle Produkte und sortiere sie vom teuersten zum günstigsten.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte ORDER BY preis DESC;",
         refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
-        mode: "order"
+        mode: "rows_order"
       },
 
       "popularity": {
@@ -599,7 +622,11 @@ ORDER BY verkäufe DESC;`,
 FROM verkäufe
 GROUP BY produkt_id
 ORDER BY verkäufe DESC;`,
-        mode: "order"
+        sqlRules: {
+          require: ["sum(", "group by", "order by"],
+          message: "Für diese Aufgabe brauchst du SUM(...) mit GROUP BY und eine Sortierung per ORDER BY."
+        },
+        mode: "rows_order"
       },
 
       "cat-electronics": {
@@ -608,19 +635,23 @@ ORDER BY verkäufe DESC;`,
         task:
 `Aufgabe:
 Zeige alle Produkte, die zur Kategorie „Elektronik“ gehören.
-Die Kategorie soll über ihren Namen bestimmt werden, nicht über eine ID.
-Gib alle Produktdaten aus.`,
+Bestimme die Kategorie über den Namen: kategorien.name = 'Elektronik'.
+Gib alle Produktdaten aus (SELECT p.*).`,
         starter:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Elektronik';`,
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Elektronik';`,
         refSql:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Elektronik';`,
-        mode: "set"
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Elektronik';`,
+        sqlRules: {
+          require: ["tablecol:kategorien:name", "'elektronik'", "eq:kategorie_id:id"],
+          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Elektronik'."
+        },
+        mode: "rows_set"
       },
 
       "cat-household": {
@@ -629,19 +660,23 @@ AND kategorien.name = 'Elektronik';`,
         task:
 `Aufgabe:
 Zeige alle Produkte, die zur Kategorie „Haushalt“ gehören.
-Die Kategorie soll über ihren Namen bestimmt werden.
-Gib alle Produktdaten aus.`,
+Bestimme die Kategorie über den Namen: kategorien.name = 'Haushalt'.
+Gib alle Produktdaten aus (SELECT p.*).`,
         starter:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Haushalt';`,
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Haushalt';`,
         refSql:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Haushalt';`,
-        mode: "set"
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Haushalt';`,
+        sqlRules: {
+          require: ["tablecol:kategorien:name", "'haushalt'", "eq:kategorie_id:id"],
+          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Haushalt'."
+        },
+        mode: "rows_set"
       },
 
       "cat-sport": {
@@ -650,19 +685,23 @@ AND kategorien.name = 'Haushalt';`,
         task:
 `Aufgabe:
 Zeige alle Produkte, die zur Kategorie „Sport“ gehören.
-Die Kategorie soll über ihren Namen bestimmt werden.
-Gib alle Produktdaten aus.`,
+Bestimme die Kategorie über den Namen: kategorien.name = 'Sport'.
+Gib alle Produktdaten aus (SELECT p.*).`,
         starter:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Sport';`,
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Sport';`,
         refSql:
-`SELECT *
-FROM produkte, kategorien
-WHERE produkte.kategorie_id = kategorien.id
-AND kategorien.name = 'Sport';`,
-        mode: "set"
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Sport';`,
+        sqlRules: {
+          require: ["tablecol:kategorien:name", "'sport'", "eq:kategorie_id:id"],
+          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Sport'."
+        },
+        mode: "rows_set"
       },
 
       "price-25": {
@@ -670,11 +709,15 @@ AND kategorien.name = 'Sport';`,
         difficulty: "+",
         task:
 `Aufgabe:
-Zeige alle Produkte, die weniger als 25 € kosten.
+Zeige alle Produkte mit preis < 25.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis < 25;",
         refSql: "SELECT * FROM produkte WHERE preis < 25;",
-        mode: "set"
+        sqlRules: {
+          require: ["preis<25", "tablecol:produkte:preis"],
+          message: "Filtere genau mit preis < 25."
+        },
+        mode: "rows_set"
       },
 
       "price-50": {
@@ -682,11 +725,15 @@ Gib alle Produktdaten aus.`,
         difficulty: "+",
         task:
 `Aufgabe:
-Zeige alle Produkte, deren Preis zwischen 25 € und 50 € liegt.
+Zeige alle Produkte mit preis >= 25 und preis <= 50.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
-        mode: "set"
+        sqlRules: {
+          require: ["preis>=25", "preis<=50", "tablecol:produkte:preis"],
+          message: "Nutze den Bereich 25 bis 50 (inklusive)."
+        },
+        mode: "rows_set"
       },
 
       "price-100": {
@@ -694,11 +741,15 @@ Gib alle Produktdaten aus.`,
         difficulty: "+",
         task:
 `Aufgabe:
-Zeige alle Produkte, deren Preis zwischen 50 € und 100 € liegt.
+Zeige alle Produkte mit preis >= 50 und preis <= 100.
 Gib alle Produktdaten aus.`,
         starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
-        mode: "set"
+        sqlRules: {
+          require: ["preis>=50", "preis<=100", "tablecol:produkte:preis"],
+          message: "Nutze den Bereich 50 bis 100 (inklusive)."
+        },
+        mode: "rows_set"
       },
 
       "rating-5": {
@@ -707,19 +758,25 @@ Gib alle Produktdaten aus.`,
         task:
 `Aufgabe:
 Zeige alle Produkte, die mindestens eine Bewertung mit fünf Sternen erhalten haben.
-Ein Produkt kann mehrere Bewertungen haben.
+Ein Produkt kann mehrere Bewertungen haben. Zeige jedes Produkt nur einmal.
+Filtere über die Spalte bewertungen.sterne.
 Gib alle Produktdaten aus.`,
         starter:
-`SELECT *
-FROM produkte, bewertungen
-WHERE produkte.id = bewertungen.produkt_id
-AND bewertungen.sterne = 5;`,
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne = 5;`,
         refSql:
-`SELECT *
-FROM produkte, bewertungen
-WHERE produkte.id = bewertungen.produkt_id
-AND bewertungen.sterne = 5;`,
-        mode: "set"
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne = 5;`,
+        sqlRules: {
+          require: ["sterne=5", "tablecol:bewertungen:sterne", "eq:produkt_id:id"],
+          any: [["distinct"], ["group by"]],
+          message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne = 5 und entferne Duplikate (DISTINCT/GROUP BY)."
+        },
+        mode: "rows_set"
       },
 
       "rating-4": {
@@ -728,23 +785,29 @@ AND bewertungen.sterne = 5;`,
         task:
 `Aufgabe:
 Zeige alle Produkte, die mindestens eine Bewertung mit vier oder fünf Sternen erhalten haben.
-Ein Produkt kann mehrere Bewertungen haben.
+Ein Produkt kann mehrere Bewertungen haben. Zeige jedes Produkt nur einmal.
+Filtere über die Spalte bewertungen.sterne.
 Gib alle Produktdaten aus.`,
         starter:
-`SELECT *
-FROM produkte, bewertungen
-WHERE produkte.id = bewertungen.produkt_id
-AND bewertungen.sterne >= 4;`,
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne >= 4;`,
         refSql:
-`SELECT *
-FROM produkte, bewertungen
-WHERE produkte.id = bewertungen.produkt_id
-AND bewertungen.sterne >= 4;`,
-        mode: "set"
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne >= 4;`,
+        sqlRules: {
+          require: ["sterne>=4", "tablecol:bewertungen:sterne", "eq:produkt_id:id"],
+          any: [["distinct"], ["group by"]],
+          message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne >= 4 und entferne Duplikate (DISTINCT/GROUP BY)."
+        },
+        mode: "rows_set"
       },
 
       "open-cart": {
-        title: "Mein Warenkorb",
+        title: "Warenkorb anzeigen",
         difficulty: "++",
         task:
 `Aufgabe:
@@ -758,7 +821,36 @@ WHERE p.id = w.produkt_id;`,
 `SELECT p.name, p.preis, w.menge
 FROM produkte p, warenkorb w
 WHERE p.id = w.produkt_id;`,
-        mode: "set"
+        sqlRules: {
+          require: ["produkte", "warenkorb", "eq:produkt_id:id"],
+          message: "Die Abfrage muss produkte.id mit warenkorb.produkt_id verknüpfen."
+        },
+        mode: "rows_set"
+      },
+
+      "cart-refresh": {
+        title: "Warenkorb aktualisieren",
+        difficulty: "++",
+        task:
+`Aufgabe:
+Aktualisiere die Warenkorb-Ansicht.
+Gib Produktname, Preis, Menge und die Zeilensumme (preis * menge) aus.
+Sortiere nach Produktname (A–Z).`,
+        starter:
+`SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id
+ORDER BY p.name ASC;`,
+        refSql:
+`SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id
+ORDER BY p.name ASC;`,
+        sqlRules: {
+          require: ["order by", "mul:preis:menge", "eq:produkt_id:id"],
+          message: "Die Abfrage braucht eine Zeilensumme (preis * menge) und eine Sortierung per ORDER BY."
+        },
+        mode: "rows_order"
       },
 
       "cart-total": {
@@ -767,6 +859,7 @@ WHERE p.id = w.produkt_id;`,
         task:
 `Aufgabe:
 Berechne den Gesamtpreis aller Produkte im Warenkorb.
+Gesamtpreis = SUM(preis * menge).
 Gib nur den Gesamtpreis aus.`,
         starter:
 `SELECT SUM(p.preis * w.menge)
@@ -776,6 +869,10 @@ WHERE p.id = w.produkt_id;`,
 `SELECT SUM(p.preis * w.menge)
 FROM produkte p, warenkorb w
 WHERE p.id = w.produkt_id;`,
+        sqlRules: {
+          require: ["sum(", "mul:preis:menge", "eq:produkt_id:id"],
+          message: "Für diese Aufgabe brauchst du SUM(preis * menge)."
+        },
         mode: "scalar"
       },
 
@@ -801,6 +898,10 @@ WHERE p.id = v.produkt_id
 AND v.nutzer_id = 1
 ORDER BY v.id DESC
 LIMIT 3;`,
+        sqlRules: {
+          require: ["nutzer_id=1", "order by", "desc", "limit 3", "mul:preis:anzahl"],
+          message: "Nutze nutzer_id = 1, ORDER BY ... DESC, LIMIT 3 und berechne den Gesamtpreis (preis * anzahl)."
+        },
         mode: "rows_order"
       },
 
@@ -825,6 +926,10 @@ WHERE p.id = v.produkt_id
 GROUP BY p.id
 ORDER BY gesamt_verkaeufe DESC
 LIMIT 2;`,
+        sqlRules: {
+          require: ["sum(", "group by", "order by"],
+          message: "Für diese Aufgabe brauchst du SUM(...) mit GROUP BY und eine Sortierung per ORDER BY."
+        },
         mode: "rows_order"
       }
     };
@@ -953,7 +1058,7 @@ renderShell() {
                     <div class="task3-cardMeta">Schreibe deine Abfrage und prüfe sie.</div>
                   </div>
 
-                  <textarea id="sqlInput" class="task3-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="SELECT …"></textarea>
+                                    <textarea id="sqlInput" class="task3-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="SELECT ?"></textarea>
 
                   <div class="task3-actions">
                     <button class="btn btn-primary" id="runBtn" type="button">Prüfen</button>
@@ -1147,7 +1252,7 @@ renderShell() {
 
     // Editor
     this.sqlEl = this.root.querySelector('#sqlInput');
-    this.outEl = this.root.querySelector('#out');
+        this.outEl = this.root.querySelector('#out');
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
 
@@ -1192,7 +1297,7 @@ this.hintTextEl = this.root.querySelector('#hintText');
 
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
     this.sqlEl?.addEventListener('input', () => this.onSqlEdited());
-
+            
     // Hint overlay
     this.hintCloseBtn?.addEventListener('click', () => this.closeHintOverlay());
     this.hintBackBtn?.addEventListener('click', () => this.closeHintOverlay());
@@ -1965,7 +2070,7 @@ async applyUnlockedToShop() {
     this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
     this.sqlEl.value = t.starter || '';
-    this.outEl.textContent = isUnlocked ? 'Bereits freigeschaltet.' : '';
+        this.outEl.textContent = isUnlocked ? 'Bereits freigeschaltet.' : '';
 
     this.unlockBtn.disabled = true;
 
@@ -2000,6 +2105,13 @@ async applyUnlockedToShop() {
       return;
     }
 
+    const t = this.TASKS[this.currentId];
+    const sqlCheck = this.validateSqlStructure(sql, t);
+    if (!sqlCheck.ok) {
+      this.outEl.textContent = sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.";
+      return;
+    }
+
     let studentRes, refRes;
     try {
       studentRes = this.db.exec(sql);
@@ -2008,7 +2120,6 @@ async applyUnlockedToShop() {
       return;
     }
 
-    const t = this.TASKS[this.currentId];
     try {
       refRes = this.db.exec(t.refSql);
     } catch (e) {
@@ -2036,7 +2147,7 @@ async applyUnlockedToShop() {
 
 
   onSqlEdited() {
-    // Sobald der User den Editor ändert: Freischalten wieder sperren,
+        // Sobald der User den Editor ändert: Freischalten wieder sperren,
     // bis erneut „Prüfen“ erfolgreich war.
     if (!this.unlockBtn) return;
     if (this.unlocked?.[this.currentId]) return; // bereits freigeschaltet
@@ -2045,6 +2156,7 @@ async applyUnlockedToShop() {
     this.unlockBtn.classList.remove('btn-unlock-ready');
     this.unlockBtn.setAttribute('aria-disabled', 'true');
   }
+
 
   
 async unlockCurrent() {
@@ -2240,23 +2352,29 @@ async unlockCurrent() {
   getHintText(taskId) {
     const t = this.TASKS?.[taskId];
     const H = {
-      "search": "Nutze LIKE mit Platzhalter :q und Wildcards (%). Achte darauf, dass du die Wildcards korrekt zusammensetzt.",
-      "bestseller": "Du brauchst eine Aggregation über verkäufe: GROUP BY produkt_id und SUM(anzahl). Danach filterst du mit HAVING.",
-      "available": "Das ist eine reine WHERE‑Bedingung auf lagerbestand. Formuliere den Bereich eindeutig.",
-      "popularity": "Beliebtheit = SUM(anzahl) pro Produkt. Gib produkt_id und die Summe aus und sortiere danach absteigend.",
-      "cat-electronics": "Du musst produkte mit kategorien verknüpfen (JOIN) und dann nach kategorien.name filtern.",
-      "cat-household": "Verknüpfe produkte mit kategorien und filtere nach kategorien.name.",
-      "cat-sport": "Verknüpfe produkte mit kategorien und filtere nach kategorien.name.",
-      "rating-5": "Verknüpfe produkte mit bewertungen und filtere nach sterne = 5. Denk daran: Produkte können mehrere Bewertungen haben.",
-      "rating-4": "Wie bei 5‑Sterne, aber mit sterne >= 4. Achte auf mögliche Duplikate.",
-      "open-cart": "Verknüpfe warenkorb mit produkte über produkt_id. Gib Name/Preis/Menge aus.",
-      "cart-refresh": "Du brauchst zusätzlich eine berechnete Spalte (preis * menge) mit Alias. Danach ORDER BY nach Name.",
-      "cart-total": "Aggregation: SUM(preis * menge). Gib nur einen Wert zurück.",
-      "orders": "Filtere auf nutzer_id = 1, sortiere nach der neuesten Bestellung (id DESC) und LIMIT 3.",
-      "topProducts": "SUM(anzahl) pro Produkt, danach absteigend sortieren und LIMIT 2. Gib Name und Summe aus.",
+      "search": "Nutze LIKE auf produkte.name. Baue den Suchbegriff :q mit Wildcards (%) zusammen.",
+      "all": "Hier wird nichts gefiltert. Verwende eine einfache SELECT-Abfrage auf die Tabelle produkte.",
+      "express": "Filtere in produkte nach liefertage. Gesucht ist der Wert 1 (exakt).",
+      "bestseller": "Aggregiere verk?ufe pro produkt_id und filtere die Summe > 300 (HAVING). Danach gib die passenden Produkte aus.",
+      "available": "Nutze eine WHERE-Bedingung auf lagerbestand im Bereich 1 bis 5 (inklusive).",
+      "priceAsc": "Sortiere die Produkte nach preis aufsteigend (ASC).",
+      "priceDesc": "Sortiere die Produkte nach preis absteigend (DESC).",
+      "popularity": "Summiere verk?ufe pro produkt_id und sortiere die Summe absteigend. Gib produkt_id und die Summe aus.",
+      "cat-electronics": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Elektronik'.",
+      "cat-household": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Haushalt'.",
+      "cat-sport": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Sport'.",
+      "price-25": "Filtere auf preis < 25.",
+      "price-50": "Filtere auf preis zwischen 25 und 50 (inklusive).",
+      "price-100": "Filtere auf preis zwischen 50 und 100 (inklusive).",
+      "rating-5": "Verbinde produkte und bewertungen ?ber produkt_id. Filtere sterne = 5 und entferne Duplikate (DISTINCT oder GROUP BY).",
+      "rating-4": "Verbinde produkte und bewertungen ?ber produkt_id. Filtere sterne >= 4 und entferne Duplikate (DISTINCT oder GROUP BY).",
+      "open-cart": "Verbinde produkte mit warenkorb ?ber produkt_id. Gib Name, Preis und Menge aus.",
+      "cart-refresh": "Wie Warenkorb anzeigen, plus Zeilensumme (preis * menge) und ORDER BY nach Name.",
+      "cart-total": "Gesamtpreis = SUM(preis * menge). Gib nur einen Wert zur?ck.",
+      "orders": "Filtere verk?ufe auf nutzer_id = 1, sortiere nach neuestem (id DESC) und begrenze auf 3. Berechne die Zeilensumme.",
+      "topProducts": "Aggregiere verk?ufe pro Produkt (SUM). Sortiere absteigend und nimm die Top 2.",
     };
-
-    if (H[taskId]) return H[taskId];
+if (H[taskId]) return H[taskId];
 
     // Fallback – hilft, verrät nicht die Lösung
     const lvl = this.getDifficultyLevel(t?.difficulty);
@@ -2351,8 +2469,8 @@ async unlockCurrent() {
   // ---------- Validation ----------
   validate(studentExec, refExec, mode) {
     // Full table comparison (supports text + numeric outputs)
-    if (mode === 'rows_order' || mode === 'rows_set') {
-      const ordered = (mode === 'rows_order');
+    if (mode === 'rows_order' || mode === 'rows_set' || mode === 'order' || mode === 'set') {
+      const ordered = (mode === 'rows_order' || mode === 'order');
       return this.validateRows(studentExec, refExec, ordered);
     }
 
@@ -2387,6 +2505,7 @@ async unlockCurrent() {
     const b = this.extractRows(refExec);
 
     if (!a.ok || !b.ok) return false;
+    if (a.colCount !== b.colCount) return false;
 
     if (ordered) {
       if (a.rows.length !== b.rows.length) return false;
@@ -2417,14 +2536,16 @@ async unlockCurrent() {
 
   extractRows(execResult) {
     // Leeres Result ist gültig
-    if (!execResult || execResult.length === 0) return { ok: true, rows: [] };
+    if (!execResult || execResult.length === 0) return { ok: true, rows: [], colCount: 0 };
     const res = execResult[0];
     const values = res?.values || [];
-    if (!Array.isArray(values) || values.length === 0) return { ok: true, rows: [] };
+    const columns = Array.isArray(res?.columns) ? res.columns : [];
+    const colCount = columns.length;
+    if (!Array.isArray(values) || values.length === 0) return { ok: true, rows: [], colCount };
 
     // Normalize each cell to stable representation
     const rows = values.map(row => row.map(v => this.normalizeCell(v)));
-    return { ok: true, rows };
+    return { ok: true, rows, colCount };
   }
 
   normalizeCell(v) {
@@ -2514,6 +2635,125 @@ async unlockCurrent() {
     if (!s.startsWith("select")) return false;
     const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
     return !forbidden.some(k => s.includes(k));
+  }
+
+  stripSqlComments(sql) {
+    const s = String(sql || "");
+    const noBlock = s.replace(/\/\*[\s\S]*?\*\//g, "");
+    return noBlock.replace(/--.*$/gm, "");
+  }
+
+  normalizeSqlForCheck(sql) {
+    const raw = this.stripSqlComments(sql).toLowerCase();
+    const flat = raw.replace(/\s+/g, " ").trim();
+    const nospace = flat.replace(/\s+/g, "");
+    const noparen = nospace.replace(/[()]/g, "");
+    return { flat, nospace, noparen };
+  }
+
+  containsSqlPattern(norm, pattern, aliasMap) {
+    const p = String(pattern || "").toLowerCase().trim();
+    if (!p) return true;
+    if (p.startsWith("tablecol:")) {
+      const parts = p.slice(9).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const table = parts[0];
+        const col = parts[1];
+        const aliases = aliasMap?.get(table) || new Set([table]);
+        for (const a of aliases) {
+          if (norm.nospace.includes(`${a}.${col}`) || norm.flat.includes(`${a}.${col}`)) return true;
+        }
+        if (aliasMap && aliasMap.size === 1 && aliasMap.has(table)) {
+          if (norm.nospace.includes(col) || norm.flat.includes(col)) return true;
+        }
+        return false;
+      }
+    }
+    if (p.startsWith("mul:")) {
+      const parts = p.slice(4).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const a = this.escapeRegExp(parts[0]);
+        const b = this.escapeRegExp(parts[1]);
+        const re = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${a}\\s*\\*\\s*(?:\\b[^\\s\\.]+\\.)?${b}`);
+        const reRev = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${b}\\s*\\*\\s*(?:\\b[^\\s\\.]+\\.)?${a}`);
+        return re.test(norm.flat) || reRev.test(norm.flat);
+      }
+    }
+    if (p.startsWith("eq:")) {
+      const parts = p.slice(3).split(":").map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const a = this.escapeRegExp(parts[0]);
+        const b = this.escapeRegExp(parts[1]);
+        const re = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${a}\\s*=\\s*(?:\\b[^\\s\\.]+\\.)?${b}`);
+        const reRev = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${b}\\s*=\\s*(?:\\b[^\\s\\.]+\\.)?${a}`);
+        return re.test(norm.flat) || reRev.test(norm.flat);
+      }
+    }
+    if (/\s/.test(p)) return norm.flat.includes(p);
+    return norm.nospace.includes(p) || norm.noparen.includes(p) || norm.flat.includes(p);
+  }
+
+  escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  validateSqlStructure(sql, task) {
+    const rules = task?.sqlRules;
+    if (!rules) return { ok: true };
+
+    const norm = this.normalizeSqlForCheck(sql);
+    const aliasMap = this.extractTableAliases(norm.flat);
+    const require = Array.isArray(rules.require) ? rules.require : [];
+    for (const p of require) {
+      if (!this.containsSqlPattern(norm, p, aliasMap)) {
+        return { ok: false, message: rules.message || "Die Abfrage passt nicht zur Aufgabe." };
+      }
+    }
+    const anyGroups = Array.isArray(rules.any) ? rules.any : [];
+    if (anyGroups.length > 0) {
+      const anyOk = anyGroups.some((group) => {
+        const parts = Array.isArray(group) ? group : [group];
+        return parts.every((p) => this.containsSqlPattern(norm, p, aliasMap));
+      });
+      if (!anyOk) {
+        return { ok: false, message: rules.message || "Die Abfrage passt nicht zur Aufgabe." };
+      }
+    }
+    return { ok: true };
+  }
+
+  extractTableAliases(sqlFlat) {
+    const map = new Map();
+    const add = (table, alias) => {
+      if (!table || !/^[a-z_][\w]*$/.test(table)) return;
+      if (!map.has(table)) map.set(table, new Set([table]));
+      if (alias && /^[a-z_][\w]*$/.test(alias)) map.get(table).add(alias);
+    };
+
+    const fromRe = /\bfrom\s+([\s\S]*?)(?=\bwhere\b|\bgroup\b|\border\b|\bhaving\b|\blimit\b|\bunion\b|\bintersect\b|\bexcept\b|$)/g;
+    let m;
+    while ((m = fromRe.exec(sqlFlat)) !== null) {
+      const chunk = m[1];
+      const parts = chunk.split(",");
+      for (const raw of parts) {
+        const part = raw.trim();
+        if (!part || part.startsWith("(")) continue;
+
+        const tokens = part.split(/\s+/);
+        const table = tokens[0];
+        let alias = tokens[1];
+        if (alias === "as") alias = tokens[2];
+        if (alias === "join" || alias === "on") alias = null;
+        add(table, alias);
+
+        const joinRe = /\bjoin\s+([a-z_][\w]*)(?:\s+(?:as\s+)?([a-z_][\w]*))?/g;
+        let jm;
+        while ((jm = joinRe.exec(part)) !== null) {
+          add(jm[1], jm[2]);
+        }
+      }
+    }
+    return map;
   }
 
   escape(s) {

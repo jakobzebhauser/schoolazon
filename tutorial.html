@@ -209,7 +209,48 @@
       white-space: nowrap;
     }
 
-    .schemaWrap{margin: 12px 0 14px;}
+    
+
+    .hiPK{
+      font-weight: 900;
+      color: rgba(11,15,24,.92);
+      background: rgba(52,199,89,.12);
+      border: 1px solid rgba(52,199,89,.18);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+    .hiFK{
+      font-weight: 900;
+      color: rgba(11,15,24,.92);
+      background: rgba(255,149,0,.12);
+      border: 1px solid rgba(255,149,0,.18);
+      padding: 0 .32em;
+      border-radius: .62em;
+      white-space: nowrap;
+    }
+    .pkTok{
+      font-family: var(--mono);
+      font-weight: 950;
+      color: rgba(52,199,89,.96);
+      background: rgba(52,199,89,.12);
+      border: 1px solid rgba(52,199,89,.18);
+      padding: 0 .22em;
+      border-radius: .50em;
+      white-space: nowrap;
+    }
+    .fkTok{
+      font-family: var(--mono);
+      font-weight: 950;
+      color: rgba(255,149,0,.96);
+      background: rgba(255,149,0,.12);
+      border: 1px solid rgba(255,149,0,.18);
+      padding: 0 .22em;
+      border-radius: .50em;
+      white-space: nowrap;
+    }
+
+.schemaWrap{margin: 12px 0 14px;}
     .schemaLabel{
       --tone: var(--blue);
       display:inline-flex;
@@ -289,6 +330,38 @@
     .miniTable tr:hover td{background: rgba(0,122,255,.055)}
     .miniTable code{font-family: var(--mono); font-size: 0.95em}
 
+
+    /* Narrow tables (used where screens should not get too wide) */
+    .narrowWrap{
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .narrowWrap .miniTable{margin-bottom: 12px}
+
+    /* Simple click-to-show (details/summary) */
+    details.reveal{
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.66);
+      border-radius: var(--radiusMd);
+      padding: 10px 12px;
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      margin: 10px 0 0;
+    }
+    details.reveal > summary{
+      cursor: pointer;
+      font-weight: 950;
+      color: rgba(11,15,24,.86);
+      list-style: none;
+      user-select:none;
+    }
+    details.reveal > summary::-webkit-details-marker{display:none}
+    details.reveal > summary::after{
+      content: "▾";
+      float: right;
+      color: rgba(11,15,24,.62);
+    }
+    details.reveal[open] > summary::after{content:"▴"}
     /* DISTINCT Visual */
     .distinctViz{
       border: 1px solid var(--hair2);
@@ -626,19 +699,19 @@
 
   /* ---------- SQL Highlighting (robust) ---------- */
   const KW_SET = new Set([
-    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT",
-    "COUNT","SUM","AVG","MIN","MAX","AS","AND","OR","NOT"
+    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","LIMIT",
+    "COUNT","SUM","AVG","MIN","MAX","AS","AND","OR","NOT","ASC","DESC"
   ]);
 
-  function isNumberToken(t){ return /^\d+$/.test(t); }
+function isNumberToken(t){ return /^\d+$/.test(t); }
   function isOpToken(t){ return /^(<=|>=|<>|=|<|>)$/.test(t); }
   function isWordToken(t){ return /^[A-Za-z_][A-Za-z0-9_]*$/.test(t); }
 
-  function highlightSqlLine(line){
+  function highlightSqlLine(line, marks){
     const raw = (line ?? "").toString();
     if(raw.trim().startsWith("--")) return `<span class="cm">${escapeHtml(raw)}</span>`;
 
-    const re = /(\bORDER\s+BY\b|\bGROUP\s+BY\b|<=|>=|<>|=|<|>|\b\d+\b|\b[A-Za-z_][A-Za-z0-9_]*\b|\s+|.)/gi;
+    const re = /(\bORDER\s+BY\b|\bGROUP\s+BY\b|\bASC\b|\bDESC\b|<=|>=|<>|=|<|>|\b\d+\b|\b[A-Za-z_][A-Za-z0-9_]*\b|\s+|.)/gi;
     const out = [];
     let m;
 
@@ -653,7 +726,12 @@
       if(KW_SET.has(up)){ out.push(`<span class="kw">${escapeHtml(tok)}</span>`); continue; }
 
       if(isWordToken(tok) && tok.toUpperCase() !== "NULL"){
-        out.push(`<span class="id">${escapeHtml(tok)}</span>`);
+        const key = tok.toLowerCase();
+        if(marks && marks[key]){
+          out.push(`<span class="${marks[key]}">${escapeHtml(tok)}</span>`);
+        } else {
+          out.push(`<span class="id">${escapeHtml(tok)}</span>`);
+        }
         continue;
       }
 
@@ -663,27 +741,28 @@
     return out.join("");
   }
 
-  function renderSql(lines, toneClass="tone-blue"){
+  function renderSql(lines, toneClass="tone-blue", marks=null){
     if(!lines || !lines.length) return "";
     return `
       <div class="schemaWrap">
         <div class="schemaLabel ${toneClass}">SQL</div>
-        <div class="codeBox"><pre class="sql">${lines.map(highlightSqlLine).join("\n")}</pre></div>
+        <div class="codeBox"><pre class="sql">${lines.map(l=>highlightSqlLine(l, marks)).join("\n")}</pre></div>
       </div>
     `;
   }
 
   /* ---------- Theory highlighting (ONLY key terms) ---------- */
   const THEORY_CODE = new Set([
-    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","AND","OR","NOT",
-    "COUNT","SUM","AVG","MIN","MAX","AS"
+    "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","LIMIT","AND","OR","NOT",
+    "COUNT","SUM","AVG","MIN","MAX","AS","ASC","DESC"
   ]);
 
   const THEORY_RE = new RegExp(
     [
       "\\bORDER\\s+BY\\b",
       "\\bGROUP\\s+BY\\b",
-      "\\bSELECT\\b","\\bFROM\\b","\\bWHERE\\b","\\bHAVING\\b","\\bDISTINCT\\b",
+      "\\bASC\\b","\\bDESC\\b",
+      "\\bSELECT\\b","\\bFROM\\b","\\bWHERE\\b","\\bHAVING\\b","\\bDISTINCT\\b","\\bLIMIT\\b",
       "\\bCOUNT\\b","\\bSUM\\b","\\bAVG\\b","\\bMIN\\b","\\bMAX\\b","\\bAS\\b",
       "\\bAND\\b","\\bOR\\b","\\bNOT\\b",
       "\\bPrimärschlüssel\\b",
@@ -698,6 +777,10 @@
 
   function highlightTheoryText(escapedText){
     return escapedText.replace(THEORY_RE, (match)=>{
+      const lower = match.toLowerCase();
+      if(lower.includes("primärschlüssel")) return `<span class="hiPK">${match}</span>`;
+      if(lower.includes("fremdschlüssel")) return `<span class="hiFK">${match}</span>`;
+
       const norm = match.toUpperCase().replace(/\s+/g, " ");
       const isCode = THEORY_CODE.has(norm);
       return isCode ? `<span class="hiCode">${match}</span>` : `<span class="hi">${match}</span>`;
@@ -834,13 +917,7 @@
       title:"Einleitung",
       context: withName("gut, dass du dranbleibst. Wir wiederholen die wichtigsten SQL-Grundlagen – Schritt für Schritt."),
       nameInTheory: true,
-      theory: ["SQL ist die Standardsprache, um Daten aus einer Datenbank abzufragen. Eine SQL-Abfrage besteht aus festen Bausteinen (z. B. SELECT, FROM, WHERE), die du je nach Ziel kombinierst."]
-    },
-    {
-      id:"blocks",
-      title:"Bausteine einer SQL-Abfrage",
-      context: "Wenn du die Bausteine kennst, kannst du Abfragen zuverlässig zusammensetzen.",
-      theory: "Das sind die wichtigsten Bausteine und wofür du sie brauchst.",
+      theory: ["SQL ist die Standardsprache, um Daten aus einer Datenbank abzufragen. Eine SQL-Abfrage besteht aus festen Bausteinen (z. B. SELECT, FROM, WHERE), die du je nach Ziel kombinierst."],
       table: `
         <div class="schemaWrap">
           <div class="schemaLabel tone-blue">Bausteine</div>
@@ -858,7 +935,9 @@
           </div>
         </div>
       `
+    
     },
+    
     {
       id:"task_match_blocks",
       type:"match",
@@ -878,15 +957,16 @@
       id:"keys",
       title:"Schlüssel",
       context: "Schlüssel sorgen dafür, dass Datensätze eindeutig sind und Tabellen verbunden werden können.",
-      theory: ["Eine Datenbank speichert Daten in Tabellen, in denen jede Zeile ein Datensatz ist und jede Spalte ein Attribut. Ein Primärschlüssel identifiziert einen Datensatz eindeutig; ein Fremdschlüssel verweist auf den Primärschlüssel einer anderen Tabelle, um Tabellen zu verbinden."],
+      theory: ["Ein Primärschlüssel identifiziert einen Datensatz eindeutig. Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle, um Tabellen zu verbinden: z. B. verweist produkte.kategorie_id auf kategorien.id; jeder Wert in produkte.kategorie_id muss in kategorien.id existieren."],
       sqlTone: "tone-blue",
+      sqlMarks: { id: "pkTok", kategorie_id: "fkTok" },
       sql: ["-- Beispiel (Shop-DB)","produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"]
     },
     {
       id:"select",
       title:"SELECT … FROM …",
       context: "Damit legst du fest, welche Spalten du aus welcher Tabelle sehen willst.",
-      theory: ["* bedeutet „alle Spalten“, und DISTINCT sorgt dafür, dass gleiche Werte in der Ergebnisspalte nur einmal vorkommen."],
+      theory: ["Das Sternchen (*) steht für „alle Spalten“. DISTINCT sorgt dafür, dass gleiche Werte in der Ergebnisspalte nur einmal vorkommen. LIMIT begrenzt die Anzahl der ausgegebenen Zeilen (für reproduzierbare Ergebnisse meist zusammen mit ORDER BY)."],
       sqlTone: "tone-blue",
       sql: [
         "-- alle Spalten, alle Datensätze",
@@ -899,10 +979,84 @@
         "",
         "-- ohne Duplikate",
         "SELECT DISTINCT liefertage",
-        "FROM produkte;"
+        "FROM produkte;",
+        "",
+        "-- nur die ersten 2 Zeilen",
+        "SELECT *",
+        "FROM produkte",
+        "LIMIT 2;"
       ],
-      distinctViz: true
-    },
+
+      afterSql: `
+        <div class="schemaWrap">
+          <div class="schemaLabel tone-blue">Beispiel-Ergebnisse (anklicken)</div>
+
+          <details class="reveal">
+            <summary><code>SELECT *</code></summary>
+            <div class="narrowWrap" style="margin-top:10px;">
+              <table class="miniTable" aria-label="Ergebnis: SELECT *">
+                <thead>
+                  <tr><th colspan="3"><code>SELECT *</code></th></tr>
+                  <tr><th>id</th><th>name</th><th>liefertage</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>USB‑Kabel</td><td>2</td></tr>
+                  <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
+                  <tr><td>3</td><td>Notebook‑Ständer</td><td>3</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="reveal">
+            <summary><code>SELECT liefertage</code></summary>
+            <div class="narrowWrap" style="margin-top:10px;">
+              <table class="miniTable" aria-label="Ergebnis: SELECT liefertage">
+                <thead>
+                  <tr><th><code>SELECT liefertage</code></th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>2</td></tr>
+                  <tr><td>3</td></tr>
+                  <tr><td>3</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="reveal">
+            <summary><code>SELECT DISTINCT liefertage</code></summary>
+            <div class="narrowWrap" style="margin-top:10px;">
+              <table class="miniTable" aria-label="Ergebnis: SELECT DISTINCT liefertage">
+                <thead>
+                  <tr><th><code>SELECT DISTINCT liefertage</code></th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>2</td></tr>
+                  <tr><td>3</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="reveal">
+            <summary><code>SELECT * … LIMIT 2</code></summary>
+            <div class="narrowWrap" style="margin-top:10px;">
+              <table class="miniTable" aria-label="Ergebnis: LIMIT 2">
+                <thead>
+                  <tr><th colspan="3"><code>SELECT * … LIMIT 2</code></th></tr>
+                  <tr><th>id</th><th>name</th><th>liefertage</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>USB‑Kabel</td><td>2</td></tr>
+                  <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      `
+},
     {
       id:"task_distinct",
       type:"fill",
@@ -956,17 +1110,7 @@
       feedbackOk:"Richtig. AND = beide müssen gelten.",
       feedbackNo:"Nicht ganz. Gesucht ist AND."
     },
-    {
-      id:"task_not",
-      type:"fill",
-      title:"Aufgabe 4/7: NOT",
-      context:"kurz: eine Bedingung verneinen.",
-      nameInPrompt: true,
-      prompt:"„Nicht Kategorie 2“:",
-      template:["SELECT *","\nFROM produkte","\nWHERE ",{blank:"NOT"}," kategorie_id = 2;"],
-      feedbackOk:"Richtig. NOT kehrt die Bedingung um.",
-      feedbackNo:"Nicht ganz. Gesucht ist NOT."
-    },
+    
     {
       id:"order",
       title:"ORDER BY",
@@ -978,7 +1122,7 @@
     {
       id:"task_order",
       type:"fill",
-      title:"Aufgabe 5/7: Lücke",
+      title:"Aufgabe 4/7: Lücke",
       context:"teuer → billig: ein Wort.",
       nameInPrompt: true,
       prompt:"Sortiere teuer → billig:",
@@ -1016,7 +1160,7 @@
     {
       id:"task_agg_new",
       type:"fill_multi",
-      title:"Aufgabe 6/7: Zwei Funktionen",
+      title:"Aufgabe 5/7: Zwei Funktionen",
       context: "Wähle die passende Aggregatfunktion.",
       nameInPrompt: true,
       blocks:[
@@ -1026,33 +1170,44 @@
       feedbackOk:"Richtig. SUM bildet eine Summe, MAX liefert den größten Wert.",
       feedbackNo:"Mindestens eine Lücke ist falsch. Gesucht sind SUM und MAX."
     },
-    {
-      id:"task_count_distinct",
-      type:"fill",
-      title:"Aufgabe 7/7: COUNT DISTINCT",
-      context: "Kategorien ohne Duplikate zählen.",
-      prompt:"Zähle unterschiedliche Kategorien:",
-      template:["SELECT COUNT(",{blank:"DISTINCT"}," kategorie_id) AS anzahl_kategorien","\nFROM produkte;"],
-      feedbackOk:"Richtig. COUNT(DISTINCT ...) zählt eindeutige Werte.",
-      feedbackNo:"Nicht ganz. Gesucht ist DISTINCT."
-    },
-
-    {
+        {
       id:"group",
       title:"GROUP BY & HAVING",
       context: "GROUP BY gruppiert Zeilen; HAVING filtert Gruppen.",
-      theory: ["GROUP BY bildet Gruppen von Zeilen mit gleichem Wert in einer Spalte, damit du pro Gruppe Aggregatwerte berechnen kannst. HAVING filtert anschließend Gruppen (nicht einzelne Zeilen)."],
+      theory: ["GROUP BY fasst Zeilen mit gleichem Gruppenschlüssel zusammen (z. B. pro Kategorie). WHERE filtert einzelne Zeilen vor dem Gruppieren; HAVING filtert Gruppen nach dem Gruppieren."],
+            table: `
+        <details class="reveal">
+          <summary>Beispiel anzeigen</summary>
+
+          <div class="schemaWrap" style="margin-top:10px;">
+            <div class="schemaLabel tone-purple">Beispiel (Ergebnis)</div>
+            <div class="narrowWrap">
+              <table class="miniTable" aria-label="Ergebnis: GROUP BY">
+                <thead>
+                  <tr><th colspan="2"><code>GROUP BY kategorie_id</code></th></tr>
+                  <tr><th>kategorie_id</th><th>anzahl</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>2</td></tr>
+                  <tr><td>2</td><td>1</td></tr>
+                  <tr><td>3</td><td>2</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      `,
       sqlTone: "tone-purple",
       sql: ["SELECT kategorie_id, COUNT(*) AS anzahl","FROM produkte","GROUP BY kategorie_id","HAVING COUNT(*) >= 2;"]
     },
     {
       id:"task_having",
       type:"fill",
-      title:"Zusatz: HAVING",
-      context: "wenn du das schaffst, sitzt GROUP BY wirklich.",
+      title:"Aufgabe 6/7: HAVING",
+      context: "HAVING filtert Gruppen (nach GROUP BY).",
       nameInPrompt: true,
-      prompt:"Filtere Gruppen mit mindestens 2 Produkten:",
-      template:["SELECT kategorie_id, COUNT(*) AS anzahl","\nFROM produkte","\nGROUP BY kategorie_id","\n",{blank:"HAVING"}," COUNT(*) >= 2;"],
+      prompt:"Filtere Lieferzeiten mit einem Durchschnittspreis von mindestens 20€:",
+      template:["SELECT liefertage, AVG(preis) AS durchschnittspreis","\nFROM produkte","\nGROUP BY liefertage","\n",{blank:"HAVING"}," AVG(preis) >= 20;"],
       feedbackOk:"Richtig. HAVING filtert Gruppen nach dem GROUP BY.",
       feedbackNo:"Nicht ganz. Gesucht ist HAVING."
     },
@@ -1086,7 +1241,7 @@
     {
       id:"task_rel",
       type:"fill",
-      title:"Zusatz: Verbund-Bedingung",
+      title:"Aufgabe 7/7: Verbund-Bedingung",
       context: "Setze die fehlende Bedingung für den Verbund (n:m).",
       nameInPrompt: true,
       prompt:"Ergänze die zweite Verknüpfung (Produkt → Warenkorb):",
@@ -1154,8 +1309,7 @@
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
-      ${renderTheory(prompt)}
+            ${renderTheory(prompt, "Aufgabe")}
       <div class="taskCard"><pre class="sql">${tpl}</pre></div>
       <button class="btn" id="checkBtn" style="margin-top:12px;">Prüfen</button>
       <div class="feedback" id="fb"></div>
@@ -1194,8 +1348,7 @@
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
-      ${renderTheory(p.nameInPrompt ? addNamePrefixText("Fülle beide Lücken korrekt.") : "Fülle beide Lücken korrekt.")}
+            ${renderTheory(p.nameInPrompt ? addNamePrefixText("Fülle beide Lücken korrekt.") : "Fülle beide Lücken korrekt.", "Aufgabe")}
       ${p.blocks.map((b, idx)=>{
         const parts = b.template.split("______");
         const before = escapeHtml(parts[0] ?? "");
@@ -1256,8 +1409,7 @@
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
-      ${renderTheory(theory)}
+            ${renderTheory(theory, "Aufgabe")}
       <div class="matchGrid">
         <div class="matchCol">
           <div class="matchTitle">Baustein</div>
@@ -1350,8 +1502,7 @@
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${ctx ? `<p class="qContext">${escapeHtml(ctx)}</p>` : ``}
-      ${theoryText ? renderTheory(theoryText) : ``}
+            ${theoryText ? renderTheory(theoryText) : ``}
 
       <button class="btn primary" id="ackBtn" style="width:100%; margin-top: 6px;">${escapeHtml(p.ackLabel || "Verstanden")}</button>
 
@@ -1392,12 +1543,12 @@
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${p.context ? `<p class="qContext">${escapeHtml(p.context)}</p>` : ``}
-      ${story}
+            ${story}
       ${recap}
       ${theoryText ? renderTheory(theoryText) : ``}
       ${p.table ? p.table : ``}
-      ${p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue") : ``}
+      ${p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue", p.sqlMarks || null) : ``}
+      ${p.afterSql ? p.afterSql : ``}
       ${p.distinctViz ? renderDistinctViz() : ``}
       <div class="btnRow">
         <button class="btn ghost ${state.i===0 ? "disabled":""}" id="backBtn">Zurück</button>

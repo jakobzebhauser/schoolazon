@@ -206,6 +206,7 @@ if (searchClear) {
     .find(p => p.textContent.includes("Warenkorb"));
 
   if (cartTrigger) {
+    if (!cartTrigger.dataset.task) cartTrigger.dataset.task = "open-cart";
     cartTrigger.style.cursor = "pointer";
     cartTrigger.addEventListener("click", (e) => {
       // if locked, do not open cart; selection handled via capture listener
