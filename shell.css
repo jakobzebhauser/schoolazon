@@ -2068,6 +2068,42 @@ body.timeup #pillTimer{
   min-height: 0;
 }
 
+/* Bonus task status */
+.task3-status{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(245,247,252,.92);
+  color: rgba(11,15,24,.86);
+  font-weight: 650;
+}
+.task3-status.is-success{
+  border-color: rgba(52,199,89,.28);
+  background: rgba(52,199,89,.10);
+}
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: rgba(52,199,89,.18);
+  color: #1f5c2e;
+}
+.status-pill.is-muted{
+  background: rgba(10,15,24,.10);
+  color: rgba(11,15,24,.65);
+}
+.status-text{
+  font-size: 13px;
+}
+
 /* Output flash on repeated checks */
 .output.out-flash,
 .task3-output.out-flash{

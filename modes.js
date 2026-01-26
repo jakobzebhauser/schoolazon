@@ -540,7 +540,7 @@ class FreeMode {
     this.sqliDone = true;
     this.persistProgressState();
     this.updateProgressUI();
-    this.showHint('SQL‑Injection geschafft: +10 Score.');
+    if (this.currentSideView === 'sqli') this.openBonus();
   }
 
   buildTasks() {
@@ -1063,7 +1063,7 @@ renderShell() {
               <button class="btn" id="btnSolutions" type="button">Bereits gelöste Aufgaben</button>
             </div>
             <div class="lab-actions-right" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-locked" id="btnBonus" type="button" aria-label="Hacking-Aufgabe">Hacking-Aufgabe</button>
+              <button class="btn btn-locked" id="btnBonus" type="button" aria-label="Zusatzaufgabe: Hacking">Zusatzaufgabe: Hacking</button>
             </div>
           </div>
 
@@ -1236,7 +1236,7 @@ renderShell() {
                 <div class="task3-header">
                   <div class="task3-headerLeft">
                     <div class="task3-kicker">Bonus</div>
-                    <h3 class="task3-title" id="sideTitle">Hacking‑Aufgabe</h3>
+                    <h3 class="task3-title" id="sideTitle">Zusatzaufgabe: Hacking</h3>
                     <div class="task3-cardMeta" id="sideMeta">SQL‑Injection (Sandbox)</div>
                   </div>
                   <div class="task3-headerRight">
@@ -1900,7 +1900,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       this.openSolutions();
       return;
     } else if (kind === 'sqli') {
-      this.sideTitleEl.textContent = 'Hacking‑Aufgabe';
+      this.sideTitleEl.textContent = 'Zusatzaufgabe: Hacking';
       this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox)';
 
       this.sideBodyEl.innerHTML = `
@@ -2064,16 +2064,10 @@ setEmptyState(isEmpty) {
 
     if (!can) {
       this.pulseLocked(this.btnBonus);
-
-      // Nur das Bonus-Header-Fenster anzeigen (ohne weitere Karten/Buttons).
-      this.hideHint();
-      this.closeAllSideViews();
-
-      this.currentSideView = 'sqli-locked';
-      if (this.sideTitleEl) this.sideTitleEl.textContent = 'Hacking‑Aufgabe';
-      if (this.sideMetaEl) this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox) • ab 10% verfügbar';
-      if (this.sideBodyEl) this.sideBodyEl.innerHTML = '';
-      this.showBonusView();
+      this.showLockedModal(
+        'Noch nicht verfuegbar',
+        'Diese Zusatzaufgabe wird ab 10% Fortschritt freigeschaltet.'
+      );
       return;
     }
 
@@ -2082,40 +2076,50 @@ setEmptyState(isEmpty) {
     this.closeAllSideViews();
 
     this.currentSideView = 'sqli';
-    if (this.sideTitleEl) this.sideTitleEl.textContent = 'Hacking‑Aufgabe';
+    if (this.sideTitleEl) this.sideTitleEl.textContent = 'Zusatzaufgabe: Hacking';
     if (this.sideMetaEl) this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox)';
+
+    const statusHtml = this.sqliDone
+      ? `<div class=\"task3-status is-success\">
+           <span class=\"status-pill\">Erledigt</span>
+           <span class=\"status-text\">Aufgabe erfolgreich bearbeitet.</span>
+         </div>`
+      : `<div class=\"task3-status\">
+           <span class=\"status-pill is-muted\">Offen</span>
+           <span class=\"status-text\">Bearbeite die Aufgabe, um den Status zu erhalten.</span>
+         </div>`;
 
     const body = `
       <div style="display:flex; flex-direction:column; gap:14px; margin-top:12px;">
+        ${statusHtml}
         <div class="spicker-block">
           <div class="spicker-block-title">Ziel</div>
-          <p style="margin:6px 0 0 0;">Du sollst verstehen, <strong>warum</strong> SQL‑Injection möglich ist – und <strong>wie</strong> man es in echten Systemen verhindert.</p>
+          <p style="margin:6px 0 0 0;">Du sollst verstehen, <strong>warum</strong> SQL-Injection moeglich ist und <strong>wie</strong> man es in echten Systemen verhindert.</p>
         </div>
 
         <div class="spicker-block">
-          <div class="spicker-block-title">Didaktischer Kontext</div>
-          <p style="margin:6px 0 0 0;">Hier wird (für die Übung) eine <strong>unsichere</strong> Login‑Abfrage per String‑Verkettung gebaut. Das ist genau der Fehler, der SQL‑Injection ermöglicht.</p>
-          <pre class="output" style="white-space:pre-wrap; margin-top:10px;">SELECT *
+          <div class="spicker-block-title">Unsichere Login-Abfrage (Beispiel)</div>
+          <p style="margin:6px 0 0 0;">Diese Query wird absichtlich per String-Verkettung gebaut (Lern-Sandbox):</p>
+          <pre class="output" style="white-space:pre-wrap; margin-top:10px;">SELECT id
 FROM users
 WHERE username = '<span class="muted">EINGABE_USER</span>'
-  AND password = '<span class="muted">EINGABE_PASS</span>';</pre>
-          <p class="muted" style="margin:10px 0 0 0;">Wenn Eingaben ungefiltert in die Query wandern, kannst du die WHERE‑Logik manipulieren (z. B. „immer wahr“ + Kommentar).</p>
+  AND password = '<span class="muted">EINGABE_PASS</span>'
+LIMIT 1;</pre>
+          <p class="muted" style="margin:10px 0 0 0;">Wenn Eingaben ungefiltert in die Query wandern, kann man die WHERE-Logik manipulieren (z. B. "immer wahr" + Kommentar).</p>
         </div>
 
         <div class="spicker-block">
-          <div class="spicker-block-title">Aufgabe</div>
-          <ol style="margin:6px 0 0 18px;">
-            <li>Öffne rechts oben im Shop das <strong>Konto‑Panel</strong>.</li>
-            <li>Teste Eingaben, die die WHERE‑Bedingung verändern (ohne die komplette Lösung zu verraten: denke an <strong>„immer wahr“</strong> und <strong>Kommentare</strong>).</li>
-            <li>Ziel: Die Anwendung zeigt <strong>„Login erfolgreich“</strong>.</li>
+          <div class="spicker-block-title">Aufgabenstellung</div>
+          <ol type="a" style="margin:6px 0 0 18px;">
+            <li>Versuche dich <strong>in den Login einzuloggen, ohne das Passwort zu kennen</strong>. Oeffne dafuer rechts oben im Shop das <strong>Konto-Panel</strong> und teste Eingaben, die die WHERE-Bedingung veraendern.</li>
+            <li>Recherchiere im Internet, <strong>wie man sich vor SQL-Injection schuetzt</strong>, und schreibe deine Gedanken stichpunktartig auf.</li>
           </ol>
-          <div class="muted" style="margin-top:8px;">Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
+          <div class="muted" style="margin-top:8px;">Ziel: Die Anwendung zeigt <strong>"Login erfolgreich"</strong>. Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
         </div>
 
         <div class="spicker-block">
-          <div class="spicker-block-title">Reflexion: Wie verhindert man das?</div>
-          <p style="margin:6px 0 0 0;">Notiere mindestens <strong>4</strong> konkrete Gegenmaßnahmen (z. B. <strong>Prepared Statements</strong>, Eingabevalidierung/Canonicalization, Least Privilege, sichere ORMs, Logging/Monitoring, WAF).</p>
-          <p class="muted" style="margin:10px 0 0 0;">Hinweis: In echten Anwendungen ist SQL‑Injection ein kritischer Sicherheitsfehler – hier ist es eine Lern‑Sandbox.</p>
+          <div class="spicker-block-title">Hinweis</div>
+          <p style="margin:6px 0 0 0;">Diese Aufgabe ist eine Lern-Sandbox. In echten Anwendungen ist SQL-Injection ein kritischer Sicherheitsfehler.</p>
         </div>
       </div>
     `;
@@ -2853,7 +2857,7 @@ WHERE ...;`;
     if (this.btnBonus) {
       this.btnBonus.classList.toggle('btn-locked', !canBonus);
       this.btnBonus.setAttribute('aria-disabled', canBonus ? 'false' : 'true');
-      this.btnBonus.title = canBonus ? 'Hacking‑Aufgabe verfügbar' : `Ab ${BONUS_MIN_PCT}% Fortschritt verfügbar`;
+      this.btnBonus.title = canBonus ? 'Zusatzaufgabe: Hacking verfügbar' : `Ab ${BONUS_MIN_PCT}% Fortschritt verfügbar`;
     }
   }
 

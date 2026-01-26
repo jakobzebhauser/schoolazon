@@ -97,6 +97,7 @@ async function init() {
     if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im selben Ordner wie index.html?)");
 
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+    ensureDemoUsers();
 
     // rechter Bereich: Name beibehalten (nur Anzeige)
     const nameEl = els.studentName();
@@ -111,6 +112,53 @@ async function init() {
     const c = els.products();
     if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">❌ ${escapeHtml(err.message)}</p>`;
     console.error(err);
+  }
+}
+
+function ensureDemoUsers() {
+  if (!db) return;
+  try {
+    // Demo users for the SQLi sandbox login.
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        name TEXT,
+        password TEXT
+      );
+    `);
+    db.run(`
+      CREATE TABLE IF NOT EXISTS nutzer (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        name TEXT,
+        passwort TEXT
+      );
+    `);
+
+    const userCount = db.exec("SELECT COUNT(*) AS c FROM users;");
+    const userRows = Number(userCount?.[0]?.values?.[0]?.[0] ?? 0);
+    if (userRows === 0) {
+      db.run(`
+        INSERT INTO users (username, name, password)
+        VALUES
+          ('anna', 'Anna Mueller', 'geheim'),
+          ('leo',  'Leo Schmidt',  'pass123');
+      `);
+    }
+
+    const nutzerCount = db.exec("SELECT COUNT(*) AS c FROM nutzer;");
+    const nutzerRows = Number(nutzerCount?.[0]?.values?.[0]?.[0] ?? 0);
+    if (nutzerRows === 0) {
+      db.run(`
+        INSERT INTO nutzer (username, name, passwort)
+        VALUES
+          ('anna', 'Anna Mueller', 'geheim'),
+          ('leo',  'Leo Schmidt',  'pass123');
+      `);
+    }
+  } catch (err) {
+    console.warn("Demo-Users konnten nicht angelegt werden:", err);
   }
 }
 
