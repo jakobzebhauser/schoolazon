@@ -2053,6 +2053,7 @@ setEmptyState(isEmpty) {
 
   closeTask() {
     this.currentId = null;
+    this.resetUnlockButton();
     this.setEmptyState(true);
   }
 
@@ -2210,9 +2211,9 @@ async applyUnlockedToShop() {
     this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
     this.sqlEl.value = t.starter || '';
-        this.outEl.textContent = isUnlocked ? 'Bereits freigeschaltet.' : '';
+        this.setOutput(isUnlocked ? 'Bereits freigeschaltet.' : '');
 
-    this.unlockBtn.disabled = true;
+    this.resetUnlockButton();
 
     // View
     this.setEmptyState(false);
@@ -2225,30 +2226,42 @@ async applyUnlockedToShop() {
     try { this.sqlEl?.focus(); } catch (_) {}
   }
 
-  checkCurrent() {
+  setOutput(text) {
+    if (!this.outEl) return;
+    const msg = (text ?? "").toString();
+    this.outEl.classList.remove('out-flash');
     this.outEl.textContent = "";
-    this.setUnlockState(false);
+    // Force reflow so the flash animation can replay on repeated checks.
+    void this.outEl.offsetWidth;
+    this.outEl.textContent = msg;
+    if (msg) this.outEl.classList.add('out-flash');
+  }
+
+
+  checkCurrent() {
+    this.setOutput("");
+    this.resetUnlockButton();
 
     if (!this.currentId) {
-      this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
+      this.setOutput("Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.");
       return;
     }
 
     if (!this.db) {
-      this.outEl.textContent = "DB ist nicht geladen.";
+      this.setOutput("DB ist nicht geladen.");
       return;
     }
 
     const sql = this.sqlEl.value || "";
     if (!this.isSelectOnly(sql)) {
-      this.outEl.textContent = "Nur SELECT-Abfragen sind erlaubt.";
+      this.setOutput("Nur SELECT-Abfragen sind erlaubt.");
       return;
     }
 
     const t = this.TASKS[this.currentId];
     const sqlCheck = this.validateSqlStructure(sql, t);
     if (!sqlCheck.ok) {
-      this.outEl.textContent = sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.";
+      this.setOutput(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
       return;
     }
 
@@ -2256,14 +2269,14 @@ async applyUnlockedToShop() {
     try {
       studentRes = this.db.exec(sql);
     } catch (e) {
-      this.outEl.textContent = "SQL-Fehler: " + e.message;
+      this.setOutput("SQL-Fehler: " + e.message);
       return;
     }
 
     try {
       refRes = this.db.exec(t.refSql);
     } catch (e) {
-      this.outEl.textContent = "Interner Referenz-Fehler: " + e.message;
+      this.setOutput("Interner Referenz-Fehler: " + e.message);
       return;
     }
 
@@ -2271,15 +2284,15 @@ async applyUnlockedToShop() {
 
     if (ok) {
       if (this.unlocked[this.currentId]) {
-        this.outEl.textContent = "✅ Korrekt (bereits freigeschaltet).";
+        this.setOutput("✅ Korrekt (bereits freigeschaltet).");
         return;
       }
-      this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
+      this.setOutput("✅ Korrekt! Du kannst jetzt freischalten.");
       this.setUnlockState(true);
       return;
     }
 
-    this.outEl.textContent = '❌ Noch nicht korrekt.';
+    this.setOutput("\u274c Noch nicht korrekt.");
   }
 
 
@@ -2289,17 +2302,30 @@ async applyUnlockedToShop() {
     if (!this.unlockBtn) return;
     if (this.unlocked?.[this.currentId]) return; // bereits freigeschaltet
 
-    this.setUnlockState(false);
+    this.resetUnlockButton();
+  }
+
+  resetUnlockButton() {
+    if (!this.unlockBtn) return;
+    this.unlockBtn.disabled = true;
+    this.unlockBtn.classList.remove('btn-unlock-ready');
+    this.unlockBtn.setAttribute('aria-disabled', 'true');
+    this.unlockBtn.style.cursor = 'not-allowed';
+    this.unlockBtn.style.opacity = '.6';
   }
 
   setUnlockState(canUnlock) {
     if (!this.unlockBtn) return;
     const can = !!canUnlock;
-    this.unlockBtn.disabled = !can;
-    this.unlockBtn.classList.toggle('btn-unlock-ready', can);
-    this.unlockBtn.setAttribute('aria-disabled', can ? 'false' : 'true');
-    this.unlockBtn.style.cursor = can ? 'pointer' : 'not-allowed';
-    this.unlockBtn.style.opacity = can ? '1' : '.6';
+    if (!can) {
+      this.resetUnlockButton();
+      return;
+    }
+    this.unlockBtn.disabled = false;
+    this.unlockBtn.classList.add('btn-unlock-ready');
+    this.unlockBtn.setAttribute('aria-disabled', 'false');
+    this.unlockBtn.style.cursor = 'pointer';
+    this.unlockBtn.style.opacity = '1';
   }
 
   resumeTaskIfAny() {
@@ -2340,7 +2366,7 @@ async unlockCurrent() {
     // UI aktualisieren
     this.selectTask(id);
 
-    this.outEl.textContent = 'Freigeschaltet! Der Button ist jetzt im Shop aktiv.';
+    this.setOutput('Freigeschaltet! Der Button ist jetzt im Shop aktiv.');
 
     this.updateProgressUI();
 

@@ -157,7 +157,7 @@
 
     .modes{
       display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -190,6 +190,7 @@
     .modeCard.tone-amber::before{ background: linear-gradient(180deg, rgba(255,149,0,.90), rgba(0,122,255,.55)); }
     .modeCard.tone-teal::before{ background: linear-gradient(180deg, rgba(52,199,89,.92), rgba(0,122,255,.55)); }
     .modeCard.tone-purple::before{ background: linear-gradient(180deg, rgba(175,82,222,.92), rgba(0,122,255,.55)); }
+    .modeCard.tone-pink::before{ background: linear-gradient(180deg, rgba(255,45,85,.92), rgba(0,122,255,.55)); }
 
     .modeCard:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
     .modeCard:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
@@ -404,6 +405,14 @@
 <span aria-hidden="true" class="btn primary">Starten</span>
 </div>
 </a>
+<a class="modeCard tone-pink" data-pass-name="1" href="posttest.html">
+  <h2 class="modeTitle">Nachbesprechung</h2>
+  <p class="modeDesc">Auswertung und kurze Reflexion nach dem Test.</p>
+  <div class="btnRow">
+    <span aria-hidden="true" class="btn primary">Öffnen</span>
+  </div>
+</a>
+
 </section>
 
 </div>
