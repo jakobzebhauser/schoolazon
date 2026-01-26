@@ -2653,105 +2653,105 @@ if (H[taskId]) return H[taskId];
     const S = {
       "search":
 `SELECT *
-FROM produkte
-WHERE name LIKE '%' || :q || '%';`,
+FROM ...
+WHERE ... LIKE ...;`,
       "all":
 `SELECT *
-FROM produkte;`,
+FROM ...;`,
       "express":
 `SELECT *
-FROM produkte
-WHERE liefertage = ...;`,
+FROM ...
+WHERE ... = ...;`,
       "bestseller":
 `SELECT p.*
-FROM produkte p
-WHERE p.id IN (
-  SELECT v.produkt_id
-  FROM verkäufe v
-  GROUP BY v.produkt_id
-  HAVING SUM(v.anzahl) > ...
+FROM ...
+WHERE ... IN (
+  SELECT ...
+  FROM ...
+  GROUP BY ...
+  HAVING SUM(...) > ...
 );`,
       "available":
 `SELECT *
-FROM produkte
-WHERE lagerbestand BETWEEN ... AND ...;`,
+FROM ...
+WHERE ... BETWEEN ... AND ...;`,
       "priceAsc":
 `SELECT *
-FROM produkte
-ORDER BY preis ASC;`,
+FROM ...
+ORDER BY ... ASC;`,
       "priceDesc":
 `SELECT *
-FROM produkte
-ORDER BY preis DESC;`,
+FROM ...
+ORDER BY ... DESC;`,
       "popularity":
-`SELECT produkt_id, SUM(anzahl) AS verkäufe
-FROM verkäufe
-GROUP BY produkt_id
-ORDER BY verkäufe DESC;`,
+`SELECT produkt_id, SUM(anzahl) AS verkaeufe
+FROM ...
+GROUP BY ...
+ORDER BY ... DESC;`,
       "cat-electronics":
 `SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Elektronik';`,
+FROM ..., ...
+WHERE ... = ...
+AND ... = ...;`,
       "cat-household":
 `SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Haushalt';`,
+FROM ..., ...
+WHERE ... = ...
+AND ... = ...;`,
       "cat-sport":
 `SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Sport';`,
+FROM ..., ...
+WHERE ... = ...
+AND ... = ...;`,
       "price-25":
 `SELECT *
-FROM produkte
-WHERE preis < 25;`,
+FROM ...
+WHERE ... < ...;`,
       "price-50":
 `SELECT *
-FROM produkte
-WHERE preis BETWEEN 25 AND 50;`,
+FROM ...
+WHERE ... BETWEEN ... AND ...;`,
       "price-100":
 `SELECT *
-FROM produkte
-WHERE preis BETWEEN 50 AND 100;`,
+FROM ...
+WHERE ... BETWEEN ... AND ...;`,
       "rating-5":
 `SELECT DISTINCT p.*
-FROM produkte p, bewertungen b
-WHERE p.id = b.produkt_id
-AND b.sterne = 5;`,
+FROM ..., ...
+WHERE ... = ...
+AND ... = ...;`,
       "rating-4":
 `SELECT DISTINCT p.*
-FROM produkte p, bewertungen b
-WHERE p.id = b.produkt_id
-AND b.sterne >= 4;`,
+FROM ..., ...
+WHERE ... = ...
+AND ... >= ...;`,
       "open-cart":
 `SELECT p.name, p.preis, w.menge
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
+FROM ..., ...
+WHERE ... = ...;`,
       "cart-refresh":
 `SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id
-ORDER BY p.name ASC;`,
+FROM ..., ...
+WHERE ... = ...
+ORDER BY ... ASC;`,
       "cart-total":
 `SELECT SUM(p.preis * w.menge)
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
+FROM ..., ...
+WHERE ... = ...;`,
       "orders":
 `SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
-FROM produkte p, verkäufe v
-WHERE p.id = v.produkt_id
-AND v.nutzer_id = ...
-ORDER BY v.id DESC
-LIMIT 3;`,
+FROM ..., ...
+WHERE ... = ...
+AND ... = ...
+ORDER BY ... DESC
+LIMIT ...;`,
       "topProducts":
 `SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
-FROM produkte p, verkäufe v
-WHERE p.id = v.produkt_id
-GROUP BY p.id
-ORDER BY gesamt_verkaeufe DESC
-LIMIT 2;`
+FROM ..., ...
+WHERE ... = ...
+GROUP BY ...
+ORDER BY ... DESC
+LIMIT ...;`
     };
 
     if (S[taskId]) return S[taskId];
