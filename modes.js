@@ -2209,6 +2209,8 @@ async applyUnlockedToShop() {
 
     // View
     this.setEmptyState(false);
+    // Auto-collapse header when a task opens (can be expanded manually)
+    this.setHeaderCollapsed(true, { persist: true });
     this.refreshHintCards();
     if (this.spickerViewEl) this.spickerViewEl.style.display = 'none';
 

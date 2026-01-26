@@ -1912,6 +1912,114 @@ body.timeup #pillTimer{
   box-shadow: 0 12px 26px rgba(10,15,24,.08);
 }
 
+/* ===============================
+   Learning UI v4 – unified modern panels
+   =============================== */
+:root{
+  --learn-accent: rgba(0,122,255,.92);
+  --learn-accent-soft: rgba(0,122,255,.10);
+  --learn-surface: linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,249,255,.96));
+  --learn-border: rgba(11,15,24,.10);
+  --learn-shadow: 0 20px 44px rgba(10,15,24,.10);
+  --learn-shadow-soft: 0 10px 24px rgba(10,15,24,.08);
+}
+
+.task-view.task-v3 .task3-surface{
+  background: var(--learn-surface);
+  border: 1px solid var(--learn-border);
+  box-shadow: var(--learn-shadow);
+}
+
+.task-view.task-v3 .task3-header{
+  background: linear-gradient(180deg, rgba(0,122,255,.10), rgba(255,255,255,.92));
+  border: 1px solid var(--learn-border);
+  box-shadow: var(--learn-shadow-soft);
+}
+
+.task-view.task-v3 .task3-card{
+  background: rgba(255,255,255,.98);
+  border: 1px solid var(--learn-border);
+  box-shadow: var(--learn-shadow-soft);
+}
+
+.task-view.task-v3 .task3-cardTitle{
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(11,15,24,.68);
+}
+
+.task-view.task-v3 .task3-editor{
+  border: 1.5px solid rgba(0,122,255,.22);
+  background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(245,248,255,.96));
+}
+
+.task-view.task-v3 .task3-actions .btn-primary{
+  background: linear-gradient(180deg, rgba(0,122,255,.20), rgba(175,82,222,.08));
+  border-color: rgba(0,122,255,.32);
+}
+
+.task-view.task-v3 .task3-actions .btn{
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+}
+
+.task-view.task-v3 .task3-hintCard{
+  border: 1px dashed rgba(0,122,255,.26);
+  background: rgba(0,122,255,.05);
+}
+.task-view.task-v3 #scaffoldCard{
+  border-color: rgba(175,82,222,.30);
+  background: rgba(175,82,222,.06);
+}
+
+.spicker-view{
+  background: transparent;
+}
+.spicker-head{
+  background: linear-gradient(180deg, rgba(0,122,255,.10), rgba(255,255,255,.92));
+  border: 1px solid var(--learn-border);
+  box-shadow: var(--learn-shadow);
+}
+.spicker-item{
+  background: rgba(255,255,255,.98);
+  border: 1px solid rgba(0,122,255,.18);
+  box-shadow: var(--learn-shadow-soft);
+}
+.spicker-content{
+  border: 1px solid var(--learn-border);
+  background: rgba(255,255,255,.98);
+  border-radius: 20px;
+  box-shadow: var(--learn-shadow-soft);
+}
+.spicker-block{
+  border: 1px solid rgba(10,15,24,.10);
+  background: rgba(246,248,252,.92);
+}
+.spicker-code{
+  border: 1px solid rgba(0,122,255,.20);
+}
+
+.schema-card{
+  border: 1px solid var(--learn-border);
+  background: rgba(255,255,255,.98);
+  box-shadow: var(--learn-shadow-soft);
+}
+
+.btn-close{
+  border: 1px solid rgba(255,59,48,.32);
+  background: linear-gradient(180deg, rgba(255,59,48,.12), rgba(255,255,255,.92));
+  box-shadow: 0 12px 26px rgba(255,59,48,.12);
+}
+
+.task-view.task-v3 .task3-closeBtn{
+  border: 1px solid rgba(255,59,48,.32);
+  background: linear-gradient(180deg, rgba(255,59,48,.12), rgba(255,255,255,.92));
+}
+
+.bonus-view #sideBody{
+  border: 1px solid var(--learn-border);
+  background: rgba(255,255,255,.98);
+  box-shadow: var(--learn-shadow-soft);
+}
 
 
 
