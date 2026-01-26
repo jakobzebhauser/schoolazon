@@ -1065,15 +1065,13 @@ renderShell() {
                   </div>
 
                   <div class="task3-headerRight">
-                    <div class="task3-difficulty" aria-label="Schwierigkeit">
-                      <span class="task3-diffLabel">Schwierigkeit</span>
+                    <div class="task3-difficulty-lite" aria-label="Schwierigkeit" title="Schwierigkeit (Punkte)">
                       <div class="difficulty-dots" id="difficultyDots">
                         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                       </div>
-                      <span class="difficulty-text" id="difficultyText"></span>
                     </div>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="hintBtn" type="button" aria-label="Tipp" title="Tipp">
+                   <button class="btn btn-ghost task3-iconBtn" id="hintBtn" type="button" aria-label="Tipp" title="Tipp anzeigen">
   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
     <path d="M9 18h6M10 22h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     <path d="M8.5 14.5c-.9-1-2.5-2.2-2.5-4.8a6 6 0 1 1 12 0c0 2.6-1.6 3.8-2.5 4.8-.6.7-.9 1.4-1 2.5h-3c-.1-1.1-.4-1.8-1-2.5Z"
@@ -1081,12 +1079,12 @@ renderShell() {
 </svg>
 </button>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst (-3)">
+                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-3)">
   <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
 </button>
 
 
-                    <button class="btn btn-ghost task3-closeBtn" id="taskClose" type="button" title="Schließen" aria-label="Aufgabe schließen"><span aria-hidden="true">✕</span></button>
+                    <button class="btn btn-ghost task3-closeBtn" id="taskClose" type="button" title="Aufgabe schließen" aria-label="Aufgabe schließen"><span aria-hidden="true">✕</span></button>
                   </div>
                 </div>
 
@@ -1154,7 +1152,7 @@ renderShell() {
                   <h3 class="spicker-title">Theorie‑Spicker</h3>
                   <div class="spicker-sub">Kapitel auswählen</div>
                 </div>
-                <button class="btn btn-close" id="spickerClose" type="button" aria-label="Schließen" title="Schließen">✕</button>
+                <button class="btn btn-close" id="spickerClose" type="button" aria-label="Schließen" title="Aufgabe schließen">✕</button>
               </div>
 
               <div id="spickerList" class="spicker-list" aria-label="Kapitelübersicht"></div>
@@ -1174,7 +1172,7 @@ renderShell() {
                   <h3 class="spicker-title">DB‑Schema</h3>
                   <div class="spicker-sub">Tabelle auswählen</div>
                 </div>
-                <button class="btn btn-close" id="schemaClose" type="button" aria-label="Schließen" title="Schließen">✕</button>
+                <button class="btn btn-close" id="schemaClose" type="button" aria-label="Schließen" title="Aufgabe schließen">✕</button>
               </div>
 
               <div id="schemaList" class="spicker-list" aria-label="Tabellenübersicht"></div>
@@ -1195,7 +1193,7 @@ renderShell() {
                   <h3 class="spicker-title">Bereits gelöste Aufgaben</h3>
                   <div class="spicker-sub">Aufgabe auswählen</div>
                 </div>
-                <button class="btn btn-close" id="solutionsClose" type="button" aria-label="Schließen" title="Schließen">✕</button>
+                <button class="btn btn-close" id="solutionsClose" type="button" aria-label="Schließen" title="Aufgabe schließen">✕</button>
               </div>
 
               <div id="solutionsList" class="spicker-list" aria-label="Aufgabenübersicht"></div>
@@ -1217,7 +1215,7 @@ renderShell() {
                     <div class="task3-cardMeta" id="sideMeta">SQL‑Injection (Sandbox)</div>
                   </div>
                   <div class="task3-headerRight">
-                    <button class="btn btn-ghost task3-closeBtn" id="bonusClose" type="button" aria-label="Schließen" title="Schließen"><span aria-hidden="true">✕</span></button>
+                    <button class="btn btn-ghost task3-closeBtn" id="bonusClose" type="button" aria-label="Schließen" title="Aufgabe schließen"><span aria-hidden="true">✕</span></button>
                   </div>
                 </div>
 
@@ -1231,7 +1229,7 @@ renderShell() {
           <div class="modal locked-modal" role="dialog" aria-modal="true" aria-labelledby="lockedTitle">
             <div class="overlay-top" style="margin-bottom:10px;">
               <h3 class="overlay-title" id="lockedTitle">Noch nicht verfügbar</h3>
-              <button class="btn btn-ghost" id="lockedClose" type="button" aria-label="Schließen" title="Schließen" style="width:40px; height:40px; padding:0; border-radius:14px;"><span aria-hidden="true">✕</span></button>
+              <button class="btn btn-ghost" id="lockedClose" type="button" aria-label="Schließen" title="Aufgabe schließen" style="width:40px; height:40px; padding:0; border-radius:14px;"><span aria-hidden="true">✕</span></button>
             </div>
             <p id="lockedMsg" style="margin:0 0 12px 0;"></p>
             <div class="row">
