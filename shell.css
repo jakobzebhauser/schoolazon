@@ -1067,6 +1067,41 @@ body.timeup #pillTimer{
   white-space: nowrap;
 }
 
+.spicker-item-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap: 6px;
+}
+
+.spicker-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 6px;
+  justify-content:flex-end;
+}
+
+.spicker-tag{
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(10,15,24,.04);
+  color: rgba(11,15,24,.82);
+  white-space: nowrap;
+}
+.spicker-tag.hint{
+  border-color: rgba(0,122,255,.28);
+  background: rgba(0,122,255,.10);
+  color: rgba(0,122,255,.92);
+}
+.spicker-tag.scaffold{
+  border-color: rgba(175,82,222,.28);
+  background: rgba(175,82,222,.10);
+  color: rgba(120,40,180,.92);
+}
+
 .spicker-chapter{
   display:flex;
   flex-direction:column;

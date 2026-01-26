@@ -77,6 +77,7 @@ const ALL_TASK_IDS = [
       "schulazon_name",
       "schulazon_unlocked_v1",
       "schulazon_hint_used_v1",
+      "schulazon_scaffold_used_v1",
       "schulazon_sqli_done_v1",
       "schulazon_free_startedAt_v1"
     ];
@@ -454,6 +455,7 @@ class FreeMode {
     // UI soll explizit bei x/N bleiben (N = Anzahl Aufgaben).
     this.TOTAL_TASKS = 0;
     this.hintUsed = {};
+    this.scaffoldUsed = {};
     this.sqliDone = false;
 
     // gespeicherte Freischalt‑SQL pro Aufgabe
@@ -478,6 +480,7 @@ class FreeMode {
     this.currentId = null;
     this.headerCollapsed = false;
     this.headerEditMode = false;
+    this._pendingScaffoldTaskId = null;
   }
 
   loadProgressState() {
@@ -499,6 +502,12 @@ class FreeMode {
         if (data && typeof data === 'object') this.hintUsed = data;
       }
 
+      const rawScaffolds = localStorage.getItem('schulazon_scaffold_used_v1');
+      if (rawScaffolds) {
+        const data = JSON.parse(rawScaffolds);
+        if (data && typeof data === 'object') this.scaffoldUsed = data;
+      }
+
 
       const rawSolutions = localStorage.getItem('schulazon_solution_sql_v1');
       if (rawSolutions) {
@@ -517,6 +526,7 @@ class FreeMode {
     try {
       localStorage.setItem('schulazon_unlocked_v1', JSON.stringify(this.unlocked));
       localStorage.setItem('schulazon_hint_used_v1', JSON.stringify(this.hintUsed || {}));
+      localStorage.setItem('schulazon_scaffold_used_v1', JSON.stringify(this.scaffoldUsed || {}));
       localStorage.setItem('schulazon_solution_sql_v1', JSON.stringify(this.solutionSql || {}));
       localStorage.setItem('schulazon_sqli_done_v1', this.sqliDone ? 'true' : 'false');
       localStorage.setItem('schulazon_spicker_used_v1', this.spickerUsed ? 'true' : 'false');
@@ -1094,6 +1104,10 @@ renderShell() {
 </svg>
 </button>
 
+                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codegerüst" title="Codegerüst (-3)">
+  <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
+</button>
+
 
                     <button class="btn btn-ghost task3-closeBtn" id="taskClose" type="button" title="Schließen" aria-label="Aufgabe schließen"><span aria-hidden="true">✕</span></button>
                   </div>
@@ -1107,15 +1121,23 @@ renderShell() {
                 </div>
 
                 
-<div class="task3-card task3-hintCard" id="hintOverlay" aria-hidden="true">
+<div class="task3-card task3-hintCard" id="hintCard" aria-hidden="true">
   <div class="task3-hintHead">
     <div class="task3-cardTitle" id="hintTitle">Tipp</div>
-    <button class="btn btn-ghost task3-hintClose" id="hintClose" type="button" aria-label="Tipp schließen" title="Schließen">✕</button>
   </div>
   <pre class="task3-hintBody" id="hintText" style="white-space:pre-wrap; margin:0;"></pre>
   <div class="task3-hintActions">
     <button class="btn btn-primary" id="hintConfirm" type="button" style="display:none;">Tipp anzeigen (-1)</button>
-    <button class="btn btn-ghost" id="hintBack" type="button">Schließen</button>
+  </div>
+</div>
+
+<div class="task3-card task3-hintCard" id="scaffoldCard" aria-hidden="true">
+  <div class="task3-hintHead">
+    <div class="task3-cardTitle" id="scaffoldTitle">Codegerüst</div>
+  </div>
+  <pre class="task3-hintBody" id="scaffoldText" style="white-space:pre-wrap; margin:0;"></pre>
+  <div class="task3-hintActions">
+    <button class="btn btn-primary" id="scaffoldConfirm" type="button" style="display:none;">Codegerüst anzeigen (-3)</button>
   </div>
 </div>
 
@@ -1320,6 +1342,7 @@ renderShell() {
     this.difficultyTextEl = this.root.querySelector('#difficultyText');
     this.closeTaskBtn = this.root.querySelector('#taskClose');
     this.hintBtn = this.root.querySelector('#hintBtn');
+    this.scaffoldBtn = this.root.querySelector('#scaffoldBtn');
     this.taskHintEl = this.root.querySelector('#taskHint');
 
     // Editor
@@ -1347,13 +1370,15 @@ renderShell() {
     this._confirmAction = null;
     this.spickerUsed = false;
 
-    // Hint overlay (Tipp‑Popup)
-    this.hintOverlayEl = this.root.querySelector('#hintOverlay');
-    this.hintCloseBtn = this.root.querySelector('#hintClose');
-    this.hintBackBtn = this.root.querySelector('#hintBack');
-        this.hintConfirmBtn = this.root.querySelector('#hintConfirm');
+    // Hint / Codegerüst cards
+    this.hintCardEl = this.root.querySelector('#hintCard');
     this.hintTitleEl = this.root.querySelector('#hintTitle');
-this.hintTextEl = this.root.querySelector('#hintText');
+    this.hintTextEl = this.root.querySelector('#hintText');
+    this.hintConfirmBtn = this.root.querySelector('#hintConfirm');
+    this.scaffoldCardEl = this.root.querySelector('#scaffoldCard');
+    this.scaffoldTitleEl = this.root.querySelector('#scaffoldTitle');
+    this.scaffoldTextEl = this.root.querySelector('#scaffoldText');
+    this.scaffoldConfirmBtn = this.root.querySelector('#scaffoldConfirm');
 
     // Bonus
     this.bonusCloseBtn = this.root.querySelector('#bonusClose');
@@ -1370,16 +1395,15 @@ this.hintTextEl = this.root.querySelector('#hintText');
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
     this.hintBtn.addEventListener('click', () => this.requestHint());
+    this.scaffoldBtn?.addEventListener('click', () => this.requestScaffold());
 
 
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
     this.sqlEl?.addEventListener('input', () => this.onSqlEdited());
             
-    // Hint overlay
-    this.hintCloseBtn?.addEventListener('click', () => this.closeHintOverlay());
-    this.hintBackBtn?.addEventListener('click', () => this.closeHintOverlay());
-
-        this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
+    // Hint / Codegerüst cards
+    this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
+    this.scaffoldConfirmBtn?.addEventListener('click', () => this.confirmScaffold());
 this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     this.confirmNoBtn.addEventListener('click', () => this.closeConfirm());
     this.confirmYesBtn.addEventListener('click', () => {
@@ -1760,10 +1784,17 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       const t = this.TASKS[id] || {};
       const title = this.escapeHtml(t.title || id);
       const cat = this.escapeHtml(this.getCategoryLabel(id));
+      const tags = [];
+      if (this.hintUsed?.[id]) tags.push('<span class="spicker-tag hint">Tipp</span>');
+      if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codegerüst</span>');
+      const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.join('')}</div>` : '';
       return `
         <button class="spicker-item" type="button" data-solution="${this.escapeHtml(id)}">
           <div class="spicker-item-title">${title}</div>
-          <div class="spicker-item-meta">${cat}</div>
+          <div class="spicker-item-right">
+            <div class="spicker-item-meta">${cat}</div>
+            ${tagsHtml}
+          </div>
         </button>
       `;
     }).join('');
@@ -2178,6 +2209,7 @@ async applyUnlockedToShop() {
 
     // View
     this.setEmptyState(false);
+    this.refreshHintCards();
     if (this.spickerViewEl) this.spickerViewEl.style.display = 'none';
 
     // UX: Fokus direkt in Editor
@@ -2368,13 +2400,12 @@ async unlockCurrent() {
     const id = this.currentId;
 
     const alreadyUsed = !!this.hintUsed?.[id];
-    const isOpen = !!this.hintOverlayEl && (this.hintOverlayEl.classList.contains('show') || this.hintOverlayEl.classList.contains('open'));
+    const isOpen = !!this.hintCardEl && (this.hintCardEl.classList.contains('show') || this.hintCardEl.classList.contains('open'));
     const isPending = this._pendingHintTaskId === id;
 
     // 1) Wenn Tipp schon genutzt: Tipp-Card togglen (ohne Pop-up).
     if (alreadyUsed) {
-      if (isOpen) this.closeHintOverlay();
-      else this.openHintOverlay(this.getHintText(id), { mode: 'hint' });
+      this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
       return;
     }
 
@@ -2394,7 +2425,33 @@ async unlockCurrent() {
 
 ` +
       `Wenn du fortfährst, wird dein Score um 1 reduziert und du siehst den Tipp für diese Aufgabe dauerhaft.`;
-    this.openHintOverlay(msg, { mode: 'confirm' });
+    this.openHintOverlay(msg, { mode: 'confirm', title: 'Tipp anzeigen?', confirmLabel: 'Tipp anzeigen (-1)' });
+  }
+
+  requestScaffold() {
+    if (!this.currentId) return;
+    const id = this.currentId;
+
+    const alreadyUsed = !!this.scaffoldUsed?.[id];
+    const isOpen = !!this.scaffoldCardEl && (this.scaffoldCardEl.classList.contains('show') || this.scaffoldCardEl.classList.contains('open'));
+    const isPending = this._pendingScaffoldTaskId === id;
+
+    // Wenn bereits genutzt: Codegerüst togglen
+    if (alreadyUsed) {
+      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
+      return;
+    }
+
+    if (isOpen && isPending) return;
+
+    this._pendingScaffoldTaskId = id;
+    const score = this.computeScore();
+    const msg =
+      `Wenn du dir das Codegerüst anzeigen lässt, verlierst du 3 Score‑Punkte.
+Aktueller Score: ${score}.
+
+Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst für diese Aufgabe dauerhaft.`;
+    this.openScaffoldCard(msg, { mode: 'confirm', title: 'Codegerüst anzeigen?', confirmLabel: 'Codegerüst anzeigen (-3)' });
   }
 
   openConfirmOverlay(opts = {}) {
@@ -2417,7 +2474,6 @@ async unlockCurrent() {
   }
 
   closeConfirm() {
-    this._pendingHintTaskId = null;
     this._confirmAction = null;
     if (!this.confirmOverlayEl) return;
     this.confirmOverlayEl.classList.remove('show', 'open');
@@ -2455,7 +2511,6 @@ async unlockCurrent() {
 
   confirmHint() {
     const id = this._pendingHintTaskId;
-    this.closeConfirm();
     if (!id) return;
 
     // Abzug nur 1x pro Aufgabe
@@ -2463,43 +2518,102 @@ async unlockCurrent() {
     this.persistProgressState();
     this.updateProgressUI();
 
-
     this._pendingHintTaskId = null;
-    this.showTaskHint(this.getHintText(id));
+    this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
+  }
+
+  confirmScaffold() {
+    const id = this._pendingScaffoldTaskId;
+    if (!id) return;
+
+    this.scaffoldUsed[id] = true;
+    this.persistProgressState();
+    this.updateProgressUI();
+
+    this._pendingScaffoldTaskId = null;
+    this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
   }
 
   openHintOverlay(text, opts = {}) {
-    if (!this.hintOverlayEl || !this.hintTextEl) return;
+    if (!this.hintCardEl || !this.hintTextEl) return;
 
     const mode = (opts && opts.mode) ? String(opts.mode) : 'hint';
     const isConfirm = mode === 'confirm';
+    const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Tipp anzeigen?' : 'Tipp');
+    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Tipp anzeigen (-1)';
 
-    if (this.hintTitleEl) this.hintTitleEl.textContent = isConfirm ? 'Tipp anzeigen?' : 'Tipp';
+    if (this.hintTitleEl) this.hintTitleEl.textContent = title;
     if (this.hintConfirmBtn) this.hintConfirmBtn.style.display = isConfirm ? '' : 'none';
-    if (this.hintBackBtn) this.hintBackBtn.textContent = isConfirm ? 'Abbrechen' : 'Schließen';
+    if (this.hintConfirmBtn && isConfirm) this.hintConfirmBtn.textContent = confirmLabel;
 
     this.hintTextEl.textContent = text || '';
-    this.hintOverlayEl.classList.add('show', 'open');
-    this.hintOverlayEl.setAttribute('aria-hidden', 'false');
-    try { this.hintOverlayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+    this.hintCardEl.classList.add('show', 'open');
+    try { this.hintCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
   }
 
   closeHintOverlay() {
-    if (!this.hintOverlayEl || !this.hintTextEl) return;
-    this.hintOverlayEl.classList.remove('show', 'open');
-    this.hintOverlayEl.setAttribute('aria-hidden', 'true');
+    if (!this.hintCardEl || !this.hintTextEl) return;
+    this.hintCardEl.classList.remove('show', 'open');
     this.hintTextEl.textContent = '';
 
     if (this.hintConfirmBtn) this.hintConfirmBtn.style.display = 'none';
-    if (this.hintBackBtn) this.hintBackBtn.textContent = 'Schließen';
     if (this.hintTitleEl) this.hintTitleEl.textContent = 'Tipp';
 
     this._pendingHintTaskId = null;
   }
 
-  // Backwards‑compat hook (alte API), jetzt als Overlay
-  showTaskHint(text) { this.openHintOverlay(text, { mode: 'hint' }); }
-  hideTaskHint() { this.closeHintOverlay(); }
+  openScaffoldCard(text, opts = {}) {
+    if (!this.scaffoldCardEl || !this.scaffoldTextEl) return;
+
+    const mode = (opts && opts.mode) ? String(opts.mode) : 'hint';
+    const isConfirm = mode === 'confirm';
+    const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Codegerüst anzeigen?' : 'Codegerüst');
+    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Codegerüst anzeigen (-3)';
+
+    if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = title;
+    if (this.scaffoldConfirmBtn) this.scaffoldConfirmBtn.style.display = isConfirm ? '' : 'none';
+    if (this.scaffoldConfirmBtn && isConfirm) this.scaffoldConfirmBtn.textContent = confirmLabel;
+
+    this.scaffoldTextEl.textContent = text || '';
+    this.scaffoldCardEl.classList.add('show', 'open');
+    try { this.scaffoldCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+  }
+
+  closeScaffoldCard() {
+    if (!this.scaffoldCardEl || !this.scaffoldTextEl) return;
+    this.scaffoldCardEl.classList.remove('show', 'open');
+    this.scaffoldTextEl.textContent = '';
+    if (this.scaffoldConfirmBtn) this.scaffoldConfirmBtn.style.display = 'none';
+    if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = 'Codegerüst';
+    this._pendingScaffoldTaskId = null;
+  }
+
+  // Backwards‑compat hook (alte API), jetzt als Card
+  showTaskHint(text) { this.openHintOverlay(text, { mode: 'hint', title: 'Tipp' }); }
+  hideTaskHint() {
+    this.closeHintOverlay();
+    this.closeScaffoldCard();
+  }
+
+  refreshHintCards() {
+    const id = this.currentId;
+    if (!id) {
+      this.hideTaskHint();
+      return;
+    }
+
+    if (this.hintUsed?.[id]) {
+      this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
+    } else {
+      this.closeHintOverlay();
+    }
+
+    if (this.scaffoldUsed?.[id]) {
+      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
+    } else {
+      this.closeScaffoldCard();
+    }
+  }
 
   getHintText(taskId) {
     const t = this.TASKS?.[taskId];
@@ -2535,6 +2649,118 @@ if (H[taskId]) return H[taskId];
     return "Wenn Aggregation nötig ist: GROUP BY auf der richtigen Schlüsselspalte, SUM/COUNT für die Kennzahl und HAVING für Bedingungen auf Aggregaten.";
   }
 
+  getScaffoldText(taskId) {
+    const S = {
+      "search":
+`SELECT *
+FROM produkte
+WHERE name LIKE '%' || :q || '%';`,
+      "all":
+`SELECT *
+FROM produkte;`,
+      "express":
+`SELECT *
+FROM produkte
+WHERE liefertage = ...;`,
+      "bestseller":
+`SELECT p.*
+FROM produkte p
+WHERE p.id IN (
+  SELECT v.produkt_id
+  FROM verkäufe v
+  GROUP BY v.produkt_id
+  HAVING SUM(v.anzahl) > ...
+);`,
+      "available":
+`SELECT *
+FROM produkte
+WHERE lagerbestand BETWEEN ... AND ...;`,
+      "priceAsc":
+`SELECT *
+FROM produkte
+ORDER BY preis ASC;`,
+      "priceDesc":
+`SELECT *
+FROM produkte
+ORDER BY preis DESC;`,
+      "popularity":
+`SELECT produkt_id, SUM(anzahl) AS verkäufe
+FROM verkäufe
+GROUP BY produkt_id
+ORDER BY verkäufe DESC;`,
+      "cat-electronics":
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Elektronik';`,
+      "cat-household":
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Haushalt';`,
+      "cat-sport":
+`SELECT p.*
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+AND k.name = 'Sport';`,
+      "price-25":
+`SELECT *
+FROM produkte
+WHERE preis < 25;`,
+      "price-50":
+`SELECT *
+FROM produkte
+WHERE preis BETWEEN 25 AND 50;`,
+      "price-100":
+`SELECT *
+FROM produkte
+WHERE preis BETWEEN 50 AND 100;`,
+      "rating-5":
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne = 5;`,
+      "rating-4":
+`SELECT DISTINCT p.*
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id
+AND b.sterne >= 4;`,
+      "open-cart":
+`SELECT p.name, p.preis, w.menge
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+      "cart-refresh":
+`SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id
+ORDER BY p.name ASC;`,
+      "cart-total":
+`SELECT SUM(p.preis * w.menge)
+FROM produkte p, warenkorb w
+WHERE p.id = w.produkt_id;`,
+      "orders":
+`SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+AND v.nutzer_id = ...
+ORDER BY v.id DESC
+LIMIT 3;`,
+      "topProducts":
+`SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
+FROM produkte p, verkäufe v
+WHERE p.id = v.produkt_id
+GROUP BY p.id
+ORDER BY gesamt_verkaeufe DESC
+LIMIT 2;`
+    };
+
+    if (S[taskId]) return S[taskId];
+
+    return `SELECT ...
+FROM ...
+WHERE ...;`;
+  }
+
   /* ---------- Score ---------- */
 
   getTaskPoints(taskId) {
@@ -2549,9 +2775,11 @@ if (H[taskId]) return H[taskId];
     const ids = Object.keys(this.TASKS || {});
     const base = ids.reduce((acc, id) => acc + (this.unlocked?.[id] ? this.getTaskPoints(id) : 0), 0);
     const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
+    const scaffolds = Object.keys(this.scaffoldUsed || {}).filter(k => !!this.scaffoldUsed[k]).length;
     const bonus = this.sqliDone ? 10 : 0;
     const spickerPenalty = this.spickerUsed ? 1 : 0;
-    return Math.max(0, base + bonus - hints - spickerPenalty);
+    const scaffoldPenalty = scaffolds * 3;
+    return Math.max(0, base + bonus - hints - spickerPenalty - scaffoldPenalty);
   }
 
   pulseLocked(el) {
