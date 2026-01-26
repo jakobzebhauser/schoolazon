@@ -973,6 +973,18 @@
     window.location.href = url;
   }
 
+  function goToFreeMode(){
+    const n = (state.name || "").toString().trim();
+    if(n){
+      try{
+        sessionStorage.setItem("schulazon_name", n);
+        localStorage.setItem("schulazon_name", n);
+      }catch(_){}
+    }
+    const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    window.location.href = url;
+  }
+
 function shuffle(arr){
     const a = arr.slice();
     for(let i=a.length-1;i>0;i--){
@@ -1159,7 +1171,7 @@ function promptWithName(q){
           </div>
           ${bodyHTML}
           <div class="btnRow">
-            <button class="btn disabled" aria-disabled="true">Zurück</button>
+            <div></div>
             <button class="btn primary disabled" id="nextBtn">${isLast ? "Abgeben" : "Weiter"}</button>
           </div>
         </div>
@@ -1468,11 +1480,14 @@ function promptWithName(q){
 
           <div class="btnRow">
             <div></div>
-            <button class="btn primary disabled" title="Noch nicht implementiert">Starten</button>
+            <button class="btn primary" id="startBtn">Starten</button>
           </div>
         </div>
       </div>
     `;
+
+    const startBtn = el("startBtn");
+    startBtn.addEventListener("click", ()=>{ goToFreeMode(); });
   }
 
   function submit(mode){

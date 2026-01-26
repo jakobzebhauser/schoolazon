@@ -134,6 +134,13 @@ function bindUI() {
       try { input.blur(); } catch (_) {}
     }
     if (clear) clear.style.pointerEvents = "none";
+
+    // Reset-Filter darf nie gesperrt sein
+    const resetBtn = document.querySelector('[data-task="reset-filters"]');
+    if (resetBtn) {
+      resetBtn.setAttribute("data-locked", "false");
+      resetBtn.setAttribute("aria-disabled", "false");
+    }
   }
   // Ensure cart action buttons participate in the lock/task system.
   // In FreeMode, locked controls must stay clickable so the parent can open the editor.
@@ -1245,6 +1252,14 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
     // a) Button sperren/entsperren
     if (msg.type === "SET_LOCK") {
       const { taskId, locked } = msg;
+
+      if (taskId === "reset-filters") {
+        document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
+          el.setAttribute("data-locked", "false");
+          el.setAttribute("aria-disabled", "false");
+        });
+        return;
+      }
 
       document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
         // Locked controls must stay clickable (parent opens editor on click).
