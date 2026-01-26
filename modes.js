@@ -279,6 +279,7 @@ function initTopbarChrome() {
 
   // 3) Fullscreen
   const fsBtn = document.getElementById("fsBtn");
+  const homeBtn = document.getElementById("homeBtn");
   async function toggleFullscreen() {
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
@@ -289,6 +290,13 @@ function initTopbarChrome() {
     fsBtn.addEventListener("click", toggleFullscreen);
     document.addEventListener("fullscreenchange", () => {
       fsBtn.textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+    });
+  }
+  if (homeBtn) {
+    homeBtn.addEventListener("click", () => {
+      const ok = window.confirm("Willst du wirklich zur Startseite? Alle aktuellen Spielstände gehen verloren.");
+      if (!ok) return;
+      try { window.location.assign("index.html"); } catch (_) { window.location.href = "index.html"; }
     });
   }
 

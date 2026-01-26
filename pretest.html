@@ -811,6 +811,7 @@
 
       <div class="status">
         <button class="pillBtn" id="fsBtn" type="button" >Vollbild</button>
+        <button class="pillBtn" id="homeBtn" type="button">Startseite</button>
 
         <div class="pill" id="pillName" style="display:none;">
           <span>Hi, <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
@@ -971,6 +972,12 @@
     const n = (state.name || "").toString().trim();
     const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
     window.location.href = url;
+  }
+
+  function goHomeConfirm(){
+    const ok = window.confirm("Willst du wirklich zur Startseite? Alle aktuellen Spielstände gehen verloren.");
+    if(!ok) return;
+    window.location.href = "index.html";
   }
 
   function goToFreeMode(){
@@ -1555,6 +1562,7 @@ function promptWithName(q){
     }catch{}
   }
   el("fsBtn").addEventListener("click", toggleFullscreen);
+  el("homeBtn")?.addEventListener("click", goHomeConfirm);
   document.addEventListener("fullscreenchange", ()=>{
     el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
   });
