@@ -479,6 +479,59 @@
     }
     .feedback.show{display:block}
 
+    .codeEditor{
+      width: 100%;
+      min-height: 180px;
+      border-radius: var(--radiusSm);
+      border: 1px solid rgba(0,122,255,.22);
+      background: rgba(255,255,255,.92);
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: var(--sql);
+      line-height: 1.65;
+      outline: none;
+      resize: vertical;
+    }
+    .codeEditor:focus{
+      box-shadow: var(--focus);
+      border-color: rgba(0,122,255,.45);
+    }
+
+    .shopPreview{
+      margin-top: 14px;
+      border-radius: var(--radiusMd);
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.80);
+      box-shadow: var(--shadow2);
+      overflow: hidden;
+    }
+    .shopPreviewHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 12px;
+      background: rgba(0,122,255,.08);
+      font-size: var(--small);
+      font-weight: 950;
+      color: rgba(11,15,24,.88);
+    }
+    .shopPreviewFrame{
+      width: 100%;
+      height: 440px;
+      border: 0;
+      display: block;
+      background: white;
+    }
+
+    .codeLayout{
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(360px, 2fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .codeLeft{min-width: 0;}
+    .codeRight{min-width: 0;}
+
     .matchGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -601,6 +654,15 @@
       .matchGrid{grid-template-columns: 1fr;}
       .topbar{padding: 10px}
     }
+
+    @media (max-width: 980px){
+      .codeLayout{
+        grid-template-columns: 1fr;
+      }
+      .shopPreviewFrame{
+        height: 320px;
+      }
+    }
   
     .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
   </style>
@@ -659,12 +721,69 @@
       .toLowerCase();
   }
 
+  function testAll(sql, regs){
+    const s = normalize(sql);
+    return regs.every((re) => re.test(s));
+  }
+
   function getName(){
     const qp = new URLSearchParams(location.search);
     return (qp.get("name") || "").trim();
   }
 
   const state = { name: getName(), i: 0 };
+  const UNLOCK_KEY = "schulazon_unlocked_v1";
+  let shopFrame = null;
+  let shopReady = false;
+  let currentTargetTaskId = null;
+
+  function getUnlockMap(){
+    try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) || "{}"); }
+    catch { return {}; }
+  }
+  function setUnlockMap(map){
+    try { localStorage.setItem(UNLOCK_KEY, JSON.stringify(map || {})); } catch {}
+  }
+  function isTaskUnlocked(id){
+    if(!id) return false;
+    const map = getUnlockMap();
+    return !!map[id];
+  }
+  function unlockTask(id){
+    if(!id) return;
+    const map = getUnlockMap();
+    if(map[id]) return;
+    map[id] = true;
+    setUnlockMap(map);
+    applyUnlocksToShop();
+  }
+
+  function sendShopLock(taskId, locked){
+    if(!shopFrame || !shopFrame.contentWindow) return;
+    shopFrame.contentWindow.postMessage(
+      { __SCHULAZON__: true, type: "SET_LOCK", taskId, locked },
+      window.location.origin
+    );
+  }
+
+  function applyUnlocksToShop(){
+    if(!shopFrame || !shopReady) return;
+    const map = getUnlockMap();
+    Object.keys(map).forEach((id) => {
+      if(map[id]) sendShopLock(id, false);
+    });
+    highlightShopTarget(currentTargetTaskId);
+  }
+
+  window.addEventListener("message", (e) => {
+    if(e.origin !== window.location.origin) return;
+    const msg = e.data;
+    if(!msg || msg.__SCHULAZON__ !== true) return;
+    if(msg.type === "SHOP_READY"){
+      shopReady = true;
+      applyUnlocksToShop();
+    }
+  });
 
   function withName(s){
     if(!state.name) return s;
@@ -1111,7 +1230,23 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       feedbackOk:"Richtig. AND = beide müssen gelten.",
       feedbackNo:"Nicht ganz. Gesucht ist AND."
     },
+
     
+    {
+      id:"code_express",
+      type:"code",
+      title:"Programmieraufgabe: Expresslieferung freischalten",
+      context: "Im Shop gibt es den Button Expresslieferung. Implementiere die SQL, die nur Produkte mit liefertage = 1 zeigt. Bei Erfolg wird der Button freigeschaltet.",
+      starter: `SELECT *
+FROM produkte
+WHERE liefertage = 1;`,
+      unlockTaskId: "express",
+      showShop: true,
+      feedbackOk: "Stark. Expresslieferung ist freigeschaltet.",
+      feedbackNo: "Noch nicht korrekt. Tipp: WHERE liefertage = 1.",
+      check: (sql)=> testAll(sql, [/select\b/, /from\s+produkte\b/, /where\b/, /liefertage\s*=\s*1/])
+    },
+
     {
       id:"order",
       title:"ORDER BY",
@@ -1130,6 +1265,22 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       template:["SELECT *","\nFROM produkte","\nORDER BY preis ",{blank:"DESC"},";"],
       feedbackOk:"Richtig. DESC sortiert absteigend.",
       feedbackNo:"Nicht ganz. Gesucht ist DESC."
+    },
+
+    
+    {
+      id:"code_price_desc",
+      type:"code",
+      title:"Programmieraufgabe: Preis absteigend",
+      context: "Im Shop gibt es eine Sortierung Preis absteigend. Schreibe die SQL, die Produkte nach preis absteigend sortiert. Bei Erfolg wird die Sortierung freigeschaltet.",
+      starter: `SELECT *
+FROM produkte
+ORDER BY preis DESC;`,
+      unlockTaskId: "priceDesc",
+      showShop: true,
+      feedbackOk: "Gut. Sortierung Preis absteigend ist freigeschaltet.",
+      feedbackNo: "Noch nicht korrekt. Tipp: ORDER BY preis DESC.",
+      check: (sql)=> testAll(sql, [/select\b/, /from\s+produkte\b/, /order\s+by\s+preis\s+desc/])
     },
 
     {
@@ -1211,6 +1362,27 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       template:["SELECT liefertage, AVG(preis) AS durchschnittspreis","\nFROM produkte","\nGROUP BY liefertage","\n",{blank:"HAVING"}," AVG(preis) >= 20;"],
       feedbackOk:"Richtig. HAVING filtert Gruppen nach dem GROUP BY.",
       feedbackNo:"Nicht ganz. Gesucht ist HAVING."
+    },
+
+    
+    {
+      id:"code_bestseller",
+      type:"code",
+      title:"Programmieraufgabe: Bestseller freischalten",
+      context: "Im Shop gibt es den Button Bestseller. Zeige Produkte, die insgesamt mindestens 300 verkauft wurden. Nutze SUM(anzahl), GROUP BY und HAVING. Bei Erfolg wird der Button freigeschaltet.",
+      starter: `SELECT p.*
+FROM produkte p
+WHERE p.id IN (
+  SELECT produkt_id
+  FROM verkaeufe
+  GROUP BY produkt_id
+  HAVING SUM(anzahl) >= 300
+);`,
+      unlockTaskId: "bestseller",
+      showShop: true,
+      feedbackOk: "Sehr gut. Bestseller ist freigeschaltet.",
+      feedbackNo: "Noch nicht korrekt. Nutze SUM + GROUP BY + HAVING und beziehe verkaeufe/anzahl ein.",
+      check: (sql)=> testAll(sql, [/sum\s*\(/, /group\s+by\b/, /having\b/, /anzahl/, /verk/])
     },
 
     {
@@ -1296,6 +1468,81 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
     const denom = Math.max(1, total - 1);
     el("bar").style.width = `${(state.i / denom) * 100}%`;
     updateNamePill();
+  }
+
+  function renderShopPreview(){
+    return `
+      <div class="shopPreview">
+        <div class="shopPreviewHead">
+          <span>Shop-Vorschau</span>
+          <span style="font-weight:700; color: var(--muted);">Buttons werden hier sichtbar</span>
+        </div>
+        <iframe id="shopPreviewFrame" class="shopPreviewFrame" src="shop.html" title="Shop Vorschau"></iframe>
+      </div>
+    `;
+  }
+
+  function bindShopPreview(){
+    shopFrame = document.getElementById("shopPreviewFrame");
+    shopReady = false;
+    if(!shopFrame) return;
+    shopFrame.addEventListener("load", () => {
+      try {
+        shopReady = true;
+        applyUnlocksToShop();
+        highlightShopTarget(currentTargetTaskId);
+      } catch {}
+    }, { once: true });
+    // Fallback: falls kein SHOP_READY ankommt, trotzdem Locks anwenden
+    setTimeout(()=>{
+      if(!shopReady){
+        shopReady = true;
+        applyUnlocksToShop();
+      }
+    }, 800);
+  }
+
+  function highlightShopTarget(taskId){
+    if(!shopFrame) return;
+    const doc = shopFrame.contentDocument;
+    if(!doc) return;
+    try {
+      if(!doc.getElementById("tutorialTargetStyle")){
+        const style = doc.createElement("style");
+        style.id = "tutorialTargetStyle";
+        style.textContent = `
+          .tutorial-target{
+            position: relative !important;
+            outline: 2px solid rgba(0,122,255,.9);
+            box-shadow: 0 0 0 6px rgba(0,122,255,.18);
+          }
+          .tutorial-target::after{
+            content: "ZIEL";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: .04em;
+            border-radius: 999px;
+            background: rgba(0,122,255,.95);
+            color: white;
+            box-shadow: 0 8px 16px rgba(0,122,255,.25);
+          }
+        `;
+        doc.head.appendChild(style);
+      }
+      doc.querySelectorAll(".tutorial-target").forEach((el) => el.classList.remove("tutorial-target"));
+      if(!taskId) return;
+      const sortIds = new Set(["priceAsc","priceDesc","popularity"]);
+      const dd = doc.getElementById("sortDropdown");
+      if(dd){
+        if(sortIds.has(taskId)) dd.classList.add("open");
+        else dd.classList.remove("open");
+      }
+      doc.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => el.classList.add("tutorial-target"));
+    } catch {}
   }
 
   /* ---------- Renderers ---------- */
@@ -1393,6 +1640,78 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
     });
 
     setTimeout(()=>inputs[0]?.focus(), 30);
+  }
+
+  function renderCodeTask(p){
+    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
+    const alreadyUnlocked = !!p.unlockTaskId && isTaskUnlocked(p.unlockTaskId);
+
+    el("screen").innerHTML = `
+      <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+      ${renderTheory(ctx, "Programmieraufgabe")}
+      <div class="codeLayout">
+        <div class="codeLeft">
+          <div class="taskCard">
+            <div style="font-size: var(--small); font-weight: 950; margin-bottom:8px; color: rgba(11,15,24,.86);">Deine SQL</div>
+            <textarea id="codeInput" class="codeEditor" spellcheck="false" autocomplete="off" autocapitalize="off">${escapeHtml(p.starter || "")}</textarea>
+          </div>
+          <button class="btn ${alreadyUnlocked ? "disabled":""}" id="checkBtn" style="margin-top:12px;">
+            ${alreadyUnlocked ? "Bereits freigeschaltet" : "Pruefen & freischalten"}
+          </button>
+          <div class="feedback ${alreadyUnlocked ? "show ok":""}" id="fb">${alreadyUnlocked ? escapeHtml(p.feedbackOk || "Bereits freigeschaltet.") : ""}</div>
+        </div>
+        <div class="codeRight">
+          ${p.showShop ? renderShopPreview() : ``}
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="btn ghost" id="backBtn">Zurueck</button>
+        <button class="btn primary ${alreadyUnlocked ? "" : "disabled"}" id="nextBtn">Verstanden</button>
+      </div>
+    `;
+
+    currentTargetTaskId = p.unlockTaskId || null;
+    if(p.showShop) bindShopPreview();
+    else { shopFrame = null; shopReady = false; currentTargetTaskId = null; }
+
+    const input = el("codeInput");
+    const fb = el("fb");
+    const nextBtn = el("nextBtn");
+    const checkBtn = el("checkBtn");
+
+    el("backBtn").addEventListener("click", ()=>{ state.i--; render(); });
+
+    if(checkBtn){
+      checkBtn.addEventListener("click", ()=>{
+        if(alreadyUnlocked) return;
+        const res = (typeof p.check === "function") ? p.check(input.value) : false;
+        const ok = (typeof res === "object") ? !!res.ok : !!res;
+        const okMsg = (typeof res === "object" && res.okMsg) ? res.okMsg : p.feedbackOk;
+        const noMsg = (typeof res === "object" && res.noMsg) ? res.noMsg : p.feedbackNo;
+
+        fb.textContent = ok ? okMsg : noMsg;
+        fb.classList.add("show");
+        fb.classList.toggle("ok", ok);
+        fb.classList.toggle("bad", !ok);
+
+        if(ok){
+          unlockTask(p.unlockTaskId);
+          checkBtn.classList.add("disabled");
+          checkBtn.textContent = "Freigeschaltet";
+          nextBtn.classList.remove("disabled");
+          nextBtn.focus();
+        } else {
+          input.focus();
+        }
+      });
+    }
+
+    nextBtn.addEventListener("click", ()=>{
+      if(nextBtn.classList.contains("disabled")) return;
+      state.i++; render();
+    });
+
+    setTimeout(()=>input?.focus(), 30);
   }
 
   function renderMatch(p){
@@ -1585,11 +1904,15 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
 
   function render(){
     updateHeader();
+    shopFrame = null;
+    shopReady = false;
+    currentTargetTaskId = null;
     const p = pages[state.i];
 
     if(p.type === "match"){ renderMatch(p); return; }
     if(p.type === "fill"){ renderFill(p); return; }
     if(p.type === "fill_multi"){ renderFillMulti(p); return; }
+    if(p.type === "code"){ renderCodeTask(p); return; }
     if(p.type === "ack"){ renderAck(p); return; }
 
     renderInfo(p);
@@ -1598,6 +1921,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
 
   function goToFreeMode(){
     const n = (state.name || "").toString().trim();
+    try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
     window.location.href = url;
   }
