@@ -48,7 +48,6 @@ const ALL_TASK_IDS = [
   "rating-5","rating-4",
   "priceAsc","priceDesc","popularity",
   "search",
-  "open-cart",
   "orders",
   "topProducts",
   "cart-refresh",
@@ -874,28 +873,6 @@ AND b.sterne >= 4;`,
           require: ["tablecol:bewertungen:sterne", "eq:produkt_id:id", "dedup"],
           any: [["cmp:sterne:>=:4"], ["invals:sterne:4,5"], ["orcmp:sterne:4:5"], ["range:sterne:4:5"]],
           message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne >= 4 und entferne Duplikate (DISTINCT/GROUP BY)."
-        },
-        mode: "rows_set"
-      },
-
-      "open-cart": {
-        title: "Warenkorb anzeigen",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die sich aktuell im Warenkorb befinden.
-Gib für jedes Produkt den Namen, den Preis und die Menge im Warenkorb aus.`,
-        starter:
-`SELECT p.name, p.preis, w.menge
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
-        refSql:
-`SELECT p.name, p.preis, w.menge
-FROM produkte p, warenkorb w
-WHERE p.id = w.produkt_id;`,
-        sqlRules: {
-          require: ["produkte", "warenkorb", "eq:produkt_id:id"],
-          message: "Die Abfrage muss produkte.id mit warenkorb.produkt_id verknüpfen."
         },
         mode: "rows_set"
       },
@@ -2659,7 +2636,6 @@ Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u0
       "price-100": "Filtere auf preis zwischen 50 und 100 (inklusive).",
       "rating-5": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne = 5 und entferne Duplikate (DISTINCT oder GROUP BY).",
       "rating-4": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne >= 4 und entferne Duplikate (DISTINCT oder GROUP BY).",
-      "open-cart": "Verbinde produkte mit warenkorb \u00fcber produkt_id. Gib Name, Preis und Menge aus.",
       "cart-refresh": "Wie Warenkorb anzeigen, plus Zeilensumme (preis * menge) und ORDER BY nach Name.",
       "cart-total": "Gesamtpreis = SUM(preis * menge). Gib nur einen Wert zur\u00fcck.",
       "orders": "Filtere verk\u00e4ufe auf nutzer_id = 1, sortiere nach neuestem (id DESC) und begrenze auf 3. Berechne die Zeilensumme.",
@@ -2750,10 +2726,6 @@ AND ... = ...;`,
 FROM ..., ...
 WHERE ... = ...
 AND ... >= ...;`,
-      "open-cart":
-`SELECT p.name, p.preis, w.menge
-FROM ..., ...
-WHERE ... = ...;`,
       "cart-refresh":
 `SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
 FROM ..., ...
