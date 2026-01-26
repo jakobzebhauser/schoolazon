@@ -1788,6 +1788,130 @@ body.timeup #pillTimer{
   justify-content:flex-start;
 }
 
+/* ===============================
+   Unified Aux Panels (Spicker / Schema / Solutions / Bonus)
+   =============================== */
+.spicker-view{
+  --aux-border: rgba(10,15,24,.10);
+  --aux-bg: rgba(255,255,255,.96);
+  --aux-shadow: 0 18px 40px rgba(10,15,24,.10);
+  --aux-shadow-soft: 0 10px 24px rgba(10,15,24,.08);
+}
+
+.spicker-head{
+  border: 1px solid var(--aux-border);
+  background: linear-gradient(180deg, rgba(0,122,255,.08), rgba(255,255,255,.92));
+  box-shadow: var(--aux-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 14px 16px;
+}
+
+.spicker-title{
+  font-size: 19px;
+  letter-spacing: .01em;
+}
+
+.spicker-sub{
+  font-weight: 650;
+}
+
+.spicker-list{
+  gap: 10px;
+}
+
+.spicker-item{
+  border: 1px solid rgba(0,122,255,.18);
+  background: rgba(255,255,255,.96);
+  box-shadow: var(--aux-shadow-soft);
+  transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.spicker-item:hover{
+  transform: translateY(-1px);
+  border-color: rgba(0,122,255,.32);
+  box-shadow: 0 16px 34px rgba(10,15,24,.10);
+}
+
+.spicker-content{
+  border: 1px solid var(--aux-border);
+  background: rgba(255,255,255,.98);
+  border-radius: 20px;
+  box-shadow: var(--aux-shadow-soft);
+}
+
+.spicker-block{
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(245,247,252,.92);
+}
+
+.spicker-code{
+  border: 1px solid rgba(0,122,255,.22);
+  background: rgba(255,255,255,.98);
+  box-shadow: var(--aux-shadow-soft);
+}
+
+.schema-card{
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(255,255,255,.98);
+  box-shadow: var(--aux-shadow-soft);
+  border-radius: 20px;
+}
+.schema-rel-item{
+  border: 1px solid rgba(10,15,24,.10);
+  background: rgba(255,255,255,.96);
+}
+
+.spicker-view .btn-ghost{
+  border: 1px solid rgba(10,15,24,.16);
+  background: rgba(255,255,255,.86);
+  border-radius: 12px;
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+}
+
+.btn-close{
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255,59,48,.35);
+  background: linear-gradient(180deg, rgba(255,59,48,.12), rgba(255,255,255,.90));
+  color: rgba(180,0,25,.92);
+  box-shadow: 0 12px 26px rgba(255,59,48,.12);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.btn-close:hover{
+  background: rgba(255,59,48,.16);
+  box-shadow: 0 16px 30px rgba(255,59,48,.16);
+  transform: translateY(-1px);
+}
+
+.task-view.task-v3 .task3-closeBtn{
+  border: 1px solid rgba(255,59,48,.35);
+  background: linear-gradient(180deg, rgba(255,59,48,.12), rgba(255,255,255,.90));
+  color: rgba(180,0,25,.92);
+  box-shadow: 0 10px 22px rgba(255,59,48,.10);
+}
+
+.overlay .btn-ghost#confirmClose,
+.overlay .btn-ghost#lockedClose{
+  border: 1px solid rgba(255,59,48,.30);
+  background: rgba(255,59,48,.10);
+  border-radius: 12px;
+}
+
+.bonus-view #sideBody{
+  border: 1px solid rgba(10,15,24,.10);
+  background: rgba(255,255,255,.98);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 12px 26px rgba(10,15,24,.08);
+}
+
 
 
 
