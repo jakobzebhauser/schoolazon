@@ -1104,7 +1104,7 @@ renderShell() {
 </svg>
 </button>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codegerüst" title="Codegerüst (-3)">
+                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst (-3)">
   <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
 </button>
 
@@ -1133,11 +1133,11 @@ renderShell() {
 
 <div class="task3-card task3-hintCard" id="scaffoldCard" aria-hidden="true">
   <div class="task3-hintHead">
-    <div class="task3-cardTitle" id="scaffoldTitle">Codegerüst</div>
+    <div class="task3-cardTitle" id="scaffoldTitle">Codeger\u00fcst</div>
   </div>
   <pre class="task3-hintBody" id="scaffoldText" style="white-space:pre-wrap; margin:0;"></pre>
   <div class="task3-hintActions">
-    <button class="btn btn-primary" id="scaffoldConfirm" type="button" style="display:none;">Codegerüst anzeigen (-3)</button>
+    <button class="btn btn-primary" id="scaffoldConfirm" type="button" style="display:none;">Codeger\u00fcst anzeigen (-3)</button>
   </div>
 </div>
 
@@ -1370,7 +1370,7 @@ renderShell() {
     this._confirmAction = null;
     this.spickerUsed = false;
 
-    // Hint / Codegerüst cards
+    // Hint / Codeger\u00fcst cards
     this.hintCardEl = this.root.querySelector('#hintCard');
     this.hintTitleEl = this.root.querySelector('#hintTitle');
     this.hintTextEl = this.root.querySelector('#hintText');
@@ -1401,7 +1401,7 @@ renderShell() {
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
     this.sqlEl?.addEventListener('input', () => this.onSqlEdited());
             
-    // Hint / Codegerüst cards
+    // Hint / Codeger\u00fcst cards
     this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
     this.scaffoldConfirmBtn?.addEventListener('click', () => this.confirmScaffold());
 this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
@@ -1786,7 +1786,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       const cat = this.escapeHtml(this.getCategoryLabel(id));
       const tags = [];
       if (this.hintUsed?.[id]) tags.push('<span class="spicker-tag hint">Tipp</span>');
-      if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codegerüst</span>');
+      if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codeger\u00fcst</span>');
       const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.join('')}</div>` : '';
       return `
         <button class="spicker-item" type="button" data-solution="${this.escapeHtml(id)}">
@@ -1878,6 +1878,13 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
 
   sanitizeTaskText(s) {
     return String(s || '').replace(/\s*->\s*Task:\s*[\w-]+/gi, '').trim();
+  }
+
+  formatTaskHtml(s) {
+    let text = this.sanitizeTaskText(s || '');
+    text = text.replace(/^aufgabe:\s*/i, '').trim();
+    let html = this.escapeHtml(text);
+    return html.replace(/\n/g, '<br>');
   }
 
   openSideView(kind) {
@@ -2188,7 +2195,7 @@ async applyUnlockedToShop() {
     // UI
     this.titleEl.textContent = this.sanitizeTaskText(`${t.title}`);
     if (this.taskIdEl) { this.taskIdEl.textContent = ""; this.taskIdEl.style.display = "none"; }
-    this.taskBodyEl.textContent = this.sanitizeTaskText(t.task || '');
+    this.taskBodyEl.innerHTML = this.formatTaskHtml(t.task || '');
 
     if (this.categoryEl) this.categoryEl.textContent = this.getCategoryLabel(this.currentId);
 
@@ -2220,10 +2227,7 @@ async applyUnlockedToShop() {
 
   checkCurrent() {
     this.outEl.textContent = "";
-    this.unlockBtn.disabled = true;
-    this.unlockBtn.style.cursor = "not-allowed";
-    this.unlockBtn.style.opacity = ".6";
-    this.unlockBtn.classList.remove('btn-unlock-ready');
+    this.setUnlockState(false);
 
     if (!this.currentId) {
       this.outEl.textContent = "Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.";
@@ -2271,10 +2275,7 @@ async applyUnlockedToShop() {
         return;
       }
       this.outEl.textContent = "✅ Korrekt! Du kannst jetzt freischalten.";
-      this.unlockBtn.disabled = false;
-      this.unlockBtn.style.cursor = "pointer";
-      this.unlockBtn.style.opacity = "1";
-      this.unlockBtn.classList.add('btn-unlock-ready');
+      this.setUnlockState(true);
       return;
     }
 
@@ -2288,9 +2289,17 @@ async applyUnlockedToShop() {
     if (!this.unlockBtn) return;
     if (this.unlocked?.[this.currentId]) return; // bereits freigeschaltet
 
-    this.unlockBtn.disabled = true;
-    this.unlockBtn.classList.remove('btn-unlock-ready');
-    this.unlockBtn.setAttribute('aria-disabled', 'true');
+    this.setUnlockState(false);
+  }
+
+  setUnlockState(canUnlock) {
+    if (!this.unlockBtn) return;
+    const can = !!canUnlock;
+    this.unlockBtn.disabled = !can;
+    this.unlockBtn.classList.toggle('btn-unlock-ready', can);
+    this.unlockBtn.setAttribute('aria-disabled', can ? 'false' : 'true');
+    this.unlockBtn.style.cursor = can ? 'pointer' : 'not-allowed';
+    this.unlockBtn.style.opacity = can ? '1' : '.6';
   }
 
   resumeTaskIfAny() {
@@ -2378,23 +2387,7 @@ async unlockCurrent() {
   /* ---------- Tipp-System (mit Score-Abzug) ---------- */
 
   requestSpicker() {
-    if (this.spickerUsed) {
-      this.openSpicker();
-      return;
-    }
-
-    const score = this.computeScore();
-    this.openConfirmOverlay({
-      title: 'SQL‑Spicker öffnen?',
-      text: `Wenn du den SQL‑Spicker öffnest, verlierst du 1 Score‑Punkt. Aktueller Score: ${score}. Trotzdem öffnen?`,
-      yesLabel: 'Spicker öffnen (-1)',
-      onConfirm: () => {
-        this.spickerUsed = true;
-        this.persistProgressState();
-        this.updateProgressUI();
-        this.openSpicker();
-      }
-    });
+    this.openSpicker();
   }
 
   requestHint() {
@@ -2426,7 +2419,7 @@ async unlockCurrent() {
       `Aktueller Score: ${score}.
 
 ` +
-      `Wenn du fortfährst, wird dein Score um 1 reduziert und du siehst den Tipp für diese Aufgabe dauerhaft.`;
+      `Wenn du fortf\u00e4hrst, wird dein Score um 1 reduziert und du siehst den Tipp f\u00fcr diese Aufgabe dauerhaft.`;
     this.openHintOverlay(msg, { mode: 'confirm', title: 'Tipp anzeigen?', confirmLabel: 'Tipp anzeigen (-1)' });
   }
 
@@ -2438,9 +2431,9 @@ async unlockCurrent() {
     const isOpen = !!this.scaffoldCardEl && (this.scaffoldCardEl.classList.contains('show') || this.scaffoldCardEl.classList.contains('open'));
     const isPending = this._pendingScaffoldTaskId === id;
 
-    // Wenn bereits genutzt: Codegerüst togglen
+    // Wenn bereits genutzt: Codeger\u00fcst togglen
     if (alreadyUsed) {
-      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
+      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codeger\u00fcst' });
       return;
     }
 
@@ -2449,16 +2442,16 @@ async unlockCurrent() {
     this._pendingScaffoldTaskId = id;
     const score = this.computeScore();
     const msg =
-      `Wenn du dir das Codegerüst anzeigen lässt, verlierst du 3 Score‑Punkte.
+      `Wenn du dir das Codeger\u00fcst anzeigen lässt, verlierst du 3 Score-Punkte.
 Aktueller Score: ${score}.
 
-Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst für diese Aufgabe dauerhaft.`;
-    this.openScaffoldCard(msg, { mode: 'confirm', title: 'Codegerüst anzeigen?', confirmLabel: 'Codegerüst anzeigen (-3)' });
+Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u00fcst f\u00fcr diese Aufgabe dauerhaft.`;
+    this.openScaffoldCard(msg, { mode: 'confirm', title: 'Codeger\u00fcst anzeigen?', confirmLabel: 'Codeger\u00fcst anzeigen (-3)' });
   }
 
   openConfirmOverlay(opts = {}) {
     if (!this.confirmOverlayEl) return;
-    const title = String(opts.title || 'Bestätigen');
+    const title = String(opts.title || 'Best\u00e4tigen');
     const text = String(opts.text || '');
     const yesLabel = String(opts.yesLabel || 'OK');
 
@@ -2533,7 +2526,7 @@ Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst f�
     this.updateProgressUI();
 
     this._pendingScaffoldTaskId = null;
-    this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
+    this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codeger\u00fcst' });
   }
 
   openHintOverlay(text, opts = {}) {
@@ -2569,8 +2562,8 @@ Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst f�
 
     const mode = (opts && opts.mode) ? String(opts.mode) : 'hint';
     const isConfirm = mode === 'confirm';
-    const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Codegerüst anzeigen?' : 'Codegerüst');
-    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Codegerüst anzeigen (-3)';
+    const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Codeger\u00fcst anzeigen?' : 'Codeger\u00fcst');
+    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Codeger\u00fcst anzeigen (-3)';
 
     if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = title;
     if (this.scaffoldConfirmBtn) this.scaffoldConfirmBtn.style.display = isConfirm ? '' : 'none';
@@ -2586,7 +2579,7 @@ Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst f�
     this.scaffoldCardEl.classList.remove('show', 'open');
     this.scaffoldTextEl.textContent = '';
     if (this.scaffoldConfirmBtn) this.scaffoldConfirmBtn.style.display = 'none';
-    if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = 'Codegerüst';
+    if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = 'Codeger\u00fcst';
     this._pendingScaffoldTaskId = null;
   }
 
@@ -2611,7 +2604,7 @@ Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst f�
     }
 
     if (this.scaffoldUsed?.[id]) {
-      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codegerüst' });
+      this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codeger\u00fcst' });
     } else {
       this.closeScaffoldCard();
     }
@@ -2623,32 +2616,32 @@ Wenn du fortfährst, wird dein Score um 3 reduziert und du siehst das Gerüst f�
       "search": "Nutze LIKE auf produkte.name. Baue den Suchbegriff :q mit Wildcards (%) zusammen.",
       "all": "Hier wird nichts gefiltert. Verwende eine einfache SELECT-Abfrage auf die Tabelle produkte.",
       "express": "Filtere in produkte nach liefertage. Gesucht ist der Wert 1 (exakt).",
-      "bestseller": "Aggregiere verk?ufe pro produkt_id und filtere die Summe > 300 (HAVING). Danach gib die passenden Produkte aus.",
+      "bestseller": "Aggregiere verk\u00e4ufe pro produkt_id und filtere die Summe > 300 (HAVING). Danach gib die passenden Produkte aus.",
       "available": "Nutze eine WHERE-Bedingung auf lagerbestand im Bereich 1 bis 5 (inklusive).",
       "priceAsc": "Sortiere die Produkte nach preis aufsteigend (ASC).",
       "priceDesc": "Sortiere die Produkte nach preis absteigend (DESC).",
-      "popularity": "Summiere verk?ufe pro produkt_id und sortiere die Summe absteigend. Gib produkt_id und die Summe aus.",
-      "cat-electronics": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Elektronik'.",
-      "cat-household": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Haushalt'.",
-      "cat-sport": "Verbinde produkte mit kategorien ?ber kategorie_id = id und filtere kategorien.name = 'Sport'.",
+      "popularity": "Summiere verk\u00e4ufe pro produkt_id und sortiere die Summe absteigend. Gib produkt_id und die Summe aus.",
+      "cat-electronics": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Elektronik'.",
+      "cat-household": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Haushalt'.",
+      "cat-sport": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Sport'.",
       "price-25": "Filtere auf preis < 25.",
       "price-50": "Filtere auf preis zwischen 25 und 50 (inklusive).",
       "price-100": "Filtere auf preis zwischen 50 und 100 (inklusive).",
-      "rating-5": "Verbinde produkte und bewertungen ?ber produkt_id. Filtere sterne = 5 und entferne Duplikate (DISTINCT oder GROUP BY).",
-      "rating-4": "Verbinde produkte und bewertungen ?ber produkt_id. Filtere sterne >= 4 und entferne Duplikate (DISTINCT oder GROUP BY).",
-      "open-cart": "Verbinde produkte mit warenkorb ?ber produkt_id. Gib Name, Preis und Menge aus.",
+      "rating-5": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne = 5 und entferne Duplikate (DISTINCT oder GROUP BY).",
+      "rating-4": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne >= 4 und entferne Duplikate (DISTINCT oder GROUP BY).",
+      "open-cart": "Verbinde produkte mit warenkorb \u00fcber produkt_id. Gib Name, Preis und Menge aus.",
       "cart-refresh": "Wie Warenkorb anzeigen, plus Zeilensumme (preis * menge) und ORDER BY nach Name.",
-      "cart-total": "Gesamtpreis = SUM(preis * menge). Gib nur einen Wert zur?ck.",
-      "orders": "Filtere verk?ufe auf nutzer_id = 1, sortiere nach neuestem (id DESC) und begrenze auf 3. Berechne die Zeilensumme.",
-      "topProducts": "Aggregiere verk?ufe pro Produkt (SUM). Sortiere absteigend und nimm die Top 2.",
+      "cart-total": "Gesamtpreis = SUM(preis * menge). Gib nur einen Wert zur\u00fcck.",
+      "orders": "Filtere verk\u00e4ufe auf nutzer_id = 1, sortiere nach neuestem (id DESC) und begrenze auf 3. Berechne die Zeilensumme.",
+      "topProducts": "Aggregiere verk\u00e4ufe pro Produkt (SUM). Sortiere absteigend und nimm die Top 2.",
     };
 if (H[taskId]) return H[taskId];
 
     // Fallback – hilft, verrät nicht die Lösung
     const lvl = this.getDifficultyLevel(t?.difficulty);
-    if (lvl === 1) return "Starte mit SELECT ... FROM ... und ergänze dann genau eine passende WHERE‑Bedingung. Prüfe zuerst, ob die richtigen Zeilen kommen.";
-    if (lvl === 2) return "Überlege, welche zwei Tabellen zusammengehören, und verbinde sie über passende Schlüsselspalten. Danach filterst du über WHERE.";
-    return "Wenn Aggregation nötig ist: GROUP BY auf der richtigen Schlüsselspalte, SUM/COUNT für die Kennzahl und HAVING für Bedingungen auf Aggregaten.";
+    if (lvl === 1) return "Starte mit SELECT ... FROM ... und erg\u00e4nze dann genau eine passende WHERE-Bedingung. Pr\u00fcfe zuerst, ob die richtigen Zeilen kommen.";
+    if (lvl === 2) return "\u00dcberlege, welche zwei Tabellen zusammengeh\u00f6ren, und verbinde sie \u00fcber passende Schl\u00fcsselspalten. Danach filterst du \u00fcber WHERE.";
+    return "Wenn Aggregation n\u00f6tig ist: GROUP BY auf der richtigen Schl\u00fcsselspalte, SUM/COUNT f\u00fcr die Kennzahl und HAVING f\u00fcr Bedingungen auf Aggregaten.";
   }
 
   getScaffoldText(taskId) {
@@ -2779,9 +2772,8 @@ WHERE ...;`;
     const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
     const scaffolds = Object.keys(this.scaffoldUsed || {}).filter(k => !!this.scaffoldUsed[k]).length;
     const bonus = this.sqliDone ? 10 : 0;
-    const spickerPenalty = this.spickerUsed ? 1 : 0;
     const scaffoldPenalty = scaffolds * 3;
-    return Math.max(0, base + bonus - hints - spickerPenalty - scaffoldPenalty);
+    return Math.max(0, base + bonus - hints - scaffoldPenalty);
   }
 
   pulseLocked(el) {
