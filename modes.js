@@ -1,4 +1,4 @@
-/* ===========================
+﻿/* ===========================
    ShopBridge (Parent -> iframe)
    =========================== */
 
@@ -455,6 +455,11 @@ if (msg.type === "SHOP_READY") {
     this.send("SET_LOCK", { taskId, locked });
   }
 
+  async pulse(taskId) {
+    await this.ready;
+    this.send("PULSE_ACTION", { taskId });
+  }
+
   onShopAction(fn) {
     this.handlers.push(fn);
   }
@@ -504,6 +509,7 @@ class FreeMode {
     this.headerCollapsed = false;
     this.headerEditMode = false;
     this._pendingScaffoldTaskId = null;
+    this._shopPulseTimer = null;
   }
 
   loadProgressState() {
@@ -1104,13 +1110,22 @@ renderShell() {
   </div>
 </div>
 
-<div class="task3-card">
+<div class="task3-card task3-editorCard">
                   <div class="task3-cardHead">
                     <div class="task3-cardTitle">SQL‑Editor</div>
                     <div class="task3-cardMeta">Schreibe deine Abfrage und prüfe sie.</div>
                   </div>
 
-                                    <textarea id="sqlInput" class="task3-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="SELECT ?"></textarea>
+                  <div class="task3-editorShell" id="sqlEditorShell">
+                    <div class="task3-editorToolbar" aria-hidden="true">
+                      <span class="label">SQL Editor</span>
+                      <span class="meta">SQLite</span>
+                    </div>
+                    <div class="task3-editorBody">
+                      <div class="task3-editorGutter" id="sqlGutter" aria-hidden="true">1</div>
+                      <textarea id="sqlInput" class="task3-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="SELECT ?"></textarea>
+                    </div>
+                  </div>
 
                   <div class="task3-actions">
                     <button class="btn btn-primary" id="runBtn" type="button">Prüfen</button>
@@ -1311,7 +1326,9 @@ renderShell() {
 
     // Editor
     this.sqlEl = this.root.querySelector('#sqlInput');
-        this.outEl = this.root.querySelector('#out');
+    this.sqlGutterEl = this.root.querySelector('#sqlGutter');
+    this.editorShellEl = this.root.querySelector('#sqlEditorShell');
+    this.outEl = this.root.querySelector('#out');
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
 
@@ -1363,7 +1380,11 @@ renderShell() {
 
 
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
-    this.sqlEl?.addEventListener('input', () => this.onSqlEdited());
+    this.sqlEl?.addEventListener('input', () => {
+      this.onSqlEdited();
+      this.updateSqlGutter();
+    });
+    this.sqlEl?.addEventListener('scroll', () => this.syncGutterScroll());
             
     // Hint / Codeger\u00fcst cards
     this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
@@ -2180,6 +2201,8 @@ async applyUnlockedToShop() {
     this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
     this.sqlEl.value = t.starter || '';
+    this.updateSqlGutter();
+    this.syncGutterScroll();
         this.setOutput(isUnlocked ? 'Bereits freigeschaltet.' : '');
 
     this.resetUnlockButton();
@@ -2206,31 +2229,43 @@ async applyUnlockedToShop() {
     if (msg) this.outEl.classList.add('out-flash');
   }
 
+  scrollToOutput() {
+    if (!this.outEl) return;
+    try {
+      this.outEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (_) {}
+  }
+
 
   checkCurrent() {
     this.setOutput("");
     this.resetUnlockButton();
 
+    const finish = (msg) => {
+      this.setOutput(msg);
+      this.scrollToOutput();
+    };
+
     if (!this.currentId) {
-      this.setOutput("Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.");
+      finish("Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.");
       return;
     }
 
     if (!this.db) {
-      this.setOutput("DB ist nicht geladen.");
+      finish("DB ist nicht geladen.");
       return;
     }
 
     const sql = this.sqlEl.value || "";
     if (!this.isSelectOnly(sql)) {
-      this.setOutput("Nur SELECT-Abfragen sind erlaubt.");
+      finish("Nur SELECT-Abfragen sind erlaubt.");
       return;
     }
 
     const t = this.TASKS[this.currentId];
     const sqlCheck = this.validateSqlStructure(sql, t);
     if (!sqlCheck.ok) {
-      this.setOutput(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
+      finish(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
       return;
     }
 
@@ -2238,14 +2273,14 @@ async applyUnlockedToShop() {
     try {
       studentRes = this.db.exec(sql);
     } catch (e) {
-      this.setOutput("SQL-Fehler: " + e.message);
+      finish("SQL-Fehler: " + e.message);
       return;
     }
 
     try {
       refRes = this.db.exec(t.refSql);
     } catch (e) {
-      this.setOutput("Interner Referenz-Fehler: " + e.message);
+      finish("Interner Referenz-Fehler: " + e.message);
       return;
     }
 
@@ -2253,15 +2288,15 @@ async applyUnlockedToShop() {
 
     if (ok) {
       if (this.unlocked[this.currentId]) {
-        this.setOutput("✅ Korrekt (bereits freigeschaltet).");
+        finish("✅ Korrekt (bereits freigeschaltet).");
         return;
       }
-      this.setOutput("✅ Korrekt! Du kannst jetzt freischalten.");
+      finish("✅ Korrekt! Du kannst jetzt freischalten.");
       this.setUnlockState(true);
       return;
     }
 
-    this.setOutput("\u274c Noch nicht korrekt.");
+    finish("\u274c Noch nicht korrekt.");
   }
 
 
@@ -2272,6 +2307,30 @@ async applyUnlockedToShop() {
     if (this.unlocked?.[this.currentId]) return; // bereits freigeschaltet
 
     this.resetUnlockButton();
+
+    const finish = (msg) => {
+      this.setOutput(msg);
+      this.scrollToOutput();
+    };
+  }
+
+  updateSqlGutter() {
+    if (!this.sqlGutterEl || !this.sqlEl) return;
+    const lines = Math.max(1, this.sqlEl.value.split("\n").length);
+    let out = "";
+    for (let i = 1; i <= lines; i++) out += i + (i === lines ? "" : "\n");
+    this.sqlGutterEl.textContent = out;
+  }
+
+  syncGutterScroll() {
+    if (!this.sqlGutterEl || !this.sqlEl) return;
+    this.sqlGutterEl.scrollTop = this.sqlEl.scrollTop;
+  }
+
+  pulseShopAction(taskId) {
+    const id = (taskId || "").toString().trim();
+    if (!id) return;
+    this.shop?.pulse?.(id);
   }
 
   resetUnlockButton() {
@@ -2309,6 +2368,8 @@ async applyUnlockedToShop() {
       if (typeof data.sql === "string") {
         this.sqlEl.value = data.sql;
         this.onSqlEdited();
+        this.updateSqlGutter();
+        this.syncGutterScroll();
       }
     } catch (_) {}
   }
@@ -2336,6 +2397,7 @@ async unlockCurrent() {
     this.selectTask(id);
 
     this.setOutput('Freigeschaltet! Der Button ist jetzt im Shop aktiv.');
+    this.pulseShopAction(id);
 
     this.updateProgressUI();
 
@@ -3263,6 +3325,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   const r = m.mount();
   if (r && typeof r.then === "function") await r;
 });
+
+
 
 
 

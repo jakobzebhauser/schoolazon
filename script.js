@@ -1348,6 +1348,23 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
       return;
     }
 
+    // a2) Unlock-Pulse auf einem konkreten Button
+    if (msg.type === "PULSE_ACTION") {
+      const { taskId } = msg;
+      if (!taskId) return;
+
+      document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
+        el.classList.remove("unlock-pulse");
+        // reflow -> Animation neu starten
+        void el.offsetWidth;
+        el.classList.add("unlock-pulse");
+        window.setTimeout(() => {
+          try { el.classList.remove("unlock-pulse"); } catch (_) {}
+        }, 900);
+      });
+      return;
+    }
+
 // b) Shop-Aktion auslösen (wie Klick)
     if (msg.type === "RUN_ACTION") {
       const { actionId } = msg;
