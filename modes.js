@@ -575,14 +575,12 @@ class FreeMode {
   buildTasks() {
     return {
 
-      "search": {
-        title: "Produkte suchen",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Ein Nutzer gibt einen Suchbegriff ein. Der Suchbegriff steht als Platzhalter :q zur Verfügung.
-Zeige alle Produkte, deren Name den Begriff enthält (LIKE mit Wildcards).
-Gib alle Spalten der Tabelle produkte aus.`,
+        "search": {
+          title: "Produkte suchen",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Name einen Suchbegriff aus der Suchleiste enthält. Verwende dafür LIKE zur Mustererkennung. Der Parameter :q enthält den Suchbegriff aus der Suchleiste. Verbinde ihn mit % über den Konkatenationsoperator ||, damit der Begriff an beliebiger Stelle im Namen gefunden wird.`,
         starter: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
         refSql: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
         sqlRules: {
@@ -592,47 +590,41 @@ Gib alle Spalten der Tabelle produkte aus.`,
         mode: "rows_set"
       },
 
-      "all": {
-        title: "Alle Produkte",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle vorhandenen Produkte.
-Gib alle Produktdaten aus.`,
-        starter: "SELECT * FROM produkte;",
-        refSql: "SELECT * FROM produkte;",
-        mode: "rows_set"
-      },
-
-      "express": {
-        title: "Expresslieferung",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die bereits am nächsten Tag geliefert werden.
-Gib alle Produktdaten aus.
-
-Tipp: liefertage = 1 (genau).`,
-        starter: "SELECT * FROM produkte WHERE liefertage = 1;",
-        refSql: "SELECT * FROM produkte WHERE liefertage = 1;",
-        sqlRules: {
-          require: ["cmp:liefertage:=:1", "tablecol:produkte:liefertage"],
-          message: "Filtere exakt mit liefertage = 1."
+        "all": {
+          title: "Alle Produkte",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte aus der Tabelle produkte zurückgibt.`,
+          starter: "SELECT * FROM produkte;",
+          refSql: "SELECT * FROM produkte;",
+          mode: "rows_set"
         },
-        mode: "rows_set"
-      },
 
-      "bestseller": {
-        title: "Bestseller",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die insgesamt öfter als 300-mal verkauft wurden.
-Ein Produkt kann mehrfach verkauft worden sein; alle diese Verkäufe sollen zusammengezählt werden.
-Gib alle Produktdaten aus.`,
-        starter:
-`SELECT p.*
-FROM produkte p
+        "express": {
+          title: "Expresslieferung",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Lieferzeit genau einen Tag beträgt.`,
+          starter: "SELECT * FROM produkte WHERE liefertage = 1;",
+          refSql: "SELECT * FROM produkte WHERE liefertage = 1;",
+          sqlRules: {
+            require: ["cmp:liefertage:=:1", "tablecol:produkte:liefertage"],
+            message: "Filtere exakt mit liefertage = 1."
+          },
+          mode: "rows_set"
+        },
+
+        "bestseller": {
+          title: "Bestseller",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren gesamte Verkaufsmenge über 300 liegt. Ein Produkt kann mehrfach verkauft worden sein; alle Verkäufe sollen aufsummiert werden.`,
+          starter:
+  `SELECT p.*
+  FROM produkte p
 WHERE p.id IN (
   SELECT v.produkt_id
   FROM verkäufe v
@@ -655,16 +647,14 @@ WHERE p.id IN (
         mode: "rows_set"
       },
 
-      "available": {
-        title: "Nur noch wenige auf Lager",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte, von denen nur noch wenige Stück auf Lager sind.
-Ein Produkt gilt als „nur noch wenige auf Lager“, wenn der Lagerbestand zwischen 1 und 5 Stück liegt.
-Gib alle Produktdaten aus (1 und 5 sind inklusive).`,
-        starter:
-`SELECT *
+        "available": {
+          title: "Nur noch wenige auf Lager",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Lagerbestand zwischen 1 und 5 liegt (einschlie\u00dflich der Grenzen).`,
+          starter:
+  `SELECT *
 FROM produkte
 WHERE lagerbestand >= 1
 AND lagerbestand <= 5;`,
@@ -680,39 +670,34 @@ AND lagerbestand <= 5;`,
         mode: "rows_set"
       },
 
-      "priceAsc": {
-        title: "Preis aufsteigend",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte und sortiere sie vom günstigsten zum teuersten.
-Gib alle Produktdaten aus.`,
-        starter: "SELECT * FROM produkte ORDER BY preis ASC;",
-        refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
-        mode: "rows_order"
-      },
+        "priceAsc": {
+          title: "Preis aufsteigend",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte aus der Tabelle produkte zurückgibt und die Ergebnisse nach dem Preis aufsteigend sortiert.`,
+          starter: "SELECT * FROM produkte ORDER BY preis ASC;",
+          refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
+          mode: "rows_order"
+        },
 
-      "priceDesc": {
-        title: "Preis absteigend",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte und sortiere sie vom teuersten zum günstigsten.
-Gib alle Produktdaten aus.`,
-        starter: "SELECT * FROM produkte ORDER BY preis DESC;",
-        refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
-        mode: "rows_order"
-      },
+        "priceDesc": {
+          title: "Preis absteigend",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte aus der Tabelle produkte zurückgibt und die Ergebnisse nach dem Preis absteigend sortiert.`,
+          starter: "SELECT * FROM produkte ORDER BY preis DESC;",
+          refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
+          mode: "rows_order"
+        },
 
-      "popularity": {
-        title: "Beliebtheit",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Sortiere Produkte nach ihrer Beliebtheit.
-Beliebtheit bedeutet, wie oft ein Produkt verkauft wurde.
-Mehrere Verkäufe desselben Produkts sollen zusammengezählt werden.
-Gib Produkt-ID und Verkaufszahl aus.`,
+        "popularity": {
+          title: "Beliebtheit",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Berechne für jedes Produkt die gesamte Anzahl aller Verkäufe. Addiere dazu alle Verkaufszahlen (anzahl) mit derselben produkt_id. Gib pro Produkt genau eine Zeile mit der Produkt-ID und der berechneten Gesamtanzahl aus. Sortiere die Ergebnisse anschließend so, dass Produkte mit höheren Verkaufszahlen zuerst erscheinen.`,
         starter:
 `SELECT produkt_id, SUM(anzahl) AS verkäufe
 FROM verkäufe
@@ -730,88 +715,81 @@ ORDER BY verkäufe DESC;`,
         mode: "rows_order"
       },
 
-      "cat-electronics": {
-        title: "Kategorie Elektronik",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die zur Kategorie „Elektronik“ gehören.
-Bestimme die Kategorie über den Namen: kategorien.name = 'Elektronik'.
-Gib alle Produktdaten aus (SELECT p.*).`,
-        starter:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Elektronik';`,
-        refSql:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Elektronik';`,
-        sqlRules: {
-          require: ["tablecol:kategorien:name", "'elektronik'", "eq:kategorie_id:id"],
-          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Elektronik'."
+        "cat-electronics": {
+          title: "Kategorie Elektronik",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Elektronik“ zurückgibt.`,
+          starter:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Elektronik';`,
+          refSql:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Elektronik';`,
+          sqlRules: {
+            require: ["tablecol:kategorien:name", "'elektronik'", "eq:kategorie_id:id"],
+            message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Elektronik'."
+          },
+          mode: "rows_set"
         },
-        mode: "rows_set"
-      },
 
-      "cat-household": {
-        title: "Kategorie Haushalt",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die zur Kategorie „Haushalt“ gehören.
-Bestimme die Kategorie über den Namen: kategorien.name = 'Haushalt'.
-Gib alle Produktdaten aus (SELECT p.*).`,
-        starter:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Haushalt';`,
-        refSql:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Haushalt';`,
-        sqlRules: {
-          require: ["tablecol:kategorien:name", "'haushalt'", "eq:kategorie_id:id"],
-          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Haushalt'."
+        "cat-household": {
+          title: "Kategorie Haushalt",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Haushalt“ zurückgibt.`,
+          starter:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Haushalt';`,
+          refSql:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Haushalt';`,
+          sqlRules: {
+            require: ["tablecol:kategorien:name", "'haushalt'", "eq:kategorie_id:id"],
+            message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Haushalt'."
+          },
+          mode: "rows_set"
         },
-        mode: "rows_set"
-      },
 
-      "cat-sport": {
-        title: "Kategorie Sport",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die zur Kategorie „Sport“ gehören.
-Bestimme die Kategorie über den Namen: kategorien.name = 'Sport'.
-Gib alle Produktdaten aus (SELECT p.*).`,
-        starter:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Sport';`,
-        refSql:
-`SELECT p.*
-FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-AND k.name = 'Sport';`,
-        sqlRules: {
-          require: ["tablecol:kategorien:name", "'sport'", "eq:kategorie_id:id"],
-          message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Sport'."
+        "cat-sport": {
+          title: "Kategorie Sport",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Sport“ zurückgibt.`,
+          starter:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Sport';`,
+          refSql:
+  `SELECT p.*
+  FROM produkte p, kategorien k
+  WHERE p.kategorie_id = k.id
+  AND k.name = 'Sport';`,
+          sqlRules: {
+            require: ["tablecol:kategorien:name", "'sport'", "eq:kategorie_id:id"],
+            message: "Verknüpfe produkte.kategorie_id mit kategorien.id und filtere kategorien.name = 'Sport'."
+          },
+          mode: "rows_set"
         },
-        mode: "rows_set"
-      },
 
-      "price-25": {
-        title: "Preis unter 25 €",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte mit preis < 25.
-Gib alle Produktdaten aus.`,
+        "price-25": {
+          title: "Preis unter 25 €",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis unter 25 € zurückgibt.`,
         starter: "SELECT * FROM produkte WHERE preis < 25;",
         refSql: "SELECT * FROM produkte WHERE preis < 25;",
         sqlRules: {
@@ -821,13 +799,12 @@ Gib alle Produktdaten aus.`,
         mode: "rows_set"
       },
 
-      "price-50": {
-        title: "Preis 25–50 €",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte mit preis >= 25 und preis <= 50.
-Gib alle Produktdaten aus.`,
+        "price-50": {
+          title: "Preis 25–50 €",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 25 € und 50 € zurückgibt.`,
         starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         sqlRules: {
@@ -837,13 +814,12 @@ Gib alle Produktdaten aus.`,
         mode: "rows_set"
       },
 
-      "price-100": {
-        title: "Preis 50–100 €",
-        difficulty: "+",
-        task:
-`Aufgabe:
-Zeige alle Produkte mit preis >= 50 und preis <= 100.
-Gib alle Produktdaten aus.`,
+        "price-100": {
+          title: "Preis 50–100 €",
+          difficulty: "+",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 50 € und 100 € zurückgibt.`,
         starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         sqlRules: {
@@ -853,15 +829,12 @@ Gib alle Produktdaten aus.`,
         mode: "rows_set"
       },
 
-      "rating-5": {
-        title: "Bewertung 5 Sterne",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die mindestens eine Bewertung mit fünf Sternen erhalten haben.
-Ein Produkt kann mehrere Bewertungen haben. Zeige jedes Produkt nur einmal.
-Filtere über die Spalte bewertungen.sterne.
-Gib alle Produktdaten aus.`,
+        "rating-5": {
+          title: "Bewertung 5 Sterne",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die mindestens eine 5-Sterne-Bewertung haben. Jedes Produkt darf nur einmal erscheinen.`,
         starter:
 `SELECT DISTINCT p.*
 FROM produkte p, bewertungen b
@@ -880,15 +853,12 @@ AND b.sterne = 5;`,
         mode: "rows_set"
       },
 
-      "rating-4": {
-        title: "Bewertung 4 Sterne",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Zeige alle Produkte, die mindestens eine Bewertung mit vier oder fünf Sternen erhalten haben.
-Ein Produkt kann mehrere Bewertungen haben. Zeige jedes Produkt nur einmal.
-Filtere über die Spalte bewertungen.sterne.
-Gib alle Produktdaten aus.`,
+        "rating-4": {
+          title: "Bewertung 4 Sterne",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die mindestens eine Bewertung mit 4 oder mehr Sternen haben. Jedes Produkt darf nur einmal erscheinen.`,
         starter:
 `SELECT DISTINCT p.*
 FROM produkte p, bewertungen b
@@ -907,14 +877,12 @@ AND b.sterne >= 4;`,
         mode: "rows_set"
       },
 
-      "cart-refresh": {
-        title: "Warenkorb aktualisieren",
-        difficulty: "++",
-        task:
-`Aufgabe:
-Aktualisiere die Warenkorb-Ansicht.
-Gib Produktname, Preis, Menge und die Zeilensumme (preis * menge) aus.
-Sortiere nach Produktname (A–Z).`,
+        "cart-refresh": {
+          title: "Warenkorb aktualisieren",
+          difficulty: "++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die alle Einträge des Warenkorbs anzeigt. Gib für jedes enthaltene Produkt den Produktnamen, den Einzelpreis, die gewählte Menge sowie die berechnete Zeilensumme (preis · menge) aus. Sortiere die Ergebnisse alphabetisch aufsteigend nach dem Produktnamen.`,
         starter:
 `SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
 FROM produkte p, warenkorb w
@@ -932,14 +900,12 @@ ORDER BY p.name ASC;`,
         mode: "rows_order"
       },
 
-      "cart-total": {
-        title: "Gesamtpreis Warenkorb",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Berechne den Gesamtpreis aller Produkte im Warenkorb.
-Gesamtpreis = SUM(preis * menge).
-Gib nur den Gesamtpreis aus.`,
+        "cart-total": {
+          title: "Gesamtpreis Warenkorb",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die den Gesamtpreis des gesamten Warenkorbs berechnet. Multipliziere dafür für jeden Eintrag den Produktpreis mit der jeweiligen Menge und summiere anschließend alle berechneten Werte zu einer einzigen Gesamtsumme.`,
         starter:
 `SELECT SUM(p.preis * w.menge)
 FROM produkte p, warenkorb w
@@ -955,14 +921,12 @@ WHERE p.id = w.produkt_id;`,
         mode: "scalar"
       },
 
-      "orders": {
-        title: "Meine Bestellungen",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Zeige die letzten drei Bestellungen des aktuell eingeloggten Nutzers an.
-Der eingeloggte Nutzer hat die ID 1.
-Gib Produktnamen, Menge und Gesamtpreis aus.`,
+        "orders": {
+          title: "Meine Bestellungen",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die für den Nutzer mit der ID 1 die drei zuletzt erfassten Verkäufe anzeigt. Gib für jeden Verkauf den Produktnamen, die gekaufte Anzahl sowie den Gesamtpreis aus. Sortiere die Ergebnisse absteigend nach der Verkaufs-ID, sodass die neuesten Verkäufe zuerst erscheinen.`,
         starter:
 `SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
 FROM produkte p, verkäufe v
@@ -984,13 +948,12 @@ LIMIT 3;`,
         mode: "rows_order"
       },
 
-      "topProducts": {
-        title: "Top-Produkte",
-        difficulty: "+++",
-        task:
-`Aufgabe:
-Zeige die zwei Produkte, die insgesamt am häufigsten verkauft wurden.
-Gib Produktnamen und Verkaufszahl aus.`,
+        "topProducts": {
+          title: "Top-Produkte",
+          difficulty: "+++",
+          task:
+  `Aufgabe:
+  Erstelle eine Abfrage, die die zwei meistverkauften Produkte ermittelt. Summiere dazu für jedes Produkt alle Verkaufszahlen (anzahl), gib den Produktnamen sowie die berechnete Gesamtsumme aus und sortiere die Ergebnisse absteigend nach dieser Summe, sodass die höchsten Verkaufszahlen zuerst erscheinen.`,
         starter:
 `SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
 FROM produkte p, verkäufe v
@@ -2671,25 +2634,25 @@ Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u0
     const t = this.TASKS?.[taskId];
     const H = {
       "search": "Nutze LIKE auf produkte.name. Baue den Suchbegriff :q mit Wildcards (%) zusammen.",
-      "all": "Hier wird nichts gefiltert. Verwende eine einfache SELECT-Abfrage auf die Tabelle produkte.",
-      "express": "Filtere in produkte nach liefertage. Gesucht ist der Wert 1 (exakt).",
-      "bestseller": "Aggregiere verk\u00e4ufe pro produkt_id und filtere die Summe > 300 (HAVING). Danach gib die passenden Produkte aus.",
-      "available": "Nutze eine WHERE-Bedingung auf lagerbestand im Bereich 1 bis 5 (inklusive).",
-      "priceAsc": "Sortiere die Produkte nach preis aufsteigend (ASC).",
-      "priceDesc": "Sortiere die Produkte nach preis absteigend (DESC).",
-      "popularity": "Summiere verk\u00e4ufe pro produkt_id und sortiere die Summe absteigend. Gib produkt_id und die Summe aus.",
-      "cat-electronics": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Elektronik'.",
-      "cat-household": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Haushalt'.",
-      "cat-sport": "Verbinde produkte mit kategorien \u00fcber kategorie_id = id und filtere kategorien.name = 'Sport'.",
-      "price-25": "Filtere auf preis < 25.",
-      "price-50": "Filtere auf preis zwischen 25 und 50 (inklusive).",
-      "price-100": "Filtere auf preis zwischen 50 und 100 (inklusive).",
-      "rating-5": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne = 5 und entferne Duplikate (DISTINCT oder GROUP BY).",
-      "rating-4": "Verbinde produkte und bewertungen \u00fcber produkt_id. Filtere sterne >= 4 und entferne Duplikate (DISTINCT oder GROUP BY).",
-      "cart-refresh": "Wie Warenkorb anzeigen, plus Zeilensumme (preis * menge) und ORDER BY nach Name.",
-      "cart-total": "Gesamtpreis = SUM(preis * menge). Gib nur einen Wert zur\u00fcck.",
-      "orders": "Filtere verk\u00e4ufe auf nutzer_id = 1, sortiere nach neuestem (id DESC) und begrenze auf 3. Berechne die Zeilensumme.",
-      "topProducts": "Aggregiere verk\u00e4ufe pro Produkt (SUM). Sortiere absteigend und nimm die Top 2.",
+        "all": "Es wird nur eine Tabelle ben\u00f6tigt. W\u00e4hle alle Spalten ohne Filterbedingungen aus.",
+        "express": "Arbeite nur mit der Tabelle produkte und filtere über eine Gleichheitsbedingung auf das Attribut liefertage.",
+        "bestseller": "Beachte die 1:n-Beziehung zwischen produkte und verk\u00e4ufe. Verkn\u00fcpfe beide Tabellen \u00fcber die Produkt-ID, gruppiere die Ergebnisse mit GROUP BY pro Produkt, berechne die Summe der Verkaufsanzahl und filtere die aggregierten Werte anschlie\u00dfend mit HAVING.",
+        "available": "Arbeite nur mit der Tabelle produkte und filtere \u00fcber zwei Vergleichsbedingungen auf das Attribut lagerbestand, um einen Wertebereich einzugrenzen.",
+        "priceAsc": "W\u00e4hle alle Spalten aus und nutze ORDER BY auf dem Attribut preis. Verwende eine aufsteigende Sortierung.",
+        "priceDesc": "W\u00e4hle alle Spalten aus und nutze ORDER BY auf dem Attribut preis. Verwende eine absteigende Sortierung (DESC).",
+        "popularity": "Arbeite nur mit verk\u00e4ufe. Addiere die Werte mit SUM(). Damit die Summe pro Produkt berechnet wird, musst du nach produkt_id gruppieren (GROUP BY). Speichere die berechnete Summe in einem Alias und sortiere danach mit ORDER BY. Ohne GROUP BY erh\u00e4ltst du nur eine Gesamtsumme statt eine pro Produkt.",
+      "cat-electronics": "Verbinde produkte und kategorien \u00fcber die Kategorie-ID, filtere nach dem Kategorienamen und gib nur die Spalten aus produkte zur\u00fcck (produkte.*).",
+      "cat-household": "Verbinde produkte und kategorien \u00fcber die Kategorie-ID, filtere nach dem Kategorienamen und gib nur die Spalten aus produkte zur\u00fcck (produkte.*).",
+      "cat-sport": "Verbinde produkte und kategorien \u00fcber die Kategorie-ID, filtere nach dem Kategorienamen und gib nur die Spalten aus produkte zur\u00fcck (produkte.*).",
+        "price-25": "Arbeite nur mit der Tabelle produkte, filtere über eine Bedingung auf preis und gib alle Spalten mit * aus.",
+        "price-50": "Arbeite nur mit der Tabelle produkte, filtere über eine Bedingung auf preis und gib alle Spalten mit * aus.",
+        "price-100": "Arbeite nur mit der Tabelle produkte, filtere über eine Bedingung auf preis und gib alle Spalten mit * aus.",
+        "rating-5": "Beachte die 1:n-Beziehung: Ein Produkt kann mehrere Bewertungen besitzen. Verkn\u00fcpfe produkte mit bewertungen \u00fcber die Produkt-ID, filtere auf sterne = 5 und verwende DISTINCT, damit jedes Produkt nur einmal erscheint.",
+        "rating-4": "Beachte die 1:n-Beziehung: Ein Produkt kann mehrere Bewertungen besitzen. Verkn\u00fcpfe produkte mit bewertungen \u00fcber die Produkt-ID, filtere auf sterne >= 4 und verwende DISTINCT, damit jedes Produkt nur einmal erscheint.",
+        "cart-refresh": "Der Warenkorb enthält nur Produkt-IDs und Mengen, die Produktdaten stehen in produkte. Verkn\u00fcpfe daher beide Tabellen \u00fcber produkte.id = warenkorb.produkt_id. W\u00e4hle name, preis und menge explizit aus, berechne zus\u00e4tzlich preis * menge als neue Spalte und sortiere das Ergebnis mit ORDER BY name ASC. Ein SELECT * ist hier nicht geeignet, da nur bestimmte Spalten ben\u00f6tigt werden.",
+        "cart-total": "Die Preise stehen in produkte, die Mengen im warenkorb. Verkn\u00fcpfe beide Tabellen \u00fcber die Produkt-ID (1:n-Beziehung), berechne f\u00fcr jede Zeile preis * menge und fasse alle Werte mit der Aggregatfunktion SUM zu genau einem Ergebnis zusammen. Es soll nur eine einzelne Zahl zur\u00fcckgegeben werden, keine einzelnen Produkte.",
+        "orders": "Verkn\u00fcpfe produkte und verk\u00e4ufe \u00fcber die Produkt-ID (1:n-Beziehung). Filtere anschlie\u00dfend nach nutzer_id = 1. Berechne den Gesamtpreis durch Multiplikation von preis und anzahl, sortiere mit ORDER BY absteigend nach der Verkaufs-ID und begrenze die Ausgabe mit LIMIT auf drei Zeilen.",
+        "topProducts": "Verkn\u00fcpfe produkte und verk\u00e4ufe \u00fcber die Produkt-ID (1:n-Beziehung). Addiere die Verkaufszahlen mit SUM(anzahl), gruppiere pro Produkt mit GROUP BY, speichere die Summe in einem Alias und sortiere anschlie\u00dfend absteigend nach diesem Wert. Begrenze die Ausgabe mit LIMIT auf zwei Zeilen.",
     };
 if (H[taskId]) return H[taskId];
 
@@ -2702,110 +2665,108 @@ if (H[taskId]) return H[taskId];
 
   getScaffoldText(taskId) {
     const S = {
-      "search":
-`SELECT *
-FROM ...
-WHERE ... LIKE ...;`,
-      "all":
-`SELECT *
-FROM ...;`,
-      "express":
-`SELECT *
-FROM ...
-WHERE ... = ...;`,
-      "bestseller":
-`SELECT p.*
-FROM ...
-WHERE ... IN (
-  SELECT ...
-  FROM ...
-  GROUP BY ...
-  HAVING SUM(...) > ...
-);`,
-      "available":
-`SELECT *
-FROM ...
-WHERE ... BETWEEN ... AND ...;`,
-      "priceAsc":
-`SELECT *
-FROM ...
-ORDER BY ... ASC;`,
-      "priceDesc":
-`SELECT *
-FROM ...
-ORDER BY ... DESC;`,
-      "popularity":
-`SELECT produkt_id, SUM(anzahl) AS verkaeufe
-FROM ...
-GROUP BY ...
-ORDER BY ... DESC;`,
-      "cat-electronics":
-`SELECT p.*
-FROM ..., ...
-WHERE ... = ...
-AND ... = ...;`,
-      "cat-household":
-`SELECT p.*
-FROM ..., ...
-WHERE ... = ...
-AND ... = ...;`,
-      "cat-sport":
-`SELECT p.*
-FROM ..., ...
-WHERE ... = ...
-AND ... = ...;`,
-      "price-25":
-`SELECT *
-FROM ...
-WHERE ... < ...;`,
-      "price-50":
-`SELECT *
-FROM ...
-WHERE ... BETWEEN ... AND ...;`,
-      "price-100":
-`SELECT *
-FROM ...
-WHERE ... BETWEEN ... AND ...;`,
-      "rating-5":
-`SELECT DISTINCT p.*
-FROM ..., ...
-WHERE ... = ...
-AND ... = ...;`,
-      "rating-4":
-`SELECT DISTINCT p.*
-FROM ..., ...
-WHERE ... = ...
-AND ... >= ...;`,
-      "cart-refresh":
-`SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
-FROM ..., ...
-WHERE ... = ...
-ORDER BY ... ASC;`,
-      "cart-total":
-`SELECT SUM(p.preis * w.menge)
-FROM ..., ...
-WHERE ... = ...;`,
-      "orders":
-`SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
-FROM ..., ...
-WHERE ... = ...
-AND ... = ...
-ORDER BY ... DESC
-LIMIT ...;`,
-      "topProducts":
-`SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
-FROM ..., ...
-WHERE ... = ...
-GROUP BY ...
-ORDER BY ... DESC
-LIMIT ...;`
-    };
+          "search":
+    `SELECT *
+    FROM ____
+    WHERE ____ LIKE ____;`,
+        "all":
+    `SELECT ____
+    FROM ____;`,
+        "express":
+    `SELECT ____
+    FROM ____
+    WHERE ____ = ____;`,
+        "bestseller":
+    `SELECT produkte.____
+    FROM produkte, verk\u00e4ufe
+    WHERE ____ = ____
+    GROUP BY ____
+    HAVING SUM(____) > ____;`,
+        "available":
+    `SELECT ____
+    FROM ____
+    WHERE ____ >= ____
+    AND ____ <= ____;`,
+        "priceAsc":
+    `SELECT ____
+    FROM ____
+    ORDER BY ____ ____;`,
+        "priceDesc":
+    `SELECT ____
+    FROM ____
+    ORDER BY ____ ____;`,
+        "popularity":
+    `SELECT ____, SUM(____) AS ____
+    FROM ____
+    GROUP BY ____
+    ORDER BY ____ ____;`,
+          "cat-electronics":
+      `SELECT produkte.*
+      FROM ____, ____
+      WHERE ____ = ____
+      AND ____ = ____;`,
+          "cat-household":
+      `SELECT produkte.*
+      FROM ____, ____
+      WHERE ____ = ____
+      AND ____ = ____;`,
+          "cat-sport":
+      `SELECT produkte.*
+      FROM ____, ____
+      WHERE ____ = ____
+      AND ____ = ____;`,
+          "price-25":
+      `SELECT *
+      FROM ____
+      WHERE ____ < ____;`,
+          "price-50":
+      `SELECT *
+      FROM ____
+      WHERE ____ >= ____ AND ____ <= ____;`,
+          "price-100":
+      `SELECT *
+      FROM ____
+      WHERE ____ >= ____ AND ____ <= ____;`,
+        "rating-5":
+    `SELECT DISTINCT produkte.*
+    FROM ____, ____
+    WHERE ____ = ____
+    AND ____ = ____;`,
+        "rating-4":
+    `SELECT DISTINCT produkte.*
+    FROM ____, ____
+    WHERE ____ = ____
+    AND ____ >= ____;`,
+          "cart-refresh":
+      `SELECT ______, ______, ______, ______ * ______
+      FROM ______ , ______
+      WHERE ______ = ______
+      ORDER BY ______ ___`,
+          "cart-total":
+      `SELECT SUM(______ * ______)
+      FROM ______ , ______
+      WHERE ______ = ______;`,
+        "orders":
+    `SELECT ____, ____, ____ * ____
+    FROM ____ p, ____ v
+    WHERE ____ = ____
+    AND ____ = ____
+    ORDER BY ____ ____
+    LIMIT ____;`,
+          "topProducts":
+      `SELECT ______, SUM(______) AS ______
+      FROM ______ , ______
+      WHERE ______ = ______
+      GROUP BY ______
+      ORDER BY ______ ____
+      LIMIT ______;`
+        };
 
     if (S[taskId]) return S[taskId];
 
-    return `SELECT ...
-FROM ...
-WHERE ...;`;
+        return `SELECT ____
+    FROM ____
+    WHERE ____;`;
   }
 
   /* ---------- Score ---------- */
