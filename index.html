@@ -177,6 +177,9 @@
       outline:none;
       position: relative;
       overflow:hidden;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
     }
 
     .modeCard::before{
@@ -329,6 +332,29 @@
       font-weight: 850;
       letter-spacing: .1px;
     }
+    .gateActions{
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .fileInput{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--hair2);
+      background: rgba(255,255,255,.86);
+      font-size: 14px;
+    }
+    .gateError{
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,45,85,.24);
+      background: rgba(255,45,85,.08);
+      color: rgba(160,0,20,.9);
+      font-size: var(--small);
+    }
     .gateSub{
       margin: 0;
       color: var(--muted);
@@ -397,6 +423,13 @@
 <span aria-hidden="true" class="btn primary">Öffnen</span>
 </div>
 </a>
+<button class="modeCard tone-teal" id="importFreeBtn" type="button">
+<h2 class="modeTitle">Freier Modus mit Spielstand</h2>
+<p class="modeDesc">Spielstand aus JSON laden und direkt weitermachen.</p>
+<div class="btnRow">
+<span aria-hidden="true" class="btn primary">Laden</span>
+</div>
+</button>
 <a class="modeCard tone-purple" data-pass-name="1" href="tutorial.html">
 <h2 class="modeTitle">Tutorial</h2>
 <p class="modeDesc">Grundlagen-Refresh</p>
@@ -434,6 +467,22 @@
 </div>
 </div>
 </div>
+<div aria-labelledby="importTitle" aria-modal="true" class="gate" id="importGate" role="dialog" style="display:none;">
+<div aria-hidden="true" class="gateBackdrop"></div>
+<div class="gateCard">
+<div class="gateInner">
+<div aria-hidden="true" class="gateIcon"></div>
+<h2 id="importTitle">Spielstand laden</h2>
+<p class="gateSub">W&auml;hle eine JSON-Datei aus dem Export.</p>
+<input accept="application/json" class="fileInput" id="importFile" type="file"/>
+<div class="gateActions">
+<button class="btn" id="importCancel" type="button">Abbrechen</button>
+<button class="btn primary" id="importConfirm" type="button" disabled>Importieren</button>
+</div>
+<div class="gateError" id="importError" style="display:none;"></div>
+</div>
+</div>
+</div>
 <script>
   const el = (id) => document.getElementById(id);
 
@@ -447,6 +496,7 @@
   }
 
   const state = { name: getName() };
+  const importState = { data: null };
 
   function updateNamePill(){
     const pill = el("pillName");
@@ -505,6 +555,94 @@ updateNamePill();
     return true;
   }
 
+  function showImportGate(){
+    const gate = el("importGate");
+    if(gate) gate.style.display = "grid";
+    const file = el("importFile");
+    if(file) file.value = "";
+    const err = el("importError");
+    if(err){ err.style.display = "none"; err.textContent = ""; }
+    const btn = el("importConfirm");
+    if(btn) btn.disabled = true;
+    importState.data = null;
+    setTimeout(()=>file && file.focus(), 0);
+  }
+
+  function hideImportGate(){
+    const gate = el("importGate");
+    if(gate) gate.style.display = "none";
+    importState.data = null;
+  }
+
+  function setImportError(msg){
+    const err = el("importError");
+    if(!err) return;
+    err.textContent = msg || "Ungueltige Datei.";
+    err.style.display = "block";
+  }
+
+  function normalizeImport(raw){
+    if(!raw || typeof raw !== "object") return null;
+    const asObj = (v) => (v && typeof v === "object") ? v : {};
+    return {
+      unlocked: asObj(raw.unlocked),
+      hintUsed: asObj(raw.hintUsed),
+      scaffoldUsed: asObj(raw.scaffoldUsed),
+      solutionSql: asObj(raw.solutionSql),
+      sqliDone: !!raw.sqliDone,
+      spickerUsed: !!raw.spickerUsed
+    };
+  }
+
+  function readImportFile(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const parsed = JSON.parse(String(reader.result || ""));
+        const data = normalizeImport(parsed);
+        if(!data) throw new Error("invalid");
+        importState.data = data;
+        const err = el("importError");
+        if(err){ err.style.display = "none"; err.textContent = ""; }
+        const btn = el("importConfirm");
+        if(btn) btn.disabled = false;
+      }catch(_){
+        importState.data = null;
+        const btn = el("importConfirm");
+        if(btn) btn.disabled = true;
+        setImportError("Datei konnte nicht gelesen werden.");
+      }
+    };
+    reader.onerror = () => {
+      importState.data = null;
+      const btn = el("importConfirm");
+      if(btn) btn.disabled = true;
+      setImportError("Datei konnte nicht gelesen werden.");
+    };
+    reader.readAsText(file);
+  }
+
+  function applyImport(){
+    const data = importState.data;
+    if(!data) return;
+    try{
+      localStorage.setItem("schulazon_unlocked_v1", JSON.stringify(data.unlocked || {}));
+      localStorage.setItem("schulazon_hint_used_v1", JSON.stringify(data.hintUsed || {}));
+      localStorage.setItem("schulazon_scaffold_used_v1", JSON.stringify(data.scaffoldUsed || {}));
+      localStorage.setItem("schulazon_solution_sql_v1", JSON.stringify(data.solutionSql || {}));
+      localStorage.setItem("schulazon_sqli_done_v1", data.sqliDone ? "true" : "false");
+      localStorage.setItem("schulazon_spicker_used_v1", data.spickerUsed ? "true" : "false");
+      sessionStorage.setItem("schulazon_skip_reset_v1", "true");
+    }catch(_){}
+
+    const url = new URL("free.html", location.href);
+    if(state.name) url.searchParams.set("name", state.name);
+    const qs = url.searchParams.toString();
+    const target = url.pathname + (qs ? "?" + qs : "");
+    try{ window.location.assign(target); }
+    catch(_){ window.location.href = target; }
+  }
+
   function bindNameGate(){
     const form = el("nameForm");
     const input = el("nameInput");
@@ -543,6 +681,29 @@ updateNamePill();
 
   bindNameGate();
   bindFullscreen();
+  const importBtn = el("importFreeBtn");
+  if(importBtn) importBtn.addEventListener("click", showImportGate);
+  const importCancel = el("importCancel");
+  if(importCancel) importCancel.addEventListener("click", hideImportGate);
+  const importFile = el("importFile");
+  if(importFile) importFile.addEventListener("change", (e)=>{
+    const f = e.target && e.target.files && e.target.files[0];
+    if(f) readImportFile(f);
+  });
+  const importConfirm = el("importConfirm");
+  if(importConfirm) importConfirm.addEventListener("click", applyImport);
+  const importGate = el("importGate");
+  if(importGate){
+    importGate.addEventListener("click", (e)=>{
+      if(e.target === importGate) hideImportGate();
+    });
+  }
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape"){
+      const gate = el("importGate");
+      if(gate && gate.style.display !== "none") hideImportGate();
+    }
+  });
 
   if(state.name){
     updateNamePill();

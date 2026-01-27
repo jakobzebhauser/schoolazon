@@ -169,6 +169,8 @@ function bindUI() {
   const inIframe = (window.parent && window.parent !== window);
   if (inIframe) {
     document.querySelectorAll("[data-task]").forEach((el) => {
+      const lockedAttr = el.getAttribute("data-locked");
+      if (lockedAttr === "false") return;
       el.setAttribute("data-locked", "true");
       el.setAttribute("aria-disabled", "true");
     });
@@ -176,12 +178,14 @@ function bindUI() {
     // Special-case: search should not accept input while locked
     const input = document.getElementById("searchInput");
     const clear = document.getElementById("searchClear");
+    const searchEl = document.querySelector('[data-task="search"]');
+    const searchLocked = searchEl?.getAttribute("data-locked") === "true";
     if (input) {
-      input.readOnly = true;
-      input.style.pointerEvents = "none";
-      try { input.blur(); } catch (_) {}
+      input.readOnly = !!searchLocked;
+      input.style.pointerEvents = searchLocked ? "none" : "";
+      if (searchLocked) { try { input.blur(); } catch (_) {} }
     }
-    if (clear) clear.style.pointerEvents = "none";
+    if (clear) clear.style.pointerEvents = searchLocked ? "none" : "";
 
     // Reset-Filter darf nie gesperrt sein
     const resetBtn = document.querySelector('[data-task="reset-filters"]');

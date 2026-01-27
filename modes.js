@@ -1263,6 +1263,7 @@ renderShell() {
     this.btnSpicker = document.getElementById('btnSpicker');
     this.btnSolutions = document.getElementById('btnSolutions');
     this.btnBonus = document.getElementById('btnBonus');
+    this.btnExport = document.getElementById('btnExport');
 
     // Views
     this.taskShellEl = this.root.querySelector('#taskShell');
@@ -1392,6 +1393,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     this.btnSpicker.addEventListener('click', () => this.requestSpicker());
     this.btnSolutions.addEventListener('click', () => this.openSolutions());
     this.btnBonus.addEventListener('click', () => this.openBonus());
+    this.btnExport?.addEventListener('click', () => this.exportProgress());
     this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
     this.spickerBackBtn?.addEventListener('click', () => this.openSpickerIndex());
     this.spickerCloseBtn?.addEventListener('click', () => this.closeSpicker());
@@ -2827,6 +2829,40 @@ WHERE ...;`;
     document.body.appendChild(a);
     a.click();
     a.remove();
+  }
+
+  downloadJson(filename, data) {
+    try {
+      const payload = JSON.stringify(data, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'schulazon-spielstand.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 800);
+    } catch (_) {}
+  }
+
+  exportProgress() {
+    const safeObj = (v) => (v && typeof v === 'object') ? v : {};
+    const stamp = new Date().toISOString().replace(/:/g, '-').replace('T', '_').slice(0, 19);
+    const payload = {
+      version: 1,
+      mode: 'free',
+      exportedAt: new Date().toISOString(),
+      name: getStudentName(),
+      totalTasks: this.TOTAL_TASKS || 0,
+      unlocked: safeObj(this.unlocked),
+      hintUsed: safeObj(this.hintUsed),
+      scaffoldUsed: safeObj(this.scaffoldUsed),
+      solutionSql: safeObj(this.solutionSql),
+      sqliDone: !!this.sqliDone,
+      spickerUsed: !!this.spickerUsed
+    };
+    this.downloadJson(`schulazon-spielstand-${stamp}.json`, payload);
   }
 
   // ---------- Validation ----------
