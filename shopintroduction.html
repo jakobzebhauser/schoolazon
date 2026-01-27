@@ -146,7 +146,18 @@
     </div>
 
     <div class="mode-shell">
-      <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
+      <div class="shop-monitor">
+        <div class="shop-screen">
+          <div class="shop-screen-top" aria-hidden="true">
+            <span class="shop-screen-cam"></span>
+          </div>
+          <div class="shop-screen-inner">
+            <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
+          </div>
+        </div>
+        <div class="shop-stand" aria-hidden="true"></div>
+        <div class="shop-base" aria-hidden="true"></div>
+      </div>
       <main class="mode-right" id="modeRoot"></main>
     </div>
   </div>

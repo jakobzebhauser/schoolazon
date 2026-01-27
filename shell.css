@@ -390,6 +390,101 @@ body[data-mode="free"] .hand{
   overflow: hidden;
 }
 
+.shop-monitor{
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.shop-screen{
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  border-radius: 24px;
+  background:
+    radial-gradient(900px 520px at 30% -10%, rgba(255,255,255,.08), transparent 60%),
+    linear-gradient(180deg, #1a1f27 0%, #0d1016 100%);
+  border: 1px solid rgba(10,15,24,.75);
+  box-shadow:
+    0 30px 70px rgba(5,8,12,.45),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.shop-screen::before{
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.08);
+  pointer-events: none;
+}
+.shop-screen-top{
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.shop-screen-cam{
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #3aa9ff 0%, #1b3350 35%, #0b0f16 70%);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.35), 0 0 10px rgba(58,169,255,.35);
+}
+.shop-screen-cam::after{
+  content: "";
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, rgba(255,255,255,.85), rgba(255,255,255,.2));
+  box-shadow: 0 0 6px rgba(255,255,255,.35);
+  opacity: .5;
+}
+.shop-screen-inner{
+  flex: 1;
+  min-height: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.06),
+    0 18px 40px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+}
+.shop-stand{
+  height: 22px;
+  width: 22%;
+  margin-top: -2px;
+  border-radius: 0 0 16px 16px;
+  background: linear-gradient(180deg, rgba(70,76,86,.95), rgba(26,30,38,.95));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 12px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.14);
+}
+.shop-base{
+  height: 10px;
+  width: 58%;
+  margin-top: -2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(60,66,75,.92), rgba(20,24,32,.98));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 14px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.16);
+}
+
 .shop-frame{
   width: 100%;
   height: 100%;
@@ -398,6 +493,14 @@ body[data-mode="free"] .hand{
   overflow: hidden;
   background: rgba(255,255,255,.82);
   box-shadow: var(--shadow);
+}
+.shop-screen .shop-frame{
+  display: block;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+  flex: 1;
 }
 
 .mode-right{
@@ -1177,6 +1280,12 @@ body.timeup #pillTimer{
     grid-template-columns: 1fr;
     grid-template-rows: 55vh 45vh;
   }
+  .shop-monitor{ gap: 0; }
+  .shop-screen{ padding: 8px; gap: 5px; border-radius: 18px; }
+  .shop-screen-top{ height: 18px; }
+  .shop-screen-cam{ width: 7px; height: 7px; }
+  .shop-stand{ height: 16px; width: 32%; margin-top: -2px; }
+  .shop-base{ height: 8px; width: 66%; margin-top: -2px; }
   .mode-right{ padding: 0; }
   .lab-progress{ width: 100%; }
   .topbar-progress{ width: 100%; }
