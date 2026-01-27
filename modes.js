@@ -1207,7 +1207,7 @@ renderShell() {
                   </div>
                 </div>
 
-                <div class="task3-surface" id="sideBody"></div>
+                <div class="task3-card" id="sideBody"></div>
               </div>
             
         </section>

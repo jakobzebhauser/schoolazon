@@ -206,7 +206,8 @@ body{
 }
 .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
 .pillBtn:active{transform: translateY(0px)}
-.pillBtn:focus{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
+.pillBtn:focus{outline:none; box-shadow:none;}
+.pillBtn:focus-visible{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
 
 /* Free mode topbar: premium icons without increasing bar height */
 body[data-mode="free"] .topbar{
@@ -247,6 +248,10 @@ body[data-mode="free"] .pillBtn:hover{
 body[data-mode="free"] .pillBtn:hover::after{ opacity: .8; }
 body[data-mode="free"] .pillBtn:active{ transform: translateY(0); }
 body[data-mode="free"] .pillBtn:focus{
+  outline: none;
+  box-shadow: none;
+}
+body[data-mode="free"] .pillBtn:focus-visible{
   outline: none;
   box-shadow: var(--focus), 0 16px 36px rgba(10,15,24,.10);
 }
@@ -2313,11 +2318,11 @@ body.timeup #pillTimer{
 }
 
 .bonus-view #sideBody{
-  border: 1px solid rgba(10,15,24,.10);
+  border: 1px solid var(--learn-border);
   background: rgba(255,255,255,.98);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 12px 26px rgba(10,15,24,.08);
+  border-radius: 20px;
+  padding: 16px 18px;
+  box-shadow: var(--learn-shadow-soft);
 }
 
 /* ===============================
@@ -2426,6 +2431,8 @@ body.timeup #pillTimer{
 .bonus-view #sideBody{
   border: 1px solid var(--learn-border);
   background: rgba(255,255,255,.98);
+  border-radius: 20px;
+  padding: 16px 18px;
   box-shadow: var(--learn-shadow-soft);
 }
 

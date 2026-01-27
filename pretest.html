@@ -130,7 +130,8 @@
     }
     .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
     .pillBtn:active{transform: translateY(0px)}
-    .pillBtn:focus{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
+    .pillBtn:focus{outline:none; box-shadow:none;}
+    .pillBtn:focus-visible{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
 
     .card{
       background: var(--glass2);
@@ -805,7 +806,7 @@
         <div class="appIcon" aria-hidden="true"></div>
         <div>
           <div class="logo">schul<span>azon</span></div>
-          <div class="sub" id="subline">Bewerbungsgespräch (6 Minuten)</div>
+          <div class="sub" id="subline">Bewerbungsgespräch (8 Minuten)</div>
         </div>
       </div>
 
@@ -843,7 +844,7 @@
   </div>
 
 <script>
-  const TOTAL_SEC = 6 * 60;
+  const TOTAL_SEC = 8 * 60;
 
   const baseQuestions = [
     { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
@@ -1061,7 +1062,7 @@ function promptWithName(q){
     el("nameTag").textContent = state.name || "";
     el("pillStep").style.display = "none";
     el("pillTimer").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch (6 Minuten)";
+    el("subline").textContent = "Bewerbungsgespräch (8 Minuten)";
 
     el("screen").innerHTML = `
       <div class="hero">
@@ -1069,7 +1070,7 @@ function promptWithName(q){
           <h2>Hi, <span id="introName"></span> – schön, schön das du dich bei Schulazon als Shop-Entwickler beworben hast!</h2>
           <p>Wir haben ein paar kurze Fragen vorbereitet, um deine SQL-Kenntnisse besser einschätzen zu können. </p>
 
-          <div class="hint hintBig"><b>Wozu das Ganze?</b> Damit wir dich im Projekt passend einplanen können. Du hast <b>6 Minuten</b>; danach geben wir automatisch ab. Am Ende bekommst du deinen Code für <b>„Pretest-Code“</b>. Wenn das passt, geht’s danach mit dem Schulazon‑Lab und echten Shop‑Aufgaben weiter.</div>
+          <div class="hint hintBig"><b>Wozu das Ganze?</b> Damit wir dich im Projekt passend einplanen können. Du hast <b>8 Minuten</b>; danach geben wir automatisch ab. Am Ende bekommst du deinen Code für <b>„Pretest-Code“</b>. Wenn das passt, geht’s danach mit dem Schulazon‑Lab und echten Shop‑Aufgaben weiter.</div>
 
           <div class="btnRow navRow" id="introCtaRow">
             <div></div>
