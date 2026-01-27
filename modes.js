@@ -575,11 +575,11 @@ class FreeMode {
   buildTasks() {
     return {
 
-        "search": {
-          title: "Produkte suchen",
-          difficulty: "+++",
-          task:
-  `Aufgabe:
+      "search": {
+        title: "Produkte suchen",
+        difficulty: "+++",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Name einen Suchbegriff aus der Suchleiste enthält. Verwende dafür LIKE zur Mustererkennung. Der Parameter :q enthält den Suchbegriff aus der Suchleiste. Verbinde ihn mit % über den Konkatenationsoperator ||, damit der Begriff an beliebiger Stelle im Namen gefunden wird.`,
         starter: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
         refSql: "SELECT * FROM produkte WHERE name LIKE '%' || :q || '%';",
@@ -670,33 +670,33 @@ AND lagerbestand <= 5;`,
         mode: "rows_set"
       },
 
-        "priceAsc": {
-          title: "Preis aufsteigend",
-          difficulty: "+",
-          task:
-  `Aufgabe:
+      "priceAsc": {
+        title: "Preis aufsteigend",
+        difficulty: "+",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die alle Spalten aller Produkte aus der Tabelle produkte zurückgibt und die Ergebnisse nach dem Preis aufsteigend sortiert.`,
-          starter: "SELECT * FROM produkte ORDER BY preis ASC;",
-          refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
-          mode: "rows_order"
-        },
+        starter: "SELECT * FROM produkte ORDER BY preis ASC;",
+        refSql: "SELECT * FROM produkte ORDER BY preis ASC;",
+        mode: "rows_order"
+      },
 
-        "priceDesc": {
-          title: "Preis absteigend",
-          difficulty: "+",
-          task:
-  `Aufgabe:
+      "priceDesc": {
+        title: "Preis absteigend",
+        difficulty: "+",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die alle Spalten aller Produkte aus der Tabelle produkte zurückgibt und die Ergebnisse nach dem Preis absteigend sortiert.`,
-          starter: "SELECT * FROM produkte ORDER BY preis DESC;",
-          refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
-          mode: "rows_order"
-        },
+        starter: "SELECT * FROM produkte ORDER BY preis DESC;",
+        refSql: "SELECT * FROM produkte ORDER BY preis DESC;",
+        mode: "rows_order"
+      },
 
-        "popularity": {
-          title: "Beliebtheit",
-          difficulty: "+++",
-          task:
-  `Aufgabe:
+      "popularity": {
+        title: "Beliebtheit",
+        difficulty: "+++",
+        task:
+`Aufgabe:
   Berechne für jedes Produkt die gesamte Anzahl aller Verkäufe. Addiere dazu alle Verkaufszahlen (anzahl) mit derselben produkt_id. Gib pro Produkt genau eine Zeile mit der Produkt-ID und der berechneten Gesamtanzahl aus. Sortiere die Ergebnisse anschließend so, dass Produkte mit höheren Verkaufszahlen zuerst erscheinen.`,
         starter:
 `SELECT produkt_id, SUM(anzahl) AS verkäufe
@@ -877,11 +877,11 @@ AND b.sterne >= 4;`,
         mode: "rows_set"
       },
 
-        "cart-refresh": {
-          title: "Warenkorb aktualisieren",
-          difficulty: "++",
-          task:
-  `Aufgabe:
+      "cart-refresh": {
+        title: "Warenkorb aktualisieren",
+        difficulty: "++",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die alle Einträge des Warenkorbs anzeigt. Gib für jedes enthaltene Produkt den Produktnamen, den Einzelpreis, die gewählte Menge sowie die berechnete Zeilensumme (preis · menge) aus. Sortiere die Ergebnisse alphabetisch aufsteigend nach dem Produktnamen.`,
         starter:
 `SELECT p.name, p.preis, w.menge, p.preis * w.menge AS zeilensumme
@@ -900,11 +900,11 @@ ORDER BY p.name ASC;`,
         mode: "rows_order"
       },
 
-        "cart-total": {
-          title: "Gesamtpreis Warenkorb",
-          difficulty: "+++",
-          task:
-  `Aufgabe:
+      "cart-total": {
+        title: "Gesamtpreis Warenkorb",
+        difficulty: "+++",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die den Gesamtpreis des gesamten Warenkorbs berechnet. Multipliziere dafür für jeden Eintrag den Produktpreis mit der jeweiligen Menge und summiere anschließend alle berechneten Werte zu einer einzigen Gesamtsumme.`,
         starter:
 `SELECT SUM(p.preis * w.menge)
@@ -921,11 +921,11 @@ WHERE p.id = w.produkt_id;`,
         mode: "scalar"
       },
 
-        "orders": {
-          title: "Meine Bestellungen",
-          difficulty: "+++",
-          task:
-  `Aufgabe:
+      "orders": {
+        title: "Meine Bestellungen",
+        difficulty: "+++",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die für den Nutzer mit der ID 1 die drei zuletzt erfassten Verkäufe anzeigt. Gib für jeden Verkauf den Produktnamen, die gekaufte Anzahl sowie den Gesamtpreis aus. Sortiere die Ergebnisse absteigend nach der Verkaufs-ID, sodass die neuesten Verkäufe zuerst erscheinen.`,
         starter:
 `SELECT p.name, v.anzahl, p.preis * v.anzahl AS summe
@@ -948,11 +948,11 @@ LIMIT 3;`,
         mode: "rows_order"
       },
 
-        "topProducts": {
-          title: "Top-Produkte",
-          difficulty: "+++",
-          task:
-  `Aufgabe:
+      "topProducts": {
+        title: "Top-Produkte",
+        difficulty: "+++",
+        task:
+`Aufgabe:
   Erstelle eine Abfrage, die die zwei meistverkauften Produkte ermittelt. Summiere dazu für jedes Produkt alle Verkaufszahlen (anzahl), gib den Produktnamen sowie die berechnete Gesamtsumme aus und sortiere die Ergebnisse absteigend nach dieser Summe, sodass die höchsten Verkaufszahlen zuerst erscheinen.`,
         starter:
 `SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe
@@ -2665,102 +2665,102 @@ if (H[taskId]) return H[taskId];
 
   getScaffoldText(taskId) {
     const S = {
-          "search":
-    `SELECT *
+      "search":
+`SELECT *
     FROM ____
     WHERE ____ LIKE ____;`,
-        "all":
+      "all":
     `SELECT ____
     FROM ____;`,
-        "express":
+      "express":
     `SELECT ____
     FROM ____
     WHERE ____ = ____;`,
-        "bestseller":
-    `SELECT produkte.____
-    FROM produkte, verk\u00e4ufe
-    WHERE ____ = ____
-    GROUP BY ____
-    HAVING SUM(____) > ____;`,
-        "available":
+      "bestseller":
+  `SELECT produkte.____
+  FROM produkte, verk\u00e4ufe
+  WHERE ____ = ____
+  GROUP BY ____
+  HAVING SUM(____) > ____;`,
+      "available":
     `SELECT ____
     FROM ____
     WHERE ____ >= ____
     AND ____ <= ____;`,
-        "priceAsc":
+      "priceAsc":
     `SELECT ____
     FROM ____
     ORDER BY ____ ____;`,
-        "priceDesc":
+      "priceDesc":
     `SELECT ____
     FROM ____
     ORDER BY ____ ____;`,
-        "popularity":
+      "popularity":
     `SELECT ____, SUM(____) AS ____
     FROM ____
     GROUP BY ____
     ORDER BY ____ ____;`,
-          "cat-electronics":
-      `SELECT produkte.*
+      "cat-electronics":
+  `SELECT produkte.*
       FROM ____, ____
       WHERE ____ = ____
       AND ____ = ____;`,
-          "cat-household":
-      `SELECT produkte.*
+      "cat-household":
+  `SELECT produkte.*
       FROM ____, ____
       WHERE ____ = ____
       AND ____ = ____;`,
-          "cat-sport":
-      `SELECT produkte.*
+      "cat-sport":
+  `SELECT produkte.*
       FROM ____, ____
       WHERE ____ = ____
       AND ____ = ____;`,
-          "price-25":
-      `SELECT *
+      "price-25":
+  `SELECT *
       FROM ____
       WHERE ____ < ____;`,
-          "price-50":
-      `SELECT *
+      "price-50":
+  `SELECT *
       FROM ____
       WHERE ____ >= ____ AND ____ <= ____;`,
-          "price-100":
-      `SELECT *
+      "price-100":
+  `SELECT *
       FROM ____
       WHERE ____ >= ____ AND ____ <= ____;`,
-        "rating-5":
-    `SELECT DISTINCT produkte.*
+      "rating-5":
+  `SELECT DISTINCT produkte.*
     FROM ____, ____
     WHERE ____ = ____
     AND ____ = ____;`,
-        "rating-4":
-    `SELECT DISTINCT produkte.*
+      "rating-4":
+  `SELECT DISTINCT produkte.*
     FROM ____, ____
     WHERE ____ = ____
     AND ____ >= ____;`,
           "cart-refresh":
       `SELECT ______, ______, ______, ______ * ______
-      FROM ______ , ______
-      WHERE ______ = ______
+  FROM ______ , ______
+  WHERE ______ = ______
       ORDER BY ______ ___`,
-          "cart-total":
+      "cart-total":
       `SELECT SUM(______ * ______)
       FROM ______ , ______
       WHERE ______ = ______;`,
-        "orders":
+      "orders":
     `SELECT ____, ____, ____ * ____
     FROM ____ p, ____ v
     WHERE ____ = ____
     AND ____ = ____
     ORDER BY ____ ____
     LIMIT ____;`,
-          "topProducts":
+      "topProducts":
       `SELECT ______, SUM(______) AS ______
       FROM ______ , ______
       WHERE ______ = ______
       GROUP BY ______
       ORDER BY ______ ____
       LIMIT ______;`
-        };
+    };
 
     if (S[taskId]) return S[taskId];
 
