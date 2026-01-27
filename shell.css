@@ -210,14 +210,14 @@ body{
 
 /* Free mode topbar: premium icons without increasing bar height */
 body[data-mode="free"] .topbar{
-  padding: 6px 10px;
+  padding: 10px 10px;
   border-color: rgba(10,15,24,.12);
   background: rgba(255,255,255,.95);
   box-shadow: 0 16px 40px rgba(10,15,24,.10);
 }
 body[data-mode="free"] .pill,
 body[data-mode="free"] .pillBtn{
-  padding: 6px 10px;
+  padding: 10px 12px;
   font-size: var(--small);
   border-color: rgba(10,15,24,.16);
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,245,250,.92));
@@ -287,8 +287,11 @@ body[data-mode="free"] .brand:hover .appIcon{
 
 body[data-mode="free"] .topbar-progress,
 body[data-mode="free"] .topbar-score{
-  padding: 6px 10px;
-  min-height: 32px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+body[data-mode="free"] .topbar-score{
+  font-size: var(--small);
 }
 body[data-mode="free"] .topbar-progress{
   align-items: center;

@@ -157,7 +157,7 @@
 
     .modes{
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(3, minmax(260px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -274,6 +274,9 @@
       .pillBtn:hover, .modeCard:hover, .btn:hover{transform:none !important}
     }
 
+    @media (max-width: 1200px){
+      .modes{grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+    }
     @media (max-width: 980px){
       .modes{grid-template-columns: 1fr; }
     }
@@ -430,6 +433,13 @@
 <span aria-hidden="true" class="btn primary">Laden</span>
 </div>
 </button>
+<button class="modeCard tone-amber" id="teachingModeBtn" type="button">
+<h2 class="modeTitle">Unterrichtsmodus</h2>
+<p class="modeDesc">Kapitelweise erarbeiten (in K&uuml;rze verf&uuml;gbar).</p>
+<div class="btnRow">
+<span aria-hidden="true" class="btn primary">Info</span>
+</div>
+</button>
 <a class="modeCard tone-purple" data-pass-name="1" href="tutorial.html">
 <h2 class="modeTitle">Tutorial</h2>
 <p class="modeDesc">Grundlagen-Refresh</p>
@@ -480,6 +490,19 @@
 <button class="btn primary" id="importConfirm" type="button" disabled>Importieren</button>
 </div>
 <div class="gateError" id="importError" style="display:none;"></div>
+</div>
+</div>
+</div>
+<div aria-labelledby="comingSoonTitle" aria-modal="true" class="gate" id="comingSoonGate" role="dialog" style="display:none;">
+<div aria-hidden="true" class="gateBackdrop"></div>
+<div class="gateCard">
+<div class="gateInner">
+<div aria-hidden="true" class="gateIcon"></div>
+<h2 id="comingSoonTitle">Noch nicht implementiert</h2>
+<p class="gateSub">Der Unterrichtsmodus ist in Vorbereitung.</p>
+<div class="gateActions">
+<button class="btn primary" id="comingSoonOk" type="button">OK</button>
+</div>
 </div>
 </div>
 </div>
@@ -572,6 +595,16 @@ updateNamePill();
     const gate = el("importGate");
     if(gate) gate.style.display = "none";
     importState.data = null;
+  }
+
+  function showComingSoon(){
+    const gate = el("comingSoonGate");
+    if(gate) gate.style.display = "grid";
+  }
+
+  function hideComingSoon(){
+    const gate = el("comingSoonGate");
+    if(gate) gate.style.display = "none";
   }
 
   function setImportError(msg){
@@ -683,6 +716,8 @@ updateNamePill();
   bindFullscreen();
   const importBtn = el("importFreeBtn");
   if(importBtn) importBtn.addEventListener("click", showImportGate);
+  const teachingBtn = el("teachingModeBtn");
+  if(teachingBtn) teachingBtn.addEventListener("click", showComingSoon);
   const importCancel = el("importCancel");
   if(importCancel) importCancel.addEventListener("click", hideImportGate);
   const importFile = el("importFile");
@@ -698,10 +733,20 @@ updateNamePill();
       if(e.target === importGate) hideImportGate();
     });
   }
+  const comingSoonOk = el("comingSoonOk");
+  if(comingSoonOk) comingSoonOk.addEventListener("click", hideComingSoon);
+  const comingSoonGate = el("comingSoonGate");
+  if(comingSoonGate){
+    comingSoonGate.addEventListener("click", (e)=>{
+      if(e.target === comingSoonGate) hideComingSoon();
+    });
+  }
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape"){
       const gate = el("importGate");
       if(gate && gate.style.display !== "none") hideImportGate();
+      const soon = el("comingSoonGate");
+      if(soon && soon.style.display !== "none") hideComingSoon();
     }
   });
 
