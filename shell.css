@@ -293,6 +293,26 @@ body[data-mode="free"] .topbar-score{
 body[data-mode="free"] .topbar-score{
   font-size: var(--small);
 }
+body[data-mode="free"] .topbar-progress,
+body[data-mode="free"] .topbar-score,
+body[data-mode="free"] .pill#pillName{
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+body[data-mode="free"] .topbar-progress:hover,
+body[data-mode="free"] .topbar-score:hover,
+body[data-mode="free"] .pill#pillName:hover{
+  transform: translateY(-1px);
+  border-color: rgba(0,122,255,.28);
+  background: linear-gradient(180deg, rgba(255,255,255,1), rgba(236,241,250,.94));
+  box-shadow: 0 16px 32px rgba(10,15,24,.10);
+}
+body[data-mode="free"] .topbar-progress:active,
+body[data-mode="free"] .topbar-score:active,
+body[data-mode="free"] .pill#pillName:active{
+  transform: translateY(0);
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+}
 body[data-mode="free"] .topbar-progress{
   align-items: center;
 }
@@ -850,7 +870,7 @@ body.help-open{
   border: 1px solid rgba(10,15,24,.12);
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,248,255,.95));
   box-shadow: 0 26px 60px rgba(10,15,24,.18);
-  padding: 16px;
+  padding: 18px;
 }
 .help-head{
   display:flex;
@@ -868,12 +888,12 @@ body.help-open{
 }
 .help-title{
   margin: 0;
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 950;
   letter-spacing: .01em;
 }
 .help-sub{
-  font-size: var(--small);
+  font-size: 15px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -886,25 +906,32 @@ body.help-open{
 .help-grid{
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 .help-card{
   border-radius: 16px;
   border: 1px solid rgba(10,15,24,.12);
   background: rgba(255,255,255,.92);
-  padding: 12px 12px 11px;
+  padding: 14px 14px 13px;
   box-shadow: 0 10px 22px rgba(10,15,24,.06);
+  transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+.help-card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(0,122,255,.28);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 18px 34px rgba(10,15,24,.10);
 }
 .help-card-title{
   display:flex;
   align-items:center;
   gap: 8px;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 6px;
 }
 .help-card-body{
-  font-size: 14px;
+  font-size: 15px;
   color: rgba(11,15,24,.86);
   line-height: 1.45;
 }
