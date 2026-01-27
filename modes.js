@@ -351,6 +351,10 @@ function initTopbarChrome() {
   // 4) 60-min countdown (session-persisted)
   const timerTag = document.getElementById("timerTag");
   const pillTimer = document.getElementById("pillTimer");
+  if (!timerTag && !pillTimer) {
+    try { sessionStorage.removeItem(FREE_TIMER_KEY); } catch (_) {}
+    return;
+  }
 
   let startedAt = Number(safeGet(sessionStorage, FREE_TIMER_KEY) || "");
   if (!Number.isFinite(startedAt) || startedAt <= 0) {
