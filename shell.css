@@ -72,7 +72,7 @@ body{
   align-items:center;
   justify-content:space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: var(--radiusLg);
   /* Less translucency to avoid “see-through” artifacts */
   background: rgba(255,255,255,.94);
@@ -109,21 +109,85 @@ body{
 .status{
   display:flex;
   align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
+  gap:8px;
+  flex-wrap: nowrap;
   justify-content:flex-end;
+}
+
+.topbar-progress{
+  width: clamp(160px, 16vw, 220px);
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+  display:flex;
+  align-items:center;
+  gap: 8px;
+}
+.topbar-progress-meta{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 0;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.topbar-score{
+  padding: 6px 10px;
+  font-size: 12px;
+  border-width: 1px;
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+  margin-left: 0;
+  align-self: center;
+}
+
+.topbar-menu{
+  position: relative;
+  display: inline-flex;
+}
+.topbar-menu > summary{
+  list-style: none;
+}
+.topbar-menu > summary::-webkit-details-marker{display:none;}
+.topbar-menu[open] > summary{
+  box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08);
+}
+.menu-panel{
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 240px;
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(10,15,24,.12);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 18px 40px rgba(10,15,24,.18);
+  z-index: 40;
+}
+.menu-panel .btn{
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 12px;
+  text-align: left;
 }
 
 .pill, .pillBtn{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 999px;
   border: 1px solid rgba(10,15,24,.14);
   background: rgba(255,255,255,.96);
   box-shadow: 0 10px 22px rgba(10,15,24,.08);
-  font-size: var(--small);
+  font-size: 12px;
   color: var(--muted);
   user-select:none;
   white-space: nowrap;
@@ -326,18 +390,18 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 2px solid rgba(10,15,24,.18);
+  border: 1px solid rgba(10,15,24,.18);
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,245,247,.92));
   color: rgba(11,15,24,.98);
   font-weight: 950;
-  font-size: 15px;
+  font-size: 12px;
   white-space: nowrap;
-  box-shadow: 0 12px 26px rgba(10,15,24,.10);
+  box-shadow: 0 10px 22px rgba(10,15,24,.10);
   letter-spacing: .01em;
-  margin-left: auto;
-  align-self: flex-start;
+  margin-left: 0;
+  align-self: center;
 }
 
 .progress-bar{
@@ -345,6 +409,12 @@ body{
   border-radius: 999px;
   background: rgba(10,15,24,.10);
   overflow: hidden;
+}
+
+.topbar-progress .progress-bar{
+  height: 6px;
+  flex: 1 1 auto;
+  min-width: 70px;
 }
 
 .progress-fill{
@@ -581,6 +651,9 @@ body{
   white-space: pre-wrap;
   line-height: 1.5;
 }
+ .lab-hint{
+  margin-bottom: 10px;
+ }
 
 /* Visuell „gesperrt“, aber klickbar (zeigt Hinweis) */
 .btn-locked{
@@ -829,6 +902,8 @@ body.timeup #pillTimer{
   }
   .mode-right{ padding: 0; }
   .lab-progress{ width: 100%; }
+  .topbar-progress{ width: 100%; }
+  .status{ flex-wrap: wrap; justify-content: flex-start; }
 }
 
 

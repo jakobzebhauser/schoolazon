@@ -335,40 +335,50 @@ function initTopbarChrome() {
     helpBtn.setAttribute("title", "Du bist bereits in der Einführung");
   }
 
+  const menu = document.getElementById("labMenu");
+  if (menu) {
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target)) menu.removeAttribute("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") menu.removeAttribute("open");
+    });
+    menu.addEventListener("click", (e) => {
+      if (e.target && e.target.closest("button")) menu.removeAttribute("open");
+    });
+  }
+
   // 4) 60-min countdown (session-persisted)
   const timerTag = document.getElementById("timerTag");
   const pillTimer = document.getElementById("pillTimer");
-  if (pillTimer && timerTag) {
-    pillTimer.style.display = "flex";
 
-    let startedAt = Number(safeGet(sessionStorage, FREE_TIMER_KEY) || "");
-    if (!Number.isFinite(startedAt) || startedAt <= 0) {
-      startedAt = Date.now();
-      safeSet(sessionStorage, FREE_TIMER_KEY, String(startedAt));
-    }
-
-    const tick = () => {
-      const elapsedSec = (Date.now() - startedAt) / 1000;
-      const remaining = FREE_TIMER_TOTAL_SEC - elapsedSec;
-      timerTag.textContent = formatMMSS(remaining);
-      if (remaining <= 0) {
-        timerTag.textContent = "00:00";
-        document.body.classList.add("timeup");
-        if (!window.__SCHULAZON_TIMEUP__) {
-          window.__SCHULAZON_TIMEUP__ = true;
-          window.setTimeout(goPosttest, 300);
-        }
-        return false;
-      }
-      return true;
-    };
-
-    tick();
-    const iv = window.setInterval(() => {
-      const keep = tick();
-      if (!keep) window.clearInterval(iv);
-    }, 250);
+  let startedAt = Number(safeGet(sessionStorage, FREE_TIMER_KEY) || "");
+  if (!Number.isFinite(startedAt) || startedAt <= 0) {
+    startedAt = Date.now();
+    safeSet(sessionStorage, FREE_TIMER_KEY, String(startedAt));
   }
+
+  const tick = () => {
+    const elapsedSec = (Date.now() - startedAt) / 1000;
+    const remaining = FREE_TIMER_TOTAL_SEC - elapsedSec;
+    if (timerTag) timerTag.textContent = formatMMSS(remaining);
+    if (remaining <= 0) {
+      if (timerTag) timerTag.textContent = "00:00";
+      document.body.classList.add("timeup");
+      if (!window.__SCHULAZON_TIMEUP__) {
+        window.__SCHULAZON_TIMEUP__ = true;
+        window.setTimeout(goPosttest, 300);
+      }
+      return false;
+    }
+    return true;
+  };
+
+  tick();
+  const iv = window.setInterval(() => {
+    const keep = tick();
+    if (!keep) window.clearInterval(iv);
+  }, 250);
 }
 
 
@@ -1011,45 +1021,9 @@ LIMIT 2;`,
 renderShell() {
     this.root.innerHTML = `
       <div class="right-wrap">
-        <header class="lab-header">
-          <div class="lab-header-collapsible" id="labHeaderCollapsible">
-            <div class="lab-header-top">
-            <div class="lab-title">
-              <h2>Freier Bereich</h2>
-              <div class="lab-sub" id="labStudent">Schüler: — • Modus: Freier Bereich</div>
-            </div>
-            <div id="scoreEl" class="score-corner" aria-label="Score">🏆 0</div>
+        <div id="labHint" class="lab-hint" style="display:none;"></div>
 
-            <div class="lab-progress" aria-label="Fortschritt">
-              <div class="lab-progress-meta">
-                <div class="progress-left">
-                  <div id="progressCount">0/0 erledigt</div>
-                </div>
-                <div id="progressPct">0%</div>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="lab-header-actions" style="justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <div class="lab-actions-left" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn" id="btnSchema" type="button">DB-Schema</button>
-              <button class="btn" id="btnSpicker" type="button">Theorie-Spicker</button>
-              <button class="btn" id="btnSolutions" type="button">Bereits gelöste Aufgaben</button>
-            </div>
-            <div class="lab-actions-right" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-locked" id="btnBonus" type="button" aria-label="Zusatzaufgabe: Hacking">Zusatzaufgabe: Hacking</button>
-            </div>
-          </div>
-
-          <div id="labHint" class="lab-hint" style="display:none;"></div>
-          </div>
-        </header>
-
-
-        <section class="page-shell" id="taskShell">
+<section class="page-shell" id="taskShell">
           <div id="emptyState" class="empty-state">
               Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.
             </div>
@@ -1265,16 +1239,16 @@ renderShell() {
     this.initHeaderCollapse();
 
     // Progress
-    this.progressCountEl = this.root.querySelector('#progressCount');
-    this.progressPctEl = this.root.querySelector('#progressPct');
-    this.progressFillEl = this.root.querySelector('#progressFill');
-    this.scoreEl = this.root.querySelector('#scoreEl');
+    this.progressCountEl = document.getElementById('progressCount');
+    this.progressPctEl = document.getElementById('progressPct');
+    this.progressFillEl = document.getElementById('progressFill');
+    this.scoreEl = document.getElementById('scoreEl');
 
     // Actions
-    this.btnSchema = this.root.querySelector('#btnSchema');
-    this.btnSpicker = this.root.querySelector('#btnSpicker');
-    this.btnSolutions = this.root.querySelector('#btnSolutions');
-    this.btnBonus = this.root.querySelector('#btnBonus');
+    this.btnSchema = document.getElementById('btnSchema');
+    this.btnSpicker = document.getElementById('btnSpicker');
+    this.btnSolutions = document.getElementById('btnSolutions');
+    this.btnBonus = document.getElementById('btnBonus');
 
     // Views
     this.taskShellEl = this.root.querySelector('#taskShell');
@@ -2816,11 +2790,11 @@ WHERE ...;`;
     const done = ids.filter(id => !!this.unlocked[id]).length;
     const pct = Math.min(100, Math.round((done / total) * 100));
 
-    if (this.progressCountEl) this.progressCountEl.textContent = `${done}/${total} erledigt`;
+    if (this.progressCountEl) this.progressCountEl.textContent = `${done}/${total}`;
     if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
     if (this.progressFillEl) this.progressFillEl.style.width = `${pct}%`;
 
-    if (this.scoreEl) this.scoreEl.textContent = `🏆 ${this.computeScore()}`;
+    if (this.scoreEl) this.scoreEl.textContent = `Score ${this.computeScore()}`;
 
     // Bonus availability
     const canBonus = pct >= BONUS_MIN_PCT;
