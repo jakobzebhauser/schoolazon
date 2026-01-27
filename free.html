@@ -58,6 +58,50 @@
       <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
       <main class="mode-right" id="modeRoot"></main>
     </div>
+
+    <div class="overlay help-overlay" id="helpOverlay" aria-hidden="true">
+      <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle" aria-describedby="helpSub">
+        <div class="help-head">
+          <div>
+            <div class="help-eyebrow">Kurzanleitung</div>
+            <h3 class="help-title" id="helpTitle">So bearbeitest du Aufgaben</h3>
+            <div class="help-sub" id="helpSub"></div>
+          </div>
+          <button class="btn btn-ghost help-close" id="helpClose" type="button" aria-label="Schlie&szlig;en">&#10005;</button>
+        </div>
+
+        <div class="help-grid">
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="select"></span>Aufgabe ausw&auml;hlen</div>
+            <div class="help-card-body">Insgesamt sind es <strong>20 Buttons</strong>, die von dir implementiert werden m&uuml;ssen. Im Shop links auf einen <strong>gesperrten Button</strong> klicken &rarr; der Editor &ouml;ffnet sich.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="check"></span>Pr&uuml;fen &amp; Freischalten</div>
+            <div class="help-card-body">SQL schreiben &rarr; <strong>Pr&uuml;fen</strong> &rarr; wenn korrekt: <strong>Freischalten</strong>.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="hint"></span>Tipp</div>
+            <div class="help-card-body">Gl&uuml;hbirne = <strong>Tipp</strong> (-1 Score).</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="hint"></span>Codeger&uuml;st</div>
+            <div class="help-card-body"><span class="help-mono">&lt;/&gt;</span> = <strong>Codeger&uuml;st</strong> (-3 Score).</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="score"></span>Score</div>
+            <div class="help-card-body">Punkte = freigeschaltete Aufgaben (leicht 1 / mittel 2 / schwer 4) + Bonus (+10) - Tipps - Codeger&uuml;ste.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-title"><span class="help-icon" data-icon="tools"></span>Tools &amp; Bonus</div>
+            <div class="help-card-body"><strong>DB-Schema</strong> &amp; <strong>Theorie-Spicker</strong> findest du im Tools-Men&uuml;. Die Hackingaufgabe gibt es ab <strong>10%</strong> Fortschritt.</div>
+          </div>
+        </div>
+
+        <div class="help-footer">
+          <button class="btn btn-primary" id="helpOk" type="button">Verstanden</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- sql.js -->

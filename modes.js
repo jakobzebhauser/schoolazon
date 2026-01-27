@@ -312,24 +312,34 @@ function initTopbarChrome() {
   };
   if (exitBtn && !isTutorial) exitBtn.addEventListener("click", goPosttest);
 
-  const goHelpIntro = () => {
-    try {
-      const cm = window.currentMode;
-      if (cm && cm.currentId) {
-        const payload = { taskId: cm.currentId, sql: (cm.sqlEl?.value || "") };
-        sessionStorage.setItem("schulazon_free_resume_v1", JSON.stringify(payload));
-      } else {
-        sessionStorage.removeItem("schulazon_free_resume_v1");
-      }
-      sessionStorage.setItem("schulazon_help_return_v1", "true");
-      sessionStorage.setItem("schulazon_skip_reset_v1", "true");
-    } catch (_) {}
-    const name = getStudentName();
-    if (name) persistStudentName(name);
-    const url = "shopintroduction.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
-    try { window.location.assign(url); } catch (_) { window.location.href = url; }
+  const helpOverlay = document.getElementById("helpOverlay");
+  const helpCloseBtn = document.getElementById("helpClose");
+  const helpOkBtn = document.getElementById("helpOk");
+  const openHelp = () => {
+    if (!helpOverlay) return;
+    helpOverlay.classList.add("show", "open");
+    helpOverlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("help-open");
+    try { helpOkBtn?.focus(); } catch (_) {}
   };
-  if (helpBtn && !isTutorial) helpBtn.addEventListener("click", goHelpIntro);
+  const closeHelp = () => {
+    if (!helpOverlay) return;
+    helpOverlay.classList.remove("show", "open");
+    helpOverlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("help-open");
+    try { helpBtn?.focus(); } catch (_) {}
+  };
+  if (helpBtn && !isTutorial) helpBtn.addEventListener("click", openHelp);
+  if (helpCloseBtn) helpCloseBtn.addEventListener("click", closeHelp);
+  if (helpOkBtn) helpOkBtn.addEventListener("click", closeHelp);
+  if (helpOverlay) {
+    helpOverlay.addEventListener("click", (e) => {
+      if (e.target === helpOverlay) closeHelp();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && helpOverlay?.classList?.contains("show")) closeHelp();
+  });
   if (helpBtn && isTutorial) {
     helpBtn.setAttribute("aria-disabled", "true");
     helpBtn.setAttribute("title", "Du bist bereits in der Einführung");
