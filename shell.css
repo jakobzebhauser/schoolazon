@@ -78,6 +78,8 @@ body{
   background: rgba(255,255,255,.94);
   border: 1px solid rgba(10,15,24,.10);
   box-shadow: 0 10px 34px rgba(10,15,24,.08);
+  position: relative;
+  z-index: 200;
 }
 
 .brand{display:flex; align-items:center; gap:12px;}
@@ -169,7 +171,7 @@ body{
   border: 1px solid rgba(10,15,24,.12);
   background: rgba(255,255,255,.98);
   box-shadow: 0 18px 40px rgba(10,15,24,.18);
-  z-index: 40;
+  z-index: 300;
 }
 .menu-panel .btn{
   padding: 8px 12px;
@@ -366,6 +368,117 @@ body[data-mode="free"] .hand{
   font-size: 16px;
   line-height: 1;
   filter: drop-shadow(0 6px 10px rgba(10,15,24,.16));
+}
+
+/* ===============================
+   Free mode layout refresh
+   =============================== */
+body[data-mode="free"]{
+  background:
+    radial-gradient(760px 520px at 8% 6%, rgba(255,149,0,.16), transparent 62%),
+    radial-gradient(820px 560px at 92% 12%, rgba(0,122,255,.14), transparent 62%),
+    linear-gradient(180deg, #f7f8fc 0%, #edf2fa 55%, #f7f8fc 100%);
+}
+body[data-mode="free"] .shell{
+  padding: 10px 10px 12px;
+  gap: 14px;
+}
+body[data-mode="free"] .topbar{
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
+  border-color: rgba(10,15,24,.06);
+  box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+body[data-mode="free"] .status{
+  gap: 10px;
+}
+body[data-mode="free"] .brand .sub{
+  letter-spacing: .02em;
+}
+body[data-mode="free"] .mode-shell{
+  gap: 18px;
+  grid-template-columns: 1.7fr 1fr;
+}
+body[data-mode="free"] .shop-monitor{
+  border-top: 3px solid rgba(255,149,0,.55);
+  background:
+    radial-gradient(520px 360px at 20% 0%, rgba(255,149,0,.12), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,248,238,.96));
+  box-shadow: 0 20px 46px rgba(255,149,0,.10), 0 14px 32px rgba(10,15,24,.08);
+}
+body[data-mode="free"] .shop-screen-inner{
+  border-radius: 16px;
+  border-color: rgba(10,15,24,.10);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.04),
+    0 14px 30px rgba(10,15,24,.10);
+}
+body[data-mode="free"] .mode-right{
+  border-top: 3px solid rgba(0,122,255,.55);
+  background:
+    repeating-linear-gradient(0deg, rgba(10,15,24,.035), rgba(10,15,24,.035) 1px, transparent 1px, transparent 26px),
+    repeating-linear-gradient(90deg, rgba(10,15,24,.03), rgba(10,15,24,.03) 1px, transparent 1px, transparent 26px),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,249,255,.94));
+  border-color: rgba(0,122,255,.18);
+  box-shadow: 0 22px 54px rgba(0,122,255,.10), 0 16px 36px rgba(10,15,24,.08);
+}
+body[data-mode="free"] .topbar-progress,
+body[data-mode="free"] .topbar-score{
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(239,244,252,.96));
+  border-color: rgba(0,122,255,.16);
+}
+body[data-mode="free"] .pillBtn.icon-btn::before{
+  opacity: .95;
+}
+body[data-mode="free"] .menu-panel{
+  border-radius: 18px;
+  border-color: rgba(0,122,255,.18);
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,246,255,.96));
+  box-shadow: 0 22px 50px rgba(0,122,255,.12), 0 14px 30px rgba(10,15,24,.08);
+}
+body[data-mode="free"] .menu-panel .btn{
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,242,252,.94));
+  border-color: rgba(0,122,255,.16);
+  box-shadow: 0 10px 22px rgba(10,15,24,.08);
+}
+body[data-mode="free"] .topbar-menu[open] > summary{
+  background: linear-gradient(180deg, rgba(255,255,255,1), rgba(236,242,252,.94));
+  border-color: rgba(0,122,255,.28);
+}
+
+body[data-mode="free"] .task-view.task-v3{
+  --task3-surface-bg: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,248,255,.96));
+  --task3-card-bg: rgba(255,255,255,.98);
+  --task3-border: rgba(0,122,255,.16);
+  --task3-shadow: 0 22px 54px rgba(0,122,255,.12), 0 16px 36px rgba(10,15,24,.08);
+  --task3-shadow-soft: 0 12px 26px rgba(10,15,24,.08);
+}
+body[data-mode="free"] .task-view.task-v3 .task3-header,
+body[data-mode="free"] .task-view.task-v3 .task3-card{
+  border-radius: 18px;
+}
+body[data-mode="free"] .task-view.task-v3 .task3-header{
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,246,255,.96));
+}
+body[data-mode="free"] .spicker-view,
+body[data-mode="free"] .schema-view,
+body[data-mode="free"] .solutions-view{
+  border-radius: var(--radiusLg);
+  border: 1px solid rgba(0,122,255,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,248,255,.96));
+  box-shadow: 0 22px 54px rgba(0,122,255,.10), 0 14px 30px rgba(10,15,24,.08);
+  padding: 12px;
+}
+body[data-mode="free"] .spicker-head{
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,246,255,.96));
+  border-color: rgba(0,122,255,.18);
+}
+body[data-mode="free"] .topbar-progress,
+body[data-mode="free"] .topbar-score,
+body[data-mode="free"] .pill,
+body[data-mode="free"] .pillBtn{
+  border-radius: 14px;
 }
 
 #labHeaderToggle::after{
@@ -2672,4 +2785,22 @@ body.timeup #pillTimer{
   box-shadow: none;
   background: transparent;
   outline: none;
+}
+
+/* Remove outer frame around right pane (use only inner cards) */
+.mode-right{
+  border: 1px solid rgba(10,15,24,.10) !important;
+  border-radius: var(--radiusLg) !important;
+  background: transparent !important;
+  box-shadow: var(--shadow) !important;
+}
+body[data-mode="free"] .mode-right{
+  border-top: 3px solid rgba(0,122,255,.55) !important;
+  border-color: rgba(0,122,255,.18) !important;
+  background:
+    radial-gradient(800px 420px at 20% 0%, rgba(0,122,255,.08), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(10,15,24,.025), rgba(10,15,24,.025) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgba(10,15,24,.02), rgba(10,15,24,.02) 1px, transparent 1px, transparent 32px),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,249,255,.94)) !important;
+  box-shadow: 0 22px 54px rgba(0,122,255,.10), 0 16px 36px rgba(10,15,24,.08) !important;
 }
