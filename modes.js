@@ -101,8 +101,10 @@ const THEORY_CHAPTERS = [
 <tr><td><strong>ORDER BY</strong></td><td>Sortierung der Ergebnistabelle</td></tr>
 <tr><td><strong>Aggregat</strong> / <strong>GROUP BY</strong> / <strong>HAVING</strong></td><td>Zusammenfassen und Filtern von Gruppen</td></tr>
 </tbody></table>`,
-    exampleSql: `SELECT *
-FROM products;`
+    exampleSql: `SELECT name, preis
+FROM produkte
+WHERE preis <= 50
+ORDER BY preis ASC;`
   },
   {
     id: 'schluessel',
@@ -112,10 +114,18 @@ FROM products;`
   {
     id: 'select-from',
     title: 'SELECT … FROM …',
-    html: `<p><strong>*</strong> bedeutet „alle Spalten“, und <strong>DISTINCT</strong> sorgt dafür, dass gleiche Werte in der Ergebnisspalte nur einmal vorkommen.</p>
-<p>Distinct veranschaulichen mit Tabelle wo doppelte werte rot rausgestrichen werden. Einfach irgendein beispiel was aber zu meiner db passt.</p>`,
-    exampleSql: `SELECT DISTINCT category
-FROM products;`
+    html: `<p><strong>*</strong> bedeutet „alle Spalten“. <strong>DISTINCT</strong> entfernt doppelte Werte in einer Ergebnisspalte. <strong>LIMIT</strong> begrenzt die Anzahl der Zeilen im Ergebnis.</p>
+<table class="spicker-table"><thead><tr><th>liefertage ohne DISTINCT</th><th>liefertage mit DISTINCT</th></tr></thead><tbody>
+<tr><td>2</td><td>2</td></tr>
+<tr><td><span style="color:#c00;text-decoration:line-through;">2</span></td><td>3</td></tr>
+<tr><td>3</td><td>5</td></tr>
+<tr><td><span style="color:#c00;text-decoration:line-through;">3</span></td><td>&nbsp;</td></tr>
+<tr><td>5</td><td>&nbsp;</td></tr>
+</tbody></table>`,
+    exampleSql: `SELECT DISTINCT liefertage
+FROM produkte
+ORDER BY liefertage
+LIMIT 3;`
   },
   {
     id: 'where',
@@ -132,18 +142,18 @@ FROM products;`
 <tr><td><strong>OR</strong></td><td>mindestens eine Bedingung muss wahr sein</td></tr>
 <tr><td><strong>NOT</strong></td><td>macht „wahr“ zu „falsch“ (und umgekehrt)</td></tr>
 </tbody></table>`,
-    exampleSql: `SELECT name, price
-FROM products
-WHERE price <= 50
-  AND available = 1;`
+    exampleSql: `SELECT name, preis, lagerbestand
+FROM produkte
+WHERE preis <= 50
+  AND lagerbestand > 0;`
   },
   {
     id: 'order-by',
     title: 'ORDER BY',
     html: `<p><strong>ORDER BY</strong> sortiert die Ergebnistabelle nach einer oder mehreren Spalten. Du kannst aufsteigend (<strong>ASC</strong>) oder absteigend (<strong>DESC</strong>) sortieren.</p>`,
-    exampleSql: `SELECT name, price
-FROM products
-ORDER BY price DESC;`
+    exampleSql: `SELECT name, preis, liefertage
+FROM produkte
+ORDER BY liefertage ASC, preis DESC;`
   },
   {
     id: 'aggregat-as',
@@ -157,32 +167,38 @@ ORDER BY price DESC;`
 <tr><td><strong>MAX(...)</strong></td><td>größter Wert</td></tr>
 </tbody></table>`,
     exampleSql: `SELECT COUNT(*) AS anzahl
-FROM products
-WHERE available = 1;`
+FROM produkte
+WHERE lagerbestand > 0;`
   },
   {
     id: 'group-by-having',
     title: 'GROUP BY & HAVING',
     html: `<p><strong>GROUP BY</strong> bildet Gruppen von Zeilen mit gleichem Wert in einer Spalte, damit du pro Gruppe Aggregatwerte berechnen kannst. <strong>HAVING</strong> filtert anschließend Gruppen (nicht einzelne Zeilen).</p>`,
-    exampleSql: `SELECT category, COUNT(*) AS anzahl
-FROM products
-GROUP BY category
+    exampleSql: `SELECT kategorie_id, COUNT(*) AS anzahl
+FROM produkte
+GROUP BY kategorie_id
 HAVING COUNT(*) >= 3;`
   },
   {
     id: 'verbund-1-n',
     title: 'Verbund 1:n',
-    html: `<p>Eine <strong>1:n‑Beziehung</strong> bedeutet: Ein Datensatz auf der „1‑Seite“ gehört zu vielen Datensätzen auf der „n‑Seite“. In Tabellen setzt man das um, indem man den <strong>Primärschlüssel</strong> der „1‑Seite“ als <strong>Fremdschlüssel</strong> in der Tabelle der „n‑Seite“ speichert.</p>`
+    html: `<p>Eine <strong>1:n‑Beziehung</strong> bedeutet: Ein Datensatz auf der „1‑Seite“ gehört zu vielen Datensätzen auf der „n‑Seite“. In Tabellen setzt man das um, indem man den <strong>Primärschlüssel</strong> der „1‑Seite“ als <strong>Fremdschlüssel</strong> in der Tabelle der „n‑Seite“ speichert.</p>
+<p><strong>Beispiel:</strong> Eine Kategorie hat viele Produkte (kategorien → produkte).</p>`,
+    exampleSql: `SELECT p.name, k.name AS kategorie
+FROM produkte p, kategorien k
+WHERE p.kategorie_id = k.id
+ORDER BY k.name, p.name;
+
+-- Alternative mit JOIN
+SELECT p.name, k.name AS kategorie
+FROM produkte p
+JOIN kategorien k ON p.kategorie_id = k.id
+ORDER BY k.name, p.name;`
   },
   {
     id: 'verbund-n-m',
     title: 'Verbund n:m',
     html: `<p>Eine <strong>n:m‑Beziehung</strong> bedeutet: Viele Datensätze aus Tabelle A passen zu vielen Datensätze aus Tabelle B. Das setzt man mit einer zusätzlichen <strong>Beziehungstabelle</strong> um, die die beiden <strong>Primärschlüssel</strong> als <strong>Fremdschlüssel</strong> speichert; oft bilden diese beiden Fremdschlüssel zusammen den Primärschlüssel der Beziehungstabelle.</p>`
-  },
-  {
-    id: 'personenbezogene-daten',
-    title: 'Personenbezogene Daten',
-    html: `<p><strong>Personenbezogene Daten</strong> sind Informationen, die sich direkt oder indirekt auf eine bestimmte Person beziehen (also eine Person erkennbar machen). Sie sind besonders geschützt (u. a. durch Gesetze und die <strong>Datenschutz‑Grundverordnung (DSGVO)</strong>).</p>`
   }
 ];
 

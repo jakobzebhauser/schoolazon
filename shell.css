@@ -1500,13 +1500,12 @@ body.timeup #pillTimer{
   min-height: 0;
 }
 
-.spicker-head{
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  border-radius: var(--radiusMd);
-  border: 3px solid rgba(10,15,24,.20);
-  background: rgba(255,255,255,.98);
+  .spicker-head{
+    position: static;
+    top: auto;
+    border-radius: var(--radiusMd);
+    border: 3px solid rgba(10,15,24,.20);
+    background: rgba(255,255,255,.98);
   box-shadow: 0 16px 40px rgba(10,15,24,.10);
   padding: 14px 14px 12px;
   display:flex;
@@ -2349,14 +2348,19 @@ body.timeup #pillTimer{
   --aux-shadow-soft: 0 10px 24px rgba(10,15,24,.08);
 }
 
-.spicker-head{
-  border: 1px solid var(--aux-border);
-  background: linear-gradient(180deg, rgba(0,122,255,.08), rgba(255,255,255,.92));
-  box-shadow: var(--aux-shadow);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 14px 16px;
-}
+  .spicker-head{
+    border: 1px solid var(--aux-border);
+    background: linear-gradient(180deg, rgba(0,122,255,.08), rgba(255,255,255,.92));
+    box-shadow: var(--aux-shadow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 14px 16px;
+  }
+
+  .solutions-view .spicker-head{
+    position: static;
+    top: auto;
+  }
 
 .spicker-title{
   font-size: 19px;
