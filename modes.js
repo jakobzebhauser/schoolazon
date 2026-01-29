@@ -261,6 +261,7 @@ function getStudentName() {
 }
 
 function initTopbarChrome() {
+  const logger = window.studyLogger;
   // 1) Persist name if provided in query
   try {
     const qp = new URLSearchParams(window.location.search);
@@ -318,15 +319,18 @@ function initTopbarChrome() {
 
   // 3b) Exit -> Posttest (name bleibt erhalten)
   const exitBtn = document.getElementById("exitBtn");
+  const posttestBtn = document.getElementById("posttestBtn");
   const helpBtn = document.getElementById("helpBtn");
   const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
   const goPosttest = () => {
     const name = getStudentName();
     if (name) persistStudentName(name);
     const url = "posttest.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
+    try { logger?.logEvent("goto_posttest_clicked", { from: "free" }); } catch (_) {}
     try { window.location.assign(url); } catch (_) { window.location.href = url; }
   };
   if (exitBtn && !isTutorial) exitBtn.addEventListener("click", goPosttest);
+  if (posttestBtn && !isTutorial) posttestBtn.addEventListener("click", goPosttest);
 
   const helpOverlay = document.getElementById("helpOverlay");
   const helpCloseBtn = document.getElementById("helpClose");
@@ -336,6 +340,7 @@ function initTopbarChrome() {
     helpOverlay.classList.add("show", "open");
     helpOverlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("help-open");
+    try { logger?.trackToolOpen("help"); } catch (_) {}
     try { helpOkBtn?.focus(); } catch (_) {}
   };
   const closeHelp = () => {
@@ -343,6 +348,7 @@ function initTopbarChrome() {
     helpOverlay.classList.remove("show", "open");
     helpOverlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("help-open");
+    try { logger?.trackToolClose("help"); } catch (_) {}
     try { helpBtn?.focus(); } catch (_) {}
   };
   if (helpBtn && !isTutorial) helpBtn.addEventListener("click", openHelp);
@@ -492,6 +498,7 @@ class FreeMode {
   constructor(root) {
     window.currentMode = this; // active mode for iframe messages
     this.root = root;
+    this.logger = window.studyLogger || null;
     this.shop = new ShopBridge("shopFrame");
     this.db = null;
 
@@ -583,6 +590,7 @@ class FreeMode {
   onSqliSuccess() {
     if (this.sqliDone) return;
     this.sqliDone = true;
+    try { this.logger?.trackBonusFinish(); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
     if (this.currentSideView === 'sqli') this.openBonus();
@@ -995,6 +1003,7 @@ LIMIT 2;`,
 
   async mount() {
   this.renderShell();
+  try { this.logger?.logEvent("free_mode_start", {}); } catch (_) {}
 
   // 1) Shop initialisieren + Buttons sperren
   await this.shop.ready;
@@ -1428,6 +1437,8 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   openSpicker() {
     this.showAuxShell();
+    try { this.logger?.trackToolClose("schema"); } catch (_) {}
+    try { this.logger?.trackToolOpen("spicker"); } catch (_) {}
     // Immer mit Übersicht starten
     this.openSpickerIndex();
     // Side-View: Task-Shell unverändert lassen
@@ -1445,6 +1456,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   closeSpicker() {
     this.showTaskShell();
+    try { this.logger?.trackToolClose("spicker"); } catch (_) {}
     if (this.spickerViewEl) this.spickerViewEl.style.display = 'none';
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
 
@@ -1504,6 +1516,8 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   async openSchema() {
     this.showAuxShell();
+    try { this.logger?.trackToolClose("spicker"); } catch (_) {}
+    try { this.logger?.trackToolOpen("schema"); } catch (_) {}
     // Reset: nichts „Placeholder-artiges“ stehen lassen
     if (this.schemaListEl) this.schemaListEl.innerHTML = '';
     if (this.schemaContentEl) this.schemaContentEl.innerHTML = '';
@@ -1535,6 +1549,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   closeSchema() {
     this.showTaskShell();
+    try { this.logger?.trackToolClose("schema"); } catch (_) {}
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
 
     // zurück zur vorherigen Ansicht
@@ -1773,6 +1788,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     const tid = String(id || '');
     const t = this.TASKS?.[tid];
     if (!t) return;
+    try { this.logger?.trackSolutionViewed(tid); } catch (_) {}
 
     const title = t.title || tid;
     const cat = this.getCategoryLabel(tid);
@@ -1822,6 +1838,10 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
     if (this.solutionsViewEl) this.solutionsViewEl.style.display = 'none';
     if (this.bonusViewEl) this.bonusViewEl.style.display = 'none';
+    try {
+      this.logger?.trackToolClose("spicker");
+      this.logger?.trackToolClose("schema");
+    } catch (_) {}
   }
 
 /* ===========================
@@ -2037,6 +2057,7 @@ setEmptyState(isEmpty) {
     }
 
     // Panels konsistent: keine Überschneidung mit anderen Views
+    try { this.logger?.trackBonusStart(); } catch (_) {}
     this.hideHint();
     this.closeAllSideViews();
 
@@ -2159,6 +2180,7 @@ async applyUnlockedToShop() {
     this.currentId = taskId;
     this.closeAllSideViews();
     const t = this.TASKS[taskId];
+    try { this.logger?.trackTaskOpen(taskId, t?.difficulty); } catch (_) {}
 
     const isUnlocked = !!this.unlocked[taskId];
 
@@ -2225,26 +2247,43 @@ async applyUnlockedToShop() {
       this.scrollToOutput();
     };
 
-    if (!this.currentId) {
+    const taskId = this.currentId;
+    if (!taskId) {
       finish("Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.");
       return;
     }
 
+    const sql = this.sqlEl.value || "";
+    const t = this.TASKS[taskId];
+
+    // Fehlerklassifikation fürs Logging:
+    // - SQL-Parser/Engine-Error (db.exec) => error_type = "syntax"
+    // - Query läuft, Ergebnis falsch / Struktur passt nicht => "logic"
+    // - DB nicht geladen / Referenz-Fehler => "runtime"
+    let result = "error";
+    let errorType = null;
+
     if (!this.db) {
       finish("DB ist nicht geladen.");
+      errorType = "runtime";
+      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
-    const sql = this.sqlEl.value || "";
     if (!this.isSelectOnly(sql)) {
       finish("Nur SELECT-Abfragen sind erlaubt.");
+      result = "wrong";
+      errorType = "logic";
+      try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
       return;
     }
 
-    const t = this.TASKS[this.currentId];
     const sqlCheck = this.validateSqlStructure(sql, t);
     if (!sqlCheck.ok) {
       finish(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
+      result = "wrong";
+      errorType = "logic";
+      try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
       return;
     }
 
@@ -2253,6 +2292,8 @@ async applyUnlockedToShop() {
       studentRes = this.db.exec(sql);
     } catch (e) {
       finish("SQL-Fehler: " + e.message);
+      errorType = "syntax";
+      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
@@ -2260,22 +2301,30 @@ async applyUnlockedToShop() {
       refRes = this.db.exec(t.refSql);
     } catch (e) {
       finish("Interner Referenz-Fehler: " + e.message);
+      errorType = "runtime";
+      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
     const ok = this.validate(studentRes, refRes, t.mode);
 
     if (ok) {
-      if (this.unlocked[this.currentId]) {
+      result = "correct";
+      if (this.unlocked[taskId]) {
         finish("✅ Korrekt (bereits freigeschaltet).");
+        try { this.logger?.trackAttempt({ taskId, sql, result, errorType: null }); } catch (_) {}
         return;
       }
       finish("✅ Korrekt! Du kannst jetzt freischalten.");
       this.setUnlockState(true);
+      try { this.logger?.trackAttempt({ taskId, sql, result, errorType: null }); } catch (_) {}
       return;
     }
 
     finish("\u274c Noch nicht korrekt.");
+    result = "wrong";
+    errorType = "logic";
+    try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
   }
 
 
@@ -2369,6 +2418,7 @@ async unlockCurrent() {
     } catch (_) {}
 
     this.unlocked[id] = true;
+    try { this.logger?.trackSolved(id); } catch (_) {}
     this.persistProgressState();
     await this.shop.lock(id, false);
 
@@ -2546,6 +2596,7 @@ Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u0
 
     // Abzug nur 1x pro Aufgabe
     this.hintUsed[id] = true;
+    try { this.logger?.trackHint(id); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
 
@@ -2558,6 +2609,7 @@ Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u0
     if (!id) return;
 
     this.scaffoldUsed[id] = true;
+    try { this.logger?.trackScaffold(id); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
 
@@ -2849,7 +2901,10 @@ if (H[taskId]) return H[taskId];
     if (this.progressPctEl) this.progressPctEl.textContent = `${pct}%`;
     if (this.progressFillEl) this.progressFillEl.style.width = `${pct}%`;
 
-    if (this.scoreEl) this.scoreEl.textContent = `Score ${this.computeScore()}`;
+    const score = this.computeScore();
+    if (this.scoreEl) this.scoreEl.textContent = `Score ${score}`;
+    try { this.logger?.trackScoreChange(score); } catch (_) {}
+    try { this.logger?.updateSummary(); } catch (_) {}
 
     // Bonus availability
     const canBonus = pct >= BONUS_MIN_PCT;

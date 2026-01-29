@@ -848,6 +848,8 @@
     </div>
   </div>
 
+  <!-- Evaluation Logger -->
+  <script src="logger.js"></script>
 <script>
   const TOTAL_SEC = 8 * 60;
 
@@ -926,8 +928,13 @@
     likert: { r1:null, r2:null },
     lastResult: null,
     contractSigned: false,
-    nextMode: null
+    nextMode: null,
+    itemStartAt: {},
+    itemTimes: {}
   };
+
+  const logger = window.studyLogger;
+  try{ logger?.ensureStudentIdFromName(state.name); }catch(_){}
 
   const el = (id) => document.getElementById(id);
 
@@ -973,10 +980,24 @@
       .replaceAll(">","&gt;");
   }
 
+  function markItemStart(id){
+    if(!id) return;
+    state.itemStartAt[id] = Date.now();
+  }
+
+  function recordItemTime(id){
+    if(!id) return;
+    if(state.itemTimes[id] != null) return;
+    const start = state.itemStartAt[id];
+    if(!start) return;
+    state.itemTimes[id] = Math.max(0, Date.now() - start);
+  }
+
   
   function goToGuidedTutorial(){
     const n = (state.name || "").toString().trim();
     const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    try{ logger?.logEvent("route_to_tutorial", { from: "pretest" }); }catch(_){}
     window.location.href = url;
   }
 
@@ -995,6 +1016,7 @@
       }catch(_){}
     }
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    try{ logger?.logEvent("route_to_free", { from: "pretest" }); }catch(_){}
     window.location.href = url;
   }
 
@@ -1104,6 +1126,7 @@ function promptWithName(q){
     const idx = state.step;
     const total = questions.length;
     const q = questions[idx];
+    markItemStart(q.id);
 
     el("pillName").style.display = "flex";
     el("pillStep").style.display = "flex";
@@ -1261,6 +1284,7 @@ function promptWithName(q){
 
     nextBtn.addEventListener("click", ()=>{
       if(nextBtn.classList.contains("disabled")) return;
+      recordItemTime(q.id);
       if(isLast) submit("manual");
       else { state.step++; renderQuestion(); }
     });
@@ -1311,6 +1335,9 @@ function promptWithName(q){
 
     const expectedMode = (result.score < 5 || result.onlySpecialWrong) ? "diff" : "free";
     state.nextMode = expectedMode;
+    try{
+      logger?.set("pretest.next_mode", expectedMode);
+    }catch(_){}
 
     const modeLabel = (expectedMode === "free") ? "Freier Modus" : "Diff‑Modus (Guided)";
     const freeStyle = (expectedMode === "free")
@@ -1504,6 +1531,8 @@ function promptWithName(q){
 
   function submit(mode){
     if(state.endedAt) return;
+    const current = questions[state.step];
+    if(current && current.id) recordItemTime(current.id);
     state.endedAt = Date.now();
     if(state.timer) clearInterval(state.timer);
 
@@ -1517,6 +1546,42 @@ function promptWithName(q){
     const code = makeCode(score, r1, r2, elapsedSec);
 
     state.lastResult = { score, r1, r2, elapsedSec, code, correctMap, wrongIds, onlySpecialWrong, mode };
+
+    try{
+      const maxScore = 8;
+      const items = questions.map((q)=>{
+        const base = { item_id: q.id, correct: false, time_ms: state.itemTimes[q.id] ?? 0 };
+        if(q.type === "mc"){
+          const response = state.answers[q.id];
+          base.correct = !!correctMap[q.id];
+          if(response != null) base.response = response;
+          return base;
+        }
+        if(q.type === "fill"){
+          const response = (state.answers[q.id] ?? "").toString();
+          base.correct = !!correctMap[q.id];
+          if(response.trim().length) base.response = response;
+          return base;
+        }
+        // likert
+        const response = state.likert[q.id];
+        base.correct = response != null;
+        if(response != null) base.response = response;
+        return base;
+      });
+
+      logger?.recordTestResult("pretest", {
+        started_at_ms: state.startedAt,
+        ended_at_ms: state.endedAt,
+        duration_ms: state.endedAt - state.startedAt,
+        score_raw: score,
+        score_pct: score / maxScore,
+        max_score: maxScore,
+        total_test_time_ms: state.endedAt - state.startedAt,
+        items
+      });
+      logger?.logEvent("pretest_submit", { mode });
+    }catch(_){}
 
     el("overlay").classList.remove("show");
     renderResult(state.lastResult);
@@ -1547,6 +1612,14 @@ function promptWithName(q){
     state.likert = { r1:null, r2:null };
     state.lastResult = null;
     state.contractSigned = false;
+    state.itemStartAt = {};
+    state.itemTimes = {};
+
+    try{
+      logger?.ensureStudentIdFromName(state.name);
+      logger?.set("pretest.started_at_ms", state.startedAt);
+      logger?.logEvent("pretest_start", { total_items: questions.length });
+    }catch(_){}
 
     el("pillName").style.display = "flex";
     el("pillTimer").style.display = "flex";

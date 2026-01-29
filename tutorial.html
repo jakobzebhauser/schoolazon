@@ -706,6 +706,8 @@
     </div>
   </div>
 
+  <!-- Evaluation Logger -->
+  <script src="logger.js"></script>
 <script>
   const el = (id) => document.getElementById(id);
 
@@ -737,6 +739,8 @@
   }
 
   const state = { name: getName(), i: 0 };
+  const logger = window.studyLogger;
+  try{ logger?.ensureStudentIdFromName(state.name); }catch(_){}
   const UNLOCK_KEY = "schulazon_unlocked_v1";
   let shopFrame = null;
   let shopReady = false;
@@ -1928,6 +1932,7 @@ WHERE p.id IN (
     const n = (state.name || "").toString().trim();
     try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    try{ logger?.logEvent("route_to_free", { from: "tutorial" }); }catch(_){}
     window.location.href = url;
   }
 

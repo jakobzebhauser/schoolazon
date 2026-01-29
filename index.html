@@ -512,6 +512,8 @@
 </div>
 </div>
 </div>
+  <!-- Evaluation Logger -->
+  <script src="logger.js"></script>
 <script>
   const el = (id) => document.getElementById(id);
 
@@ -578,7 +580,8 @@
     if(!name) return false;
 
     state.name = name;
-updateNamePill();
+    try{ window.studyLogger?.ensureStudentIdFromName(name); }catch(_){}
+    updateNamePill();
     passNameToLinks();
     hideNameGate();
     return true;

@@ -847,6 +847,8 @@
     </div>
   </div>
 
+  <!-- Evaluation Logger -->
+  <script src="logger.js"></script>
 <script>
   const TOTAL_SEC = 6 * 60;
 
@@ -925,8 +927,12 @@
     remainingSec: TOTAL_SEC,
     answers: {},
     likert: { r1:null, r2:null },
-    lastResult: null
+    lastResult: null,
+    itemStartAt: {},
+    itemTimes: {}
   };
+
+  const logger = window.studyLogger;
 
   const el = (id) => document.getElementById(id);
 
@@ -957,6 +963,19 @@
       .replaceAll('"',"&quot;")
       .replaceAll("<","&lt;")
       .replaceAll(">","&gt;");
+  }
+
+  function markItemStart(id){
+    if(!id) return;
+    state.itemStartAt[id] = Date.now();
+  }
+
+  function recordItemTime(id){
+    if(!id) return;
+    if(state.itemTimes[id] != null) return;
+    const start = state.itemStartAt[id];
+    if(!start) return;
+    state.itemTimes[id] = Math.max(0, Date.now() - start);
   }
 
   function shuffle(arr){
@@ -1035,6 +1054,7 @@
     const idx = state.step;
     const total = questions.length;
     const q = questions[idx];
+    markItemStart(q.id);
 
     const hasName = !!(state.name && state.name.trim());
     el("pillName").style.display = hasName ? "flex" : "none";
@@ -1193,6 +1213,7 @@
 
     nextBtn.addEventListener("click", ()=>{
       if(nextBtn.classList.contains("disabled")) return;
+      recordItemTime(q.id);
       if(isLast) submit("manual");
       else { state.step++; renderQuestion(); }
     });
@@ -1295,6 +1316,7 @@
 
           <div class="btnRow" style="margin-top:14px;">
             <div></div>
+            <button class="btn primary" id="downloadJsonBtn" type="button">JSON herunterladen</button>
             <button class="btn" id="homeBtnInline" type="button">Zur Startseite</button>
           </div>
         </div>
@@ -1305,10 +1327,20 @@
     if(homeBtn){
       homeBtn.addEventListener("click", goHomeConfirm);
     }
+
+    const downloadBtn = document.getElementById("downloadJsonBtn");
+    if(downloadBtn){
+      downloadBtn.addEventListener("click", ()=>{
+        try{ logger?.exportJson(); }catch(_){}
+      });
+    }
+    setTimeout(()=>{ try{ logger?.exportJson(); }catch(_){ } }, 1000);
   }
 
   function submit(mode){
     if(state.endedAt) return;
+    const current = questions[state.step];
+    if(current && current.id) recordItemTime(current.id);
     state.endedAt = Date.now();
     if(state.timer) clearInterval(state.timer);
 
@@ -1320,6 +1352,46 @@
 
     const code = makeCode(s, r1, r2, elapsedSec);
     state.lastResult = { score: s, r1, r2, elapsedSec, code, mode };
+
+    try{
+      const maxScore = 8;
+      const items = questions.map((q)=>{
+        const base = { item_id: q.id, correct: false, time_ms: state.itemTimes[q.id] ?? 0 };
+        if(q.type === "mc"){
+          const response = state.answers[q.id];
+          const ok = (typeof response === "number" && response === q.correctIndex);
+          base.correct = !!ok;
+          if(response != null) base.response = response;
+          return base;
+        }
+        if(q.type === "fill"){
+          const response = (state.answers[q.id] ?? "").toString();
+          const ok = q.correct.some(c=>{
+            if(q.id === "q7") return normalizeNoSpace(response) === normalizeNoSpace(c);
+            return normalize(response) === normalize(c);
+          });
+          base.correct = !!ok;
+          if(response.trim().length) base.response = response;
+          return base;
+        }
+        const response = state.likert[q.id];
+        base.correct = response != null;
+        if(response != null) base.response = response;
+        return base;
+      });
+
+      logger?.recordTestResult("posttest", {
+        started_at_ms: state.startedAt,
+        ended_at_ms: state.endedAt,
+        duration_ms: state.endedAt - state.startedAt,
+        score_raw: s,
+        score_pct: s / maxScore,
+        max_score: maxScore,
+        total_test_time_ms: state.endedAt - state.startedAt,
+        items
+      });
+      logger?.logEvent("posttest_submit", { mode });
+    }catch(_){}
 
     el("overlay").classList.remove("show");
     renderResult(state.lastResult);
@@ -1355,6 +1427,14 @@
     state.answers = {};
     state.likert = { r1:null, r2:null };
     state.lastResult = null;
+    state.itemStartAt = {};
+    state.itemTimes = {};
+
+    try{
+      logger?.ensureStudentIdFromName(state.name);
+      logger?.set("posttest.started_at_ms", state.startedAt);
+      logger?.logEvent("posttest_start", { total_items: questions.length });
+    }catch(_){}
 
     const hasName = !!(state.name && state.name.trim());
     el("pillName").style.display = hasName ? "flex" : "none";
@@ -1414,6 +1494,7 @@
 
   // Init
   state.name = loadName();
+  try{ logger?.ensureStudentIdFromName(state.name); }catch(_){}
   renderStart();
 </script>
 </body>
