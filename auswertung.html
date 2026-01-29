@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schulazon – JSON Auswertung (lokal, erweitert)</title>
+  <style>
+    :root{
+      --bg:#0b0f18; --panel:#111827; --panel2:#0f172a; --text:#e5e7eb; --muted:#9ca3af;
+      --line:rgba(255,255,255,.10); --ok:#34d399; --warn:#fbbf24; --bad:#fb7185; --accent:#60a5fa;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:var(--sans); background:linear-gradient(180deg, #050814, #0b0f18 35%, #050814); color:var(--text);}
+    .wrap{max-width:1320px; margin:0 auto; padding:18px;}
+    h1{margin:0 0 6px; font-size:20px;}
+    .sub{color:var(--muted); margin:0 0 14px; font-size:13px; line-height:1.4;}
+    .row{display:flex; gap:12px; flex-wrap:wrap;}
+    .card{background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:14px; padding:12px; flex:1; min-width:280px;}
+    .card h2{margin:0 0 8px; font-size:14px; color:#dbeafe;}
+    .drop{
+      border:1px dashed rgba(255,255,255,.22);
+      border-radius:14px;
+      padding:16px;
+      background:rgba(255,255,255,.03);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .drop strong{font-size:13px;}
+    .btn{border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--text);
+      padding:9px 10px; border-radius:12px; cursor:pointer; font-weight:700; font-size:13px;}
+    .btn:hover{border-color:rgba(96,165,250,.55); background:rgba(96,165,250,.10);}
+    .btn:disabled{opacity:.5; cursor:not-allowed;}
+    input[type=file]{display:none;}
+    .kvs{display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:6px;}
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03);}
+    .kv .k{color:var(--muted); font-size:12px;}
+    .kv .v{font-size:16px; font-weight:900; margin-top:3px;}
+    .kv .s{color:var(--muted); font-size:12px; margin-top:2px;}
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid var(--line); border-radius:14px;}
+    th,td{padding:10px 10px; border-bottom:1px solid var(--line); font-size:12px; vertical-align:top;}
+    th{position:sticky; top:0; background:rgba(255,255,255,.05); text-align:left; color:#dbeafe; z-index:2;}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(96,165,250,.06)}
+    .mono{font-family:var(--mono);}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 9px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); font-size:12px;}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    .small{font-size:12px; color:var(--muted); line-height:1.4;}
+    .err{white-space:pre-wrap; font-family:var(--mono); font-size:11px; color:#fecaca;}
+    .tools{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+    .split{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 900px){ .split{grid-template-columns:1fr;} }
+
+    /* Details panel */
+    .details{padding:12px; background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:14px;}
+    .details h3{margin:0 0 8px; font-size:13px; color:#dbeafe;}
+    .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+    @media (max-width: 1050px){ .grid3{grid-template-columns:1fr;} }
+    .miniTableWrap{overflow:auto; max-height:320px;}
+    .tag{display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:999px; font-size:11px; color:var(--muted); background:rgba(255,255,255,.02);}
+    .muted{color:var(--muted);}
+    .toggleBtn{border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--text);
+      padding:4px 8px; border-radius:10px; cursor:pointer; font-weight:900; font-size:12px; min-width:34px;}
+    .toggleBtn:hover{border-color:rgba(96,165,250,.55); background:rgba(96,165,250,.10);}
+    .chipRow{display:flex; gap:6px; flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Schulazon – JSON Auswertung (lokal, erweitert)</h1>
+  <p class="sub">
+    Läuft vollständig im Browser (keine Uploads ins Internet). Mehrere JSON-Dateien auswählen oder hier hineinziehen.
+    Ergebnis: Overview + Gruppenvergleich + Korrelationen + Pro Schüler:in Detail (Pretest falsch, Free-Mode Unlock/Order, Attempts/Events).
+  </p>
+
+  <div class="card">
+    <div id="drop" class="drop">
+      <div>
+        <strong>Dateien laden</strong>
+        <div class="small">Akzeptiert mehrere <span class="mono">.json</span>. Drag&Drop oder Button.</div>
+      </div>
+      <div class="tools">
+        <label class="btn" for="fileInput">JSON auswählen…</label>
+        <button class="btn" id="btnDemo" type="button">Demo-Datensatz</button>
+        <button class="btn" id="btnClear" type="button" disabled>Zurücksetzen</button>
+      </div>
+      <input id="fileInput" type="file" accept="application/json,.json" multiple />
+    </div>
+    <div id="status" class="small" style="margin-top:10px;"></div>
+    <div id="errors" class="err" style="display:none; margin-top:10px;"></div>
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <div class="card">
+      <h2>Key Results</h2>
+      <div class="kvs" id="kvsKey"></div>
+      <div class="small" id="noteKey" style="margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <h2>Outcome (Pre/Post)</h2>
+      <div class="kvs" id="kvsOutcome"></div>
+      <div class="small" id="noteOutcome" style="margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <h2>Prozess (Free Mode Summary)</h2>
+      <div class="kvs" id="kvsProcess"></div>
+      <div class="small" id="noteProcess" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="split" style="margin-top:12px;">
+    <div class="card">
+      <h2>Gruppenvergleich</h2>
+      <div class="small">Gruppen werden aus <span class="mono">meta.mode_path</span> abgeleitet: enthält „tutorial“ ⇒ Tutorial-Gruppe.</div>
+      <div id="groupTable" style="margin-top:10px;"></div>
+    </div>
+    <div class="card">
+      <h2>Korrelationen (Pearson)</h2>
+      <div class="small">Beispielhaft: Zusammenhang von Lernzuwachs (g) mit Nutzungsmustern.</div>
+      <div id="corrTable" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <h2 style="margin:0;">Pro Schüler:in (Tabelle + Details)</h2>
+      <div class="tools">
+        <button class="btn" id="btnCSV" type="button" disabled>CSV exportieren</button>
+        <button class="btn" id="btnJSONAgg" type="button" disabled>Aggregat-JSON exportieren</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:6px;">
+      Klick auf <span class="mono">▶</span> öffnet Details: Pretest falsch, Free-Mode Unlock-Reihenfolge, Attempts, Events.
+      Browser-Suche (<span class="mono">Strg+F</span>) funktioniert auf der Tabelle.
+    </div>
+    <div id="tableWrap" style="margin-top:10px;"></div>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  // ---------- Utilities ----------
+  const $ = (id) => document.getElementById(id);
+  const safeNum = (x) => (Number.isFinite(+x) ? +x : null);
+  const mean = (a) => a.length ? a.reduce((s,x)=>s+x,0)/a.length : null;
+  const median = (a) => {
+    if (!a.length) return null;
+    const b=[...a].sort((x,y)=>x-y);
+    const m=Math.floor(b.length/2);
+    return b.length%2?b[m]:(b[m-1]+b[m])/2;
+  };
+  const sd = (a) => {
+    if (a.length < 2) return null;
+    const m = mean(a);
+    const v = a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1);
+    return Math.sqrt(v);
+  };
+
+  // Pearson correlation
+  const pearson = (xs, ys) => {
+    const pairs = xs.map((x,i)=>[x,ys[i]]).filter(([x,y])=>Number.isFinite(x)&&Number.isFinite(y));
+    const n = pairs.length;
+    if (n < 3) return null;
+    const X = pairs.map(p=>p[0]);
+    const Y = pairs.map(p=>p[1]);
+    const mx = mean(X), my = mean(Y);
+    const num = pairs.reduce((s,[x,y])=>s+(x-mx)*(y-my),0);
+    const denx = Math.sqrt(pairs.reduce((s,[x])=>s+(x-mx)*(x-mx),0));
+    const deny = Math.sqrt(pairs.reduce((s,[,y])=>s+(y-my)*(y-my),0));
+    if (!denx || !deny) return null;
+    return num/(denx*deny);
+  };
+
+  // Welch t-test (rough p)
+  const welchT = (a, b) => {
+    const A = a.filter(Number.isFinite);
+    const B = b.filter(Number.isFinite);
+    if (A.length < 2 || B.length < 2) return null;
+    const ma = mean(A), mb = mean(B);
+    const sda = sd(A), sdb = sd(B);
+    if (!sda || !sdb) return null;
+    const va = sda*sda, vb = sdb*sdb;
+    const na = A.length, nb = B.length;
+    const t = (ma - mb) / Math.sqrt(va/na + vb/nb);
+    const df = Math.pow(va/na + vb/nb, 2) / ( Math.pow(va/na,2)/(na-1) + Math.pow(vb/nb,2)/(nb-1) );
+    const p = approxTwoSidedP(t, df);
+    return {t, df, p, na, nb, ma, mb, sda, sdb};
+  };
+
+  const normCdf = (z) => 0.5 * (1 + erf(z/Math.SQRT2));
+  const erf = (x) => {
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429;
+    const p=0.3275911;
+    const t=1/(1+p*x);
+    const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+    return sign*y;
+  };
+  const approxTwoSidedP = (t, df) => {
+    const z = Math.abs(t);
+    let p = 2*(1 - normCdf(z));
+    if (df && df < 30) p = Math.min(1, p * (30/df));
+    return p;
+  };
+
+  // Effect size: Cohen's d for independent samples (pooled SD)
+  const cohensD = (a, b) => {
+    const A = a.filter(Number.isFinite);
+    const B = b.filter(Number.isFinite);
+    if (A.length < 2 || B.length < 2) return null;
+    const ma = mean(A), mb = mean(B);
+    const sda = sd(A), sdb = sd(B);
+    if (!sda || !sdb) return null;
+    const na = A.length, nb = B.length;
+    const sp = Math.sqrt(((na-1)*sda*sda + (nb-1)*sdb*sdb) / (na+nb-2));
+    if (!sp) return null;
+    return (ma - mb)/sp;
+  };
+
+  const fmt = (x, digits=2) => (x===null || x===undefined || !Number.isFinite(x)) ? "—" : (+x).toFixed(digits);
+  const fmtInt = (x) => (x===null || x===undefined || !Number.isFinite(x)) ? "—" : String(Math.round(+x));
+  const msToMin = (ms) => Number.isFinite(ms) ? ms/60000 : null;
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function downloadText(filename, text, mime="text/plain") {
+    const blob = new Blob([text], {type:mime});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---------- Parsing helpers ----------
+  function normalizeTools(tools) {
+    const t = tools || {};
+    const getTool = (k) => {
+      const x = t[k] || {};
+      const opens = safeNum(x.opens);
+      const dur = safeNum(x.duration_ms);
+      const events = Array.isArray(x.events) ? x.events : [];
+      return {opens, duration_ms: dur, events};
+    };
+    return {
+      schema: getTool("schema"),
+      spicker: getTool("spicker"),
+      help: getTool("help")
+    };
+  }
+
+  function normalizeTasks(freeMode) {
+    // Expected: free_mode.tasks is object keyed by task_id
+    const tasksObj = freeMode && freeMode.tasks ? freeMode.tasks : null;
+    if (!tasksObj || typeof tasksObj !== "object") return [];
+    const out = [];
+    for (const [task_id, v] of Object.entries(tasksObj)) {
+      const x = v || {};
+      const attempts = Array.isArray(x.attempts) ? x.attempts : [];
+      out.push({
+        task_id,
+        start_time_ms: safeNum(x.start_time_ms),
+        first_submit_time_ms: safeNum(x.first_submit_time_ms),
+        solved_time_ms: safeNum(x.solved_time_ms),
+        attempts_total: safeNum(x.attempts_total),
+        attempts_wrong: safeNum(x.attempts_wrong),
+        used_hint_count: safeNum(x.used_hint_count),
+        used_scaffold_count: safeNum(x.used_scaffold_count),
+        solution_viewed: !!x.solution_viewed,
+        difficulty: x.difficulty ?? null,
+        order_index: safeNum(x.order_index),
+        attempts: attempts.map(a => ({
+          timestamp: safeNum(a.timestamp),
+          task_id: a.task_id ?? task_id,
+          sql_length: safeNum(a.sql_length),
+          changed_since_last_submit: (a.changed_since_last_submit===undefined? null : !!a.changed_since_last_submit),
+          result: a.result ?? null,
+          error_type: a.error_type ?? null
+        }))
+      });
+    }
+    return out;
+  }
+
+  function flattenAttempts(tasks) {
+    const out = [];
+    for (const t of tasks) {
+      for (const a of (t.attempts || [])) out.push(a);
+    }
+    out.sort((x,y)=>(x.timestamp??0)-(y.timestamp??0));
+    return out;
+  }
+
+  function summarizeEvents(evts) {
+    const events = Array.isArray(evts) ? evts : [];
+    const countBy = (name) => events.filter(e => e && e.type === name).length;
+    // Be robust: some logs might use event_name instead of type
+    const countByAlt = (name) => events.filter(e => e && (e.type === name || e.event === name || e.name === name)).length;
+
+    const c = (n) => Math.max(countBy(n), countByAlt(n));
+    return {
+      n: events.length,
+      task_open: c("task_open"),
+      task_submit: c("task_submit"),
+      task_solved: c("task_solved"),
+      hint_used: c("hint_used"),
+      scaffold_used: c("scaffold_used"),
+      bonus_start: c("bonus_start"),
+      bonus_finish: c("bonus_finish"),
+      score_change: c("score_change"),
+      route: events.filter(e => e && (String(e.type||e.event||e.name||"").startsWith("route_to_") || String(e.type||"").startsWith("route_to_"))).length
+    };
+  }
+
+  // ---------- Main parse ----------
+  function parseStudent(d, sourceName="(unknown)") {
+    const meta = d.meta || {};
+    const pre = d.pretest || {};
+    const post = d.posttest || {};
+    const freeMode = d.free_mode || {};
+
+    const id = meta.student_id || meta.id || sourceName;
+
+    const preScore = safeNum(pre.score_raw);
+    const postScore = safeNum(post.score_raw);
+    const maxScore = safeNum(pre.max_score ?? post.max_score);
+
+    // Score pct normalize to 0..1
+    const prePctRaw = safeNum(pre.score_pct);
+    const postPctRaw = safeNum(post.score_pct);
+    const prePct = (prePctRaw!==null) ? (prePctRaw>1 ? prePctRaw/100 : prePctRaw) : (preScore!==null && maxScore ? preScore/maxScore : null);
+    const postPct = (postPctRaw!==null) ? (postPctRaw>1 ? postPctRaw/100 : postPctRaw) : (postScore!==null && maxScore ? postScore/maxScore : null);
+
+    const delta = (preScore!==null && postScore!==null) ? (postScore - preScore) : null;
+
+    let gain = safeNum(post.normalized_gain ?? d.derived?.normalized_gain);
+    if (gain===null && preScore!==null && postScore!==null && maxScore!==null && (maxScore - preScore) > 0) {
+      gain = (postScore - preScore) / (maxScore - preScore);
+    }
+    if (gain!==null && !Number.isFinite(gain)) gain = null;
+
+    const preTimeMs = safeNum(pre.duration_ms);
+    const postTimeMs = safeNum(post.duration_ms);
+
+    // Items
+    const preItems = Array.isArray(pre.items) ? pre.items : [];
+    const postItems = Array.isArray(post.items) ? post.items : [];
+    const preWrong = preItems.filter(it => it && it.correct === false).map(it => ({
+      item_id: it.item_id ?? null,
+      time_ms: safeNum(it.time_ms),
+      response: it.response ?? null
+    }));
+    const postWrong = postItems.filter(it => it && it.correct === false).map(it => ({
+      item_id: it.item_id ?? null,
+      time_ms: safeNum(it.time_ms),
+      response: it.response ?? null
+    }));
+
+    // Summary (old structure)
+    const freeSummary = (freeMode && freeMode.summary) ? freeMode.summary : {};
+    const tasksSolved = safeNum(freeSummary.tasks_solved);
+    const attemptsWrong = safeNum(freeSummary.attempts_wrong);
+    const attemptsTotal = safeNum(freeSummary.attempts_total);
+    const hints = safeNum(freeSummary.hints_total);
+    const scaffolds = safeNum(freeSummary.scaffolds_total);
+    const schemaOpens = safeNum(freeSummary.schema_opens);
+    const schemaDur = safeNum(freeSummary.schema_duration_ms);
+    const spickerOpens = safeNum(freeSummary.spicker_opens);
+    const spickerDur = safeNum(freeSummary.spicker_duration_ms);
+    const active = safeNum(freeSummary.active_time_ms ?? freeMode.active_time_ms);
+    const idle = safeNum(freeSummary.idle_time_ms ?? freeMode.idle_time_ms);
+    const idleRatio = safeNum(freeSummary.idle_time_ratio) ?? ((active!==null && idle!==null && (active+idle)>0) ? idle/(active+idle) : null);
+    const scoreFinal = safeNum(freeSummary.score_final);
+    const lastTask = freeSummary.last_task_id ?? null;
+
+    // Efficiency derived
+    const attemptsPerTask = (Number.isFinite(attemptsTotal) && Number.isFinite(tasksSolved) && tasksSolved>0) ? attemptsTotal/tasksSolved : null;
+    const errorRate = (Number.isFinite(attemptsWrong) && Number.isFinite(attemptsTotal) && attemptsTotal>0) ? attemptsWrong/attemptsTotal : null;
+    const hintRate = (Number.isFinite(hints) && Number.isFinite(tasksSolved) && tasksSolved>0) ? hints/tasksSolved : null;
+    const timePerTaskMin = (Number.isFinite(active) && Number.isFinite(tasksSolved) && tasksSolved>0) ? (active/60000)/tasksSolved : null;
+
+    // group: tutorial or direct
+    const path = Array.isArray(meta.mode_path) ? meta.mode_path : [];
+    const group = path.includes("tutorial") ? "Tutorial" : "Direkt";
+
+    // New: tasks + attempts + tools + bonus + pauses + events
+    const tasks = normalizeTasks(freeMode);
+    const attemptsFlat = flattenAttempts(tasks);
+    const tools = normalizeTools(freeMode.tools);
+    const bonus = freeMode.bonus || null;
+    const pauses = Array.isArray(freeMode.pause_events) ? freeMode.pause_events : [];
+    const events = Array.isArray(d.events) ? d.events : (Array.isArray(freeMode.events) ? freeMode.events : []);
+    const eventsSummary = summarizeEvents(events);
+
+    // Unlock / order: prefer order_index; fall back to solved_time_ms; fall back to start_time_ms
+    const taskOrder = [...tasks].sort((a,b) => {
+      const ao = a.order_index, bo = b.order_index;
+      if (Number.isFinite(ao) && Number.isFinite(bo)) return ao-bo;
+      if (Number.isFinite(ao)) return -1;
+      if (Number.isFinite(bo)) return 1;
+      const as = a.solved_time_ms ?? a.start_time_ms ?? 1e18;
+      const bs = b.solved_time_ms ?? b.start_time_ms ?? 1e18;
+      return as-bs;
+    }).map(t => ({
+      task_id: t.task_id,
+      order_index: t.order_index,
+      solved: Number.isFinite(t.solved_time_ms),
+      solved_time_ms: t.solved_time_ms,
+      start_time_ms: t.start_time_ms,
+      attempts_total: t.attempts_total,
+      attempts_wrong: t.attempts_wrong,
+      used_hint_count: t.used_hint_count,
+      used_scaffold_count: t.used_scaffold_count,
+      solution_viewed: t.solution_viewed,
+      difficulty: t.difficulty
+    }));
+
+    return {
+      sourceName,
+      id,
+      group,
+      mode_path: path,
+      created_at: meta.created_at ?? null,
+      user_agent: meta.user_agent ?? null,
+      last_seen_page: meta.last_seen_page ?? null,
+      last_event_time: meta.last_event_time ?? null,
+
+      // outcome
+      preScore, postScore, maxScore, delta, gain,
+      prePct, postPct,
+      preTimeMs, postTimeMs,
+      preItemsCount: preItems.length,
+      postItemsCount: postItems.length,
+
+      // process (summary)
+      tasksSolved, attemptsTotal, attemptsWrong, hints, scaffolds,
+      schemaOpens, schemaDur, spickerOpens, spickerDur,
+      active, idle, idleRatio,
+      scoreFinal, lastTask,
+
+      // derived efficiency
+      attemptsPerTask, errorRate, hintRate, timePerTaskMin,
+
+      // details
+      preWrong, postWrong,
+      tasks, taskOrder,
+      attemptsFlat,
+      tools, bonus, pauses,
+      events, eventsSummary
+    };
+  }
+
+  function computeAggregate(students) {
+    const nums = (key) => students.map(s => s[key]).filter(Number.isFinite);
+    const out = {};
+
+    const pre = nums("preScore");
+    const post = nums("postScore");
+    const delta = nums("delta");
+    const gain = nums("gain");
+    const preT = students.map(s => msToMin(s.preTimeMs)).filter(Number.isFinite);
+    const postT = students.map(s => msToMin(s.postTimeMs)).filter(Number.isFinite);
+
+    out.outcome = {
+      n: students.length,
+      pre_mean: mean(pre), pre_median: median(pre), pre_sd: sd(pre),
+      post_mean: mean(post), post_median: median(post), post_sd: sd(post),
+      delta_mean: mean(delta), delta_median: median(delta), delta_sd: sd(delta),
+      gain_mean: mean(gain), gain_median: median(gain), gain_sd: sd(gain),
+      pre_time_min_mean: mean(preT), post_time_min_mean: mean(postT)
+    };
+
+    // Process
+    const tasks = nums("tasksSolved");
+    const wrong = nums("attemptsWrong");
+    const attemptsTotal = nums("attemptsTotal");
+    const hints = nums("hints");
+    const scaff = nums("scaffolds");
+    const idleR = nums("idleRatio");
+    const schemaDurMin = students.map(s => msToMin(s.schemaDur)).filter(Number.isFinite);
+    const spickerDurMin = students.map(s => msToMin(s.spickerDur)).filter(Number.isFinite);
+    const activeMin = students.map(s => msToMin(s.active)).filter(Number.isFinite);
+
+    // Efficiency
+    const attemptsPerTask = nums("attemptsPerTask");
+    const errorRate = nums("errorRate");
+    const hintRate = nums("hintRate");
+    const timePerTaskMin = nums("timePerTaskMin");
+
+    out.process = {
+      tasks_solved_mean: mean(tasks),
+      attempts_total_mean: mean(attemptsTotal),
+      attempts_wrong_mean: mean(wrong),
+      hints_mean: mean(hints),
+      scaffolds_mean: mean(scaff),
+      idle_ratio_mean: mean(idleR),
+      active_min_mean: mean(activeMin),
+      schema_dur_min_mean: mean(schemaDurMin),
+      spicker_dur_min_mean: mean(spickerDurMin),
+
+      attempts_per_task_mean: mean(attemptsPerTask),
+      error_rate_mean: mean(errorRate),
+      hint_rate_mean: mean(hintRate),
+      time_per_task_min_mean: mean(timePerTaskMin)
+    };
+
+    // Group comparison
+    const tut = students.filter(s => s.group === "Tutorial");
+    const dir = students.filter(s => s.group === "Direkt");
+
+    const tutGain = tut.map(s=>s.gain).filter(Number.isFinite);
+    const dirGain = dir.map(s=>s.gain).filter(Number.isFinite);
+    const tutDelta = tut.map(s=>s.delta).filter(Number.isFinite);
+    const dirDelta = dir.map(s=>s.delta).filter(Number.isFinite);
+
+    out.groups = {
+      tutorial_n: tut.length,
+      direkt_n: dir.length,
+      gain: {
+        tutorial_mean: mean(tutGain),
+        direkt_mean: mean(dirGain),
+        test: welchT(tutGain, dirGain),
+        d: cohensD(tutGain, dirGain)
+      },
+      delta: {
+        tutorial_mean: mean(tutDelta),
+        direkt_mean: mean(dirDelta),
+        test: welchT(tutDelta, dirDelta),
+        d: cohensD(tutDelta, dirDelta)
+      }
+    };
+
+    // Correlations with gain
+    const gainVec = students.map(s=>s.gain);
+    out.correlations = [
+      {name: "gain ~ tasks_solved", r: pearson(gainVec, students.map(s=>s.tasksSolved))},
+      {name: "gain ~ attempts_wrong", r: pearson(gainVec, students.map(s=>s.attemptsWrong))},
+      {name: "gain ~ hints", r: pearson(gainVec, students.map(s=>s.hints))},
+      {name: "gain ~ scaffolds", r: pearson(gainVec, students.map(s=>s.scaffolds))},
+      {name: "gain ~ idle_ratio", r: pearson(gainVec, students.map(s=>s.idleRatio))},
+      {name: "gain ~ error_rate", r: pearson(gainVec, students.map(s=>s.errorRate))},
+      {name: "gain ~ attempts_per_task", r: pearson(gainVec, students.map(s=>s.attemptsPerTask))},
+      {name: "gain ~ pre_score", r: pearson(gainVec, students.map(s=>s.preScore))}
+    ];
+
+    // Key results (for top card)
+    out.key = {
+      n: out.outcome.n,
+      delta_mean: out.outcome.delta_mean,
+      gain_mean: out.outcome.gain_mean,
+      active_min_mean: out.process.active_min_mean,
+      tasks_solved_mean: out.process.tasks_solved_mean,
+      attempts_per_task_mean: out.process.attempts_per_task_mean,
+      hint_rate_mean: out.process.hint_rate_mean,
+      effect_d_gain: out.groups.gain.d
+    };
+
+    return out;
+  }
+
+  // ---------- Rendering ----------
+  function renderKVs(el, kvs) {
+    el.innerHTML = "";
+    for (const kv of kvs) {
+      const div = document.createElement("div");
+      div.className = "kv";
+      div.innerHTML = `<div class="k">${kv.k}</div><div class="v">${kv.v}</div><div class="s">${kv.s||""}</div>`;
+      el.appendChild(div);
+    }
+  }
+
+  function renderGroupTable(container, agg) {
+    const g = agg.groups;
+    const fmtP = (p) => (p===null || !Number.isFinite(p)) ? "—" : (p < 0.001 ? "<0.001" : p.toFixed(3));
+    const testGain = g.gain.test;
+    const testDelta = g.delta.test;
+
+    const row = (label, tutMean, dirMean, d, test) => {
+      const t = test ? test.t : null;
+      const df = test ? test.df : null;
+      const p = test ? test.p : null;
+      const dTxt = (d===null || !Number.isFinite(d)) ? "—" : d.toFixed(2);
+      return `
+        <tr>
+          <td>${label}</td>
+          <td>${fmt(tutMean,2)}</td>
+          <td>${fmt(dirMean,2)}</td>
+          <td class="mono">${dTxt}</td>
+          <td class="mono">${test ? `${fmt(t,2)} / df≈${fmt(df,1)} / p≈${fmtP(p)}` : "—"}</td>
+        </tr>`;
+    };
+
+    container.innerHTML = `
+      <div class="pill">Tutorial: <b>${g.tutorial_n}</b></div>
+      <div class="pill" style="margin-left:6px;">Direkt: <b>${g.direkt_n}</b></div>
+      <div style="margin-top:10px; overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Tutorial Mittel</th>
+              <th>Direkt Mittel</th>
+              <th>Cohen's d</th>
+              <th>Welch t / df / p (≈)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${row("Normalized Gain (g)", g.gain.tutorial_mean, g.gain.direkt_mean, g.gain.d, testGain)}
+            ${row("ΔScore (post-pre)", g.delta.tutorial_mean, g.delta.direkt_mean, g.delta.d, testDelta)}
+          </tbody>
+        </table>
+      </div>
+      <div class="small" style="margin-top:8px;">
+        Hinweis: p-Werte sind nur näherungsweise (Browser ohne Statistik-Libs). Für die Arbeit: gleiche Daten in Python/R exakt nachrechnen.
+      </div>
+    `;
+  }
+
+  function renderCorrTable(container, agg) {
+    container.innerHTML = `
+      <div style="overflow:auto;">
+        <table>
+          <thead>
+            <tr><th>Zusammenhang</th><th>Pearson r</th><th>Interpretation (Daumenregel)</th></tr>
+          </thead>
+          <tbody>
+            ${agg.correlations.map(c => {
+              const r = c.r;
+              let tag = "—", cls = "";
+              if (Number.isFinite(r)) {
+                const ar = Math.abs(r);
+                if (ar < 0.1) { tag="praktisch 0"; cls=""; }
+                else if (ar < 0.3) { tag="schwach"; cls="warn"; }
+                else if (ar < 0.5) { tag="mittel"; cls="ok"; }
+                else { tag="stark"; cls="ok"; }
+              }
+              return `
+                <tr>
+                  <td>${c.name}</td>
+                  <td class="mono ${cls}">${Number.isFinite(r) ? r.toFixed(3) : "—"}</td>
+                  <td class="${cls}">${tag}</td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function buildWrongItemsBlock(title, wrongItems) {
+    if (!wrongItems || !wrongItems.length) {
+      return `<div class="details"><h3>${title}</h3><div class="small muted">Keine falschen Items (oder Items fehlen).</div></div>`;
+    }
+    const rows = wrongItems.map(w => `
+      <tr>
+        <td class="mono">${w.item_id ? escapeHtml(w.item_id) : "—"}</td>
+        <td class="mono">${Number.isFinite(w.time_ms) ? fmt(msToMin(w.time_ms),2) : "—"}</td>
+        <td class="mono">${w.response!==null && w.response!==undefined ? escapeHtml(String(w.response)) : "—"}</td>
+      </tr>
+    `).join("");
+    return `
+      <div class="details">
+        <h3>${title}</h3>
+        <div class="miniTableWrap">
+          <table>
+            <thead><tr><th>item_id</th><th>time (min)</th><th>response</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function buildTaskOrderBlock(taskOrder) {
+    if (!taskOrder || !taskOrder.length) {
+      return `<div class="details"><h3>Free-Mode: Unlock/Order</h3><div class="small muted">Keine tasks-Daten (free_mode.tasks fehlt).</div></div>`;
+    }
+    const rows = taskOrder.map(t => {
+      const solved = t.solved ? `<span class="tag ok">solved</span>` : `<span class="tag warn">unsolved</span>`;
+      const sTime = Number.isFinite(t.solved_time_ms) ? fmt(msToMin(t.solved_time_ms),2) : "—";
+      const stTime = Number.isFinite(t.start_time_ms) ? fmt(msToMin(t.start_time_ms),2) : "—";
+      const oi = Number.isFinite(t.order_index) ? t.order_index : "—";
+      return `
+        <tr>
+          <td class="mono">${escapeHtml(t.task_id)}</td>
+          <td class="mono">${oi}</td>
+          <td>${solved}</td>
+          <td class="mono">${stTime}</td>
+          <td class="mono">${sTime}</td>
+          <td class="mono">${fmtInt(t.attempts_total)}</td>
+          <td class="mono">${fmtInt(t.attempts_wrong)}</td>
+          <td class="mono">${fmtInt(t.used_hint_count)}</td>
+          <td class="mono">${fmtInt(t.used_scaffold_count)}</td>
+          <td class="mono">${t.solution_viewed ? "ja" : "nein"}</td>
+          <td class="mono">${t.difficulty ?? "—"}</td>
+        </tr>`;
+    }).join("");
+    return `
+      <div class="details">
+        <h3>Free-Mode: Unlock/Order (Reihenfolge)</h3>
+        <div class="small">Sortierung: <span class="mono">order_index</span> (falls vorhanden), sonst Zeit.</div>
+        <div class="miniTableWrap" style="margin-top:8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>task_id</th><th>order</th><th>status</th><th>start (min)</th><th>solved (min)</th>
+                <th>attempts</th><th>wrong</th><th>hints</th><th>scaff</th><th>solution</th><th>diff</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function buildAttemptsBlock(attemptsFlat) {
+    if (!attemptsFlat || !attemptsFlat.length) {
+      return `<div class="details"><h3>Attempts (Submits)</h3><div class="small muted">Keine attempts-Daten (free_mode.tasks[*].attempts fehlt).</div></div>`;
+    }
+    const rows = attemptsFlat.slice(0, 200).map(a => {
+      const res = a.result ?? "—";
+      const cls = (res==="correct") ? "ok" : (res==="wrong" ? "bad" : "warn");
+      const t = Number.isFinite(a.timestamp) ? fmt(msToMin(a.timestamp),2) : "—";
+      return `
+        <tr>
+          <td class="mono">${t}</td>
+          <td class="mono">${escapeHtml(String(a.task_id ?? "—"))}</td>
+          <td class="mono">${fmtInt(a.sql_length)}</td>
+          <td class="mono">${a.changed_since_last_submit===null ? "—" : (a.changed_since_last_submit ? "ja" : "nein")}</td>
+          <td class="mono ${cls}">${escapeHtml(String(res))}</td>
+          <td class="mono">${a.error_type ?? "—"}</td>
+        </tr>`;
+    }).join("");
+    const note = attemptsFlat.length > 200 ? `<div class="small muted" style="margin-top:8px;">Hinweis: Anzeige auf 200 Attempts begrenzt.</div>` : "";
+    return `
+      <div class="details">
+        <h3>Attempts (Submits)</h3>
+        <div class="miniTableWrap">
+          <table>
+            <thead><tr><th>t (min)</th><th>task_id</th><th>sql_len</th><th>changed</th><th>result</th><th>error_type</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${note}
+      </div>`;
+  }
+
+  function buildToolsBlock(tools) {
+    const t = tools || {schema:{},spicker:{},help:{}};
+    const row = (name, obj) => `
+      <tr>
+        <td>${name}</td>
+        <td class="mono">${fmtInt(obj.opens)}</td>
+        <td class="mono">${Number.isFinite(obj.duration_ms) ? fmt(msToMin(obj.duration_ms),2) : "—"}</td>
+        <td class="mono">${Array.isArray(obj.events) ? obj.events.length : "—"}</td>
+      </tr>`;
+    return `
+      <div class="details">
+        <h3>Hilfenutzung (tools.*)</h3>
+        <div class="miniTableWrap">
+          <table>
+            <thead><tr><th>tool</th><th>opens</th><th>duration (min)</th><th>events</th></tr></thead>
+            <tbody>
+              ${row("schema", t.schema)}
+              ${row("spicker", t.spicker)}
+              ${row("help", t.help)}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function buildEventsBlock(events, eventsSummary) {
+    const s = eventsSummary || {};
+    const chips = `
+      <div class="chipRow">
+        <span class="tag">events: <b>${fmtInt(s.n)}</b></span>
+        <span class="tag">open: <b>${fmtInt(s.task_open)}</b></span>
+        <span class="tag">submit: <b>${fmtInt(s.task_submit)}</b></span>
+        <span class="tag">solved: <b>${fmtInt(s.task_solved)}</b></span>
+        <span class="tag">hint: <b>${fmtInt(s.hint_used)}</b></span>
+        <span class="tag">scaffold: <b>${fmtInt(s.scaffold_used)}</b></span>
+        <span class="tag">score: <b>${fmtInt(s.score_change)}</b></span>
+        <span class="tag">route: <b>${fmtInt(s.route)}</b></span>
+      </div>`;
+    const ev = Array.isArray(events) ? events : [];
+    if (!ev.length) {
+      return `<div class="details"><h3>Events (Chronologisch)</h3>${chips}<div class="small muted" style="margin-top:8px;">Keine events[] in der JSON gefunden.</div></div>`;
+    }
+    const rows = ev.slice(0, 250).map(e => {
+      const type = e.type ?? e.event ?? e.name ?? "—";
+      const t = safeNum(e.timestamp ?? e.time_ms ?? e.t_ms);
+      const tMin = Number.isFinite(t) ? fmt(msToMin(t),2) : "—";
+      const task = e.task_id ?? e.taskId ?? "—";
+      const delta = safeNum(e.delta ?? e.delta_score ?? e.score_delta);
+      const newScore = safeNum(e.new_score ?? e.score ?? e.newScore);
+      return `
+        <tr>
+          <td class="mono">${tMin}</td>
+          <td class="mono">${escapeHtml(String(type))}</td>
+          <td class="mono">${escapeHtml(String(task))}</td>
+          <td class="mono">${Number.isFinite(delta) ? fmt(delta,2) : "—"}</td>
+          <td class="mono">${Number.isFinite(newScore) ? fmt(newScore,2) : "—"}</td>
+        </tr>`;
+    }).join("");
+    const note = ev.length > 250 ? `<div class="small muted" style="margin-top:8px;">Hinweis: Anzeige auf 250 Events begrenzt.</div>` : "";
+    return `
+      <div class="details">
+        <h3>Events (Chronologisch)</h3>
+        ${chips}
+        <div class="miniTableWrap" style="margin-top:8px;">
+          <table>
+            <thead><tr><th>t (min)</th><th>type</th><th>task_id</th><th>delta</th><th>new_score</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${note}
+      </div>`;
+  }
+
+  function buildTimeBlock(s) {
+    const pauses = Array.isArray(s.pauses) ? s.pauses : [];
+    const pauseCount = pauses.length;
+    const pauseTotal = pauses.reduce((sum,p)=> sum + (safeNum(p.end_ms)-safeNum(p.start_ms) || 0), 0);
+    const pauseMin = Number.isFinite(pauseTotal) ? msToMin(pauseTotal) : null;
+
+    return `
+      <div class="details">
+        <h3>Zeitverhalten</h3>
+        <div class="kvs">
+          <div class="kv"><div class="k">Session active (min)</div><div class="v">${fmt(msToMin(s.active),1)}</div><div class="s mono">free_mode.summary.active_time_ms</div></div>
+          <div class="kv"><div class="k">Session idle (min)</div><div class="v">${fmt(msToMin(s.idle),1)}</div><div class="s mono">free_mode.summary.idle_time_ms</div></div>
+          <div class="kv"><div class="k">Idle ratio</div><div class="v">${fmt(s.idleRatio,3)}</div><div class="s mono">idle/(idle+active)</div></div>
+          <div class="kv"><div class="k">Pauses</div><div class="v">${fmtInt(pauseCount)}</div><div class="s mono">free_mode.pause_events[]</div></div>
+          <div class="kv"><div class="k">Pause total (min)</div><div class="v">${fmt(pauseMin,1)}</div><div class="s mono">Σ(end-start)</div></div>
+          <div class="kv"><div class="k">Time/Task (min)</div><div class="v">${fmt(s.timePerTaskMin,2)}</div><div class="s mono">active/tasks_solved</div></div>
+        </div>
+      </div>`;
+  }
+
+  function buildEfficiencyBlock(s) {
+    return `
+      <div class="details">
+        <h3>Effizienz</h3>
+        <div class="kvs">
+          <div class="kv"><div class="k">Attempts/Task</div><div class="v">${fmt(s.attemptsPerTask,2)}</div><div class="s">attempts_total / tasks_solved</div></div>
+          <div class="kv"><div class="k">Error rate</div><div class="v">${fmt(s.errorRate,3)}</div><div class="s">attempts_wrong / attempts_total</div></div>
+          <div class="kv"><div class="k">Hint rate</div><div class="v">${fmt(s.hintRate,2)}</div><div class="s">hints_total / tasks_solved</div></div>
+          <div class="kv"><div class="k">Tasks solved</div><div class="v">${fmtInt(s.tasksSolved)}</div><div class="s">free_mode.summary.tasks_solved</div></div>
+        </div>
+      </div>`;
+  }
+
+  function renderStudentTable(container, students) {
+    const header = `
+      <thead>
+        <tr>
+          <th></th>
+          <th>ID</th>
+          <th>Gruppe</th>
+          <th>Pre</th>
+          <th>Post</th>
+          <th>Δ</th>
+          <th>g</th>
+          <th>Pre (min)</th>
+          <th>Post (min)</th>
+          <th>Tasks</th>
+          <th>Attempts</th>
+          <th>Wrong</th>
+          <th>Hints</th>
+          <th>Scaff</th>
+          <th>Attempts/Task</th>
+          <th>Error rate</th>
+          <th>Hint rate</th>
+          <th>Active (min)</th>
+          <th>Idle ratio</th>
+          <th>Score final</th>
+          <th>Last task</th>
+        </tr>
+      </thead>`;
+
+    const rows = students.map((s, idx) => {
+      const deltaCls = s.delta!==null ? (s.delta>0?"ok":(s.delta<0?"bad":"")) : "";
+      return `
+        <tr data-row="${idx}">
+          <td><button class="toggleBtn" data-toggle="${idx}" aria-label="Details">▶</button></td>
+          <td class="mono">${escapeHtml(s.id)}</td>
+          <td>${s.group}</td>
+          <td>${fmtInt(s.preScore)} / ${fmtInt(s.maxScore)}</td>
+          <td>${fmtInt(s.postScore)} / ${fmtInt(s.maxScore)}</td>
+          <td class="${deltaCls} mono">${fmt(s.delta,2)}</td>
+          <td class="mono">${fmt(s.gain,3)}</td>
+          <td class="mono">${fmt(msToMin(s.preTimeMs),1)}</td>
+          <td class="mono">${fmt(msToMin(s.postTimeMs),1)}</td>
+          <td class="mono">${fmtInt(s.tasksSolved)}</td>
+          <td class="mono">${fmtInt(s.attemptsTotal)}</td>
+          <td class="mono">${fmtInt(s.attemptsWrong)}</td>
+          <td class="mono">${fmtInt(s.hints)}</td>
+          <td class="mono">${fmtInt(s.scaffolds)}</td>
+          <td class="mono">${fmt(s.attemptsPerTask,2)}</td>
+          <td class="mono">${fmt(s.errorRate,3)}</td>
+          <td class="mono">${fmt(s.hintRate,2)}</td>
+          <td class="mono">${fmt(msToMin(s.active),1)}</td>
+          <td class="mono">${fmt(s.idleRatio,3)}</td>
+          <td class="mono">${fmtInt(s.scoreFinal)}</td>
+          <td class="mono">${s.lastTask ? escapeHtml(s.lastTask) : "—"}</td>
+        </tr>`;
+    }).join("");
+
+    container.innerHTML = `
+      <div style="overflow:auto; max-height:560px;">
+        <table id="studentsTable">
+          ${header}
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+
+    // Attach toggles
+    container.querySelectorAll("[data-toggle]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const i = +e.currentTarget.getAttribute("data-toggle");
+        toggleDetails(i);
+      });
+    });
+  }
+
+  function makeDetailsRowHTML(s) {
+    // Left: pre/post wrong. Middle: task order. Right: attempts + tools + events + time/efficiency.
+    const left = `
+      ${buildWrongItemsBlock("Pretest: falsch", s.preWrong)}
+      <div style="height:10px;"></div>
+      ${buildWrongItemsBlock("Posttest: falsch", s.postWrong)}
+    `;
+
+    const mid = `${buildTaskOrderBlock(s.taskOrder)}`;
+
+    const right = `
+      ${buildEfficiencyBlock(s)}
+      <div style="height:10px;"></div>
+      ${buildTimeBlock(s)}
+      <div style="height:10px;"></div>
+      ${buildToolsBlock(s.tools)}
+      <div style="height:10px;"></div>
+      ${buildAttemptsBlock(s.attemptsFlat)}
+      <div style="height:10px;"></div>
+      ${buildEventsBlock(s.events, s.eventsSummary)}
+    `;
+
+    const metaLine = `
+      <div class="small">
+        <span class="tag">mode_path: <span class="mono">${escapeHtml(JSON.stringify(s.mode_path || []))}</span></span>
+        ${s.last_seen_page ? `<span class="tag">last_seen_page: <span class="mono">${escapeHtml(String(s.last_seen_page))}</span></span>` : ``}
+      </div>`;
+
+    return `
+      <div class="details">
+        <h3>Details – ${escapeHtml(s.id)}</h3>
+        ${metaLine}
+        <div class="grid3" style="margin-top:10px;">
+          <div>${left}</div>
+          <div>${mid}</div>
+          <div>${right}</div>
+        </div>
+      </div>`;
+  }
+
+  function toggleDetails(idx) {
+    const table = document.getElementById("studentsTable");
+    if (!table) return;
+    const tbody = table.querySelector("tbody");
+    const row = tbody.querySelector(`tr[data-row="${idx}"]`);
+    if (!row) return;
+
+    const existing = tbody.querySelector(`tr[data-details="${idx}"]`);
+    const btn = row.querySelector(`[data-toggle="${idx}"]`);
+
+    if (existing) {
+      existing.remove();
+      if (btn) btn.textContent = "▶";
+      return;
+    }
+
+    // close other open details to keep UI usable
+    tbody.querySelectorAll(`tr[data-details]`).forEach(x => x.remove());
+    tbody.querySelectorAll(`[data-toggle]`).forEach(b => b.textContent = "▶");
+
+    const s = window.__students[idx];
+    const detailsTr = document.createElement("tr");
+    detailsTr.setAttribute("data-details", String(idx));
+    const td = document.createElement("td");
+    td.colSpan = 21;
+    td.innerHTML = makeDetailsRowHTML(s);
+    detailsTr.appendChild(td);
+
+    row.insertAdjacentElement("afterend", detailsTr);
+    if (btn) btn.textContent = "▼";
+  }
+
+  function renderAll(students) {
+    const agg = computeAggregate(students);
+
+    // Key
+    renderKVs($("kvsKey"), [
+      {k:"Dateien (n)", v: fmtInt(agg.key.n), s:"Anzahl geladener JSONs"},
+      {k:"ΔScore (Ø)", v: fmt(agg.key.delta_mean,2), s:"post − pre"},
+      {k:"Normalized Gain g (Ø)", v: fmt(agg.key.gain_mean,3), s:"(post-pre)/(max-pre)"},
+      {k:"Effekt (d) g", v: fmt(agg.key.effect_d_gain,2), s:"Cohen's d (Tutorial vs Direkt)"},
+      {k:"Active Time (Ø min)", v: fmt(agg.key.active_min_mean,1), s:"free_mode.active_time"},
+      {k:"Tasks solved (Ø)", v: fmt(agg.key.tasks_solved_mean,2), s:"free_mode.summary.tasks_solved"},
+      {k:"Attempts/Task (Ø)", v: fmt(agg.key.attempts_per_task_mean,2), s:"attempts_total / tasks_solved"},
+      {k:"Hint rate (Ø)", v: fmt(agg.key.hint_rate_mean,2), s:"hints_total / tasks_solved"}
+    ]);
+    $("noteKey").textContent =
+      "Für die Arbeit: d und p exakt in Python/R nachrechnen; hier sind d und p für schnelle Orientierung gedacht.";
+
+    // Outcome
+    renderKVs($("kvsOutcome"), [
+      {k:"Pre (Mittel)", v: fmt(agg.outcome.pre_mean,2), s:"Score roh"},
+      {k:"Post (Mittel)", v: fmt(agg.outcome.post_mean,2), s:"Score roh"},
+      {k:"ΔScore (Mittel)", v: fmt(agg.outcome.delta_mean,2), s:"post − pre"},
+      {k:"ΔScore (SD)", v: fmt(agg.outcome.delta_sd,2), s:"Streuung"},
+      {k:"Normalized Gain g (Mittel)", v: fmt(agg.outcome.gain_mean,3), s:"(post-pre)/(max-pre)"},
+      {k:"Pre-Zeit (Ø min)", v: fmt(agg.outcome.pre_time_min_mean,1), s:"durchschnittliche Dauer"},
+      {k:"Post-Zeit (Ø min)", v: fmt(agg.outcome.post_time_min_mean,1), s:"durchschnittliche Dauer"},
+      {k:"g (SD)", v: fmt(agg.outcome.gain_sd,3), s:"Streuung"}
+    ]);
+    $("noteOutcome").textContent =
+      "Wenn Werte „—“ sind, fehlen Felder in manchen JSONs oder wurden anders benannt. Dann JSON-Schema vereinheitlichen.";
+
+    // Process
+    renderKVs($("kvsProcess"), [
+      {k:"Tasks solved (Ø)", v: fmt(agg.process.tasks_solved_mean,2), s:"tasks_solved"},
+      {k:"Attempts total (Ø)", v: fmt(agg.process.attempts_total_mean,2), s:"attempts_total"},
+      {k:"Wrong attempts (Ø)", v: fmt(agg.process.attempts_wrong_mean,2), s:"attempts_wrong"},
+      {k:"Attempts/Task (Ø)", v: fmt(agg.process.attempts_per_task_mean,2), s:"attempts_total / tasks_solved"},
+      {k:"Error rate (Ø)", v: fmt(agg.process.error_rate_mean,3), s:"wrong / total"},
+      {k:"Hints (Ø)", v: fmt(agg.process.hints_mean,2), s:"hints_total"},
+      {k:"Hint rate (Ø)", v: fmt(agg.process.hint_rate_mean,2), s:"hints_total / tasks_solved"},
+      {k:"Active (Ø min)", v: fmt(agg.process.active_min_mean,1), s:"active_time_ms"}
+    ]);
+    $("noteProcess").textContent =
+      "Interpretation: Attempts/Task + Error rate sind meist aussagekräftiger als reine Hint-Zahlen; immer gemeinsam mit Pre-Score lesen.";
+
+    // Group + Corr
+    renderGroupTable($("groupTable"), agg);
+    renderCorrTable($("corrTable"), agg);
+
+    // Students table
+    renderStudentTable($("tableWrap"), students);
+
+    // Enable exports
+    $("btnCSV").disabled = false;
+    $("btnJSONAgg").disabled = false;
+    $("btnClear").disabled = false;
+
+    window.__students = students;
+    window.__agg = agg;
+  }
+
+  // ---------- CSV Export ----------
+  function toCSV(students) {
+    const cols = [
+      "id","group","preScore","postScore","maxScore","delta","gain",
+      "preTimeMin","postTimeMin",
+      "tasksSolved","attemptsTotal","attemptsWrong","hints","scaffolds",
+      "attemptsPerTask","errorRate","hintRate","activeMin","idleRatio","scoreFinal","lastTask"
+    ];
+    const rows = students.map(s => ({
+      id: s.id,
+      group: s.group,
+      preScore: s.preScore,
+      postScore: s.postScore,
+      maxScore: s.maxScore,
+      delta: s.delta,
+      gain: s.gain,
+      preTimeMin: msToMin(s.preTimeMs),
+      postTimeMin: msToMin(s.postTimeMs),
+      tasksSolved: s.tasksSolved,
+      attemptsTotal: s.attemptsTotal,
+      attemptsWrong: s.attemptsWrong,
+      hints: s.hints,
+      scaffolds: s.scaffolds,
+      attemptsPerTask: s.attemptsPerTask,
+      errorRate: s.errorRate,
+      hintRate: s.hintRate,
+      activeMin: msToMin(s.active),
+      idleRatio: s.idleRatio,
+      scoreFinal: s.scoreFinal,
+      lastTask: s.lastTask
+    }));
+
+    const esc = (v) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    };
+
+    const header = cols.join(",");
+    const body = rows.map(r => cols.map(c => esc(r[c])).join(",")).join("\n");
+    return header + "\n" + body;
+  }
+
+  // ---------- Load files ----------
+  async function readJsonFile(file) {
+    const text = await file.text();
+    return JSON.parse(text);
+  }
+
+  async function handleFiles(fileList) {
+    const files = Array.from(fileList || []).filter(f => f.name.toLowerCase().endsWith(".json"));
+    if (!files.length) {
+      setStatus("Keine .json Dateien erkannt.");
+      return;
+    }
+
+    const errors = [];
+    const students = [];
+
+    for (const f of files) {
+      try {
+        const d = await readJsonFile(f);
+        const s = parseStudent(d, f.name);
+        students.push(s);
+      } catch (e) {
+        errors.push(`${f.name}: ${e.message}`);
+      }
+    }
+
+    students.sort((a,b) => String(a.id).localeCompare(String(b.id)));
+
+    setStatus(`Geladen: ${students.length} Datei(en). Fehler: ${errors.length}.`);
+    setErrors(errors);
+
+    if (students.length) renderAll(students);
+  }
+
+  function setStatus(msg) { $("status").textContent = msg; }
+  function setErrors(errs) {
+    const box = $("errors");
+    if (!errs || !errs.length) { box.style.display="none"; box.textContent=""; return; }
+    box.style.display="block";
+    box.textContent = "Fehler beim Parsen:\n" + errs.map(e=>" - "+e).join("\n");
+  }
+
+  function resetUI() {
+    $("kvsKey").innerHTML = "";
+    $("kvsOutcome").innerHTML = "";
+    $("kvsProcess").innerHTML = "";
+    $("groupTable").innerHTML = "";
+    $("corrTable").innerHTML = "";
+    $("tableWrap").innerHTML = "";
+    $("status").textContent = "";
+    setErrors([]);
+    $("btnCSV").disabled = true;
+    $("btnJSONAgg").disabled = true;
+    $("btnClear").disabled = true;
+    $("fileInput").value = "";
+    window.__students = null;
+    window.__agg = null;
+  }
+
+  // ---------- Demo ----------
+  function loadDemo() {
+    const demo = {
+      meta: { student_id: "S-DEMO", mode_path: ["index","pretest","tutorial","free","posttest"] },
+      pretest: {
+        max_score: 10, score_raw: 4, score_pct: 0.4, duration_ms: 372000,
+        items: [
+          {item_id:"p01",correct:true,time_ms:12000,response:"A"},
+          {item_id:"p02",correct:false,time_ms:18000,response:"C"},
+          {item_id:"p03",correct:false,time_ms:22000,response:"B"}
+        ]
+      },
+      free_mode: {
+        summary: { tasks_solved: 3, attempts_total: 7, attempts_wrong: 4, hints_total: 2, scaffolds_total: 1,
+                   schema_opens: 2, schema_duration_ms: 26000, spicker_opens: 1, spicker_duration_ms: 14000,
+                   active_time_ms: 420000, idle_time_ms: 60000, idle_time_ratio: 0.125, score_final: 8, last_task_id: "T03"},
+        tools: { schema:{opens:2,duration_ms:26000,events:[{t:1,type:"open"},{t:2,type:"close"}]},
+                 spicker:{opens:1,duration_ms:14000,events:[{t:3,type:"open"},{t:4,type:"close"}]},
+                 help:{opens:0,duration_ms:0,events:[]} },
+        tasks: {
+          "T01": { order_index:1, start_time_ms:10000, first_submit_time_ms:20000, solved_time_ms:35000, attempts_total:2, attempts_wrong:1, used_hint_count:1, used_scaffold_count:0, solution_viewed:false, difficulty:"easy",
+                  attempts:[{timestamp:20000,task_id:"T01",sql_length:23,changed_since_last_submit:true,result:"wrong",error_type:"logic"},
+                            {timestamp:35000,task_id:"T01",sql_length:30,changed_since_last_submit:true,result:"correct",error_type:null}] },
+          "T02": { order_index:2, start_time_ms:50000, first_submit_time_ms:65000, solved_time_ms:null, attempts_total:3, attempts_wrong:3, used_hint_count:1, used_scaffold_count:1, solution_viewed:true, difficulty:"medium",
+                  attempts:[{timestamp:65000,task_id:"T02",sql_length:40,changed_since_last_submit:true,result:"error",error_type:"syntax"},
+                            {timestamp:80000,task_id:"T02",sql_length:41,changed_since_last_submit:false,result:"wrong",error_type:"logic"},
+                            {timestamp:95000,task_id:"T02",sql_length:45,changed_since_last_submit:true,result:"wrong",error_type:"logic"}] },
+          "T03": { order_index:3, start_time_ms:120000, first_submit_time_ms:130000, solved_time_ms:150000, attempts_total:2, attempts_wrong:0, used_hint_count:0, used_scaffold_count:0, solution_viewed:false, difficulty:"easy",
+                  attempts:[{timestamp:130000,task_id:"T03",sql_length:28,changed_since_last_submit:true,result:"correct",error_type:null},
+                            {timestamp:150000,task_id:"T03",sql_length:28,changed_since_last_submit:false,result:"correct",error_type:null}] }
+        },
+        pause_events: [{start_ms:200000,end_ms:230000,reason:"tab_hidden"}]
+      },
+      posttest: { max_score: 10, score_raw: 7, score_pct: 0.7, duration_ms: 315000,
+        items: [{item_id:"q01",correct:true,time_ms:10000},{item_id:"q02",correct:false,time_ms:15000,response:"D"}]
+      },
+      events: [
+        {timestamp:10000,type:"task_open",task_id:"T01"},
+        {timestamp:20000,type:"task_submit",task_id:"T01"},
+        {timestamp:35000,type:"task_solved",task_id:"T01"},
+        {timestamp:36000,type:"score_change",delta:2,new_score:2},
+        {timestamp:65000,type:"hint_used",task_id:"T02"},
+        {timestamp:120000,type:"route_to_free"},
+        {timestamp:150000,type:"task_solved",task_id:"T03"}
+      ]
+    };
+
+    const s = parseStudent(demo, "demo.json");
+    setStatus("Demo geladen (1 Datei).");
+    setErrors([]);
+    renderAll([s]);
+  }
+
+  // ---------- Events ----------
+  $("fileInput").addEventListener("change", (e) => handleFiles(e.target.files));
+
+  const drop = $("drop");
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.style.borderColor="rgba(96,165,250,.75)"; });
+  drop.addEventListener("dragleave", () => { drop.style.borderColor="rgba(255,255,255,.22)"; });
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.style.borderColor="rgba(255,255,255,.22)";
+    handleFiles(e.dataTransfer.files);
+  });
+
+  $("btnCSV").addEventListener("click", () => {
+    const students = window.__students;
+    if (!students) return;
+    const csv = toCSV(students);
+    const stamp = new Date().toISOString().slice(0,16).replaceAll(":","").replace("T","_");
+    downloadText(`schulazon_auswertung_${stamp}.csv`, csv, "text/csv;charset=utf-8");
+  });
+
+  $("btnJSONAgg").addEventListener("click", () => {
+    const agg = window.__agg;
+    const students = window.__students;
+    if (!agg || !students) return;
+    const stamp = new Date().toISOString().slice(0,16).replaceAll(":","").replace("T","_");
+    const payload = { aggregated: agg, rows: students };
+    downloadText(`schulazon_auswertung_${stamp}.json`, JSON.stringify(payload, null, 2), "application/json");
+  });
+
+  $("btnClear").addEventListener("click", resetUI);
+  $("btnDemo").addEventListener("click", loadDemo);
+
+})();
+</script>
+</body>
+</html>
