@@ -72,11 +72,11 @@
       gap: 12px; margin-bottom: 12px;
       padding: 10px 10px;
       border-radius: var(--radiusLg);
-      background: var(--glass3);
-      border: 1px solid var(--hair2);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: 0 10px 34px rgba(10,15,24,.06);
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
+      border: 1px solid rgba(10,15,24,.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
     }
 
     .brand{display:flex; align-items:center; gap:12px;}
@@ -110,11 +110,11 @@
       display:inline-flex; align-items:center; gap:8px;
       padding: 10px 12px;
       border-radius: 999px;
-      border: 1px solid var(--hair2);
-      background: var(--glass);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: 0 10px 22px rgba(10,15,24,.06);
+      border: 1px solid rgba(10,15,24,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,245,250,.92));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 10px 24px rgba(10,15,24,.08);
       font-size: var(--small);
       color: var(--muted);
       user-select:none;
@@ -127,9 +127,14 @@
       cursor:pointer;
       color: rgba(11,15,24,.92);
       font-weight: 900;
-      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
     }
-    .pillBtn:hover{transform: translateY(-1px); box-shadow: 0 14px 30px rgba(10,15,24,.08)}
+    .pillBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(0,122,255,.35);
+      background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(236,241,250,.92));
+      box-shadow: 0 16px 36px rgba(10,15,24,.10);
+    }
     .pillBtn:active{transform: translateY(0px)}
     .pillBtn:focus{outline:none; box-shadow:none;}
     .pillBtn:focus-visible{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
