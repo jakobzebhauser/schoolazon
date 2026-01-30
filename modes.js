@@ -321,6 +321,9 @@ function initTopbarChrome() {
   const exitBtn = document.getElementById("exitBtn");
   const posttestBtn = document.getElementById("posttestBtn");
   const helpBtn = document.getElementById("helpBtn");
+  const posttestGate = document.getElementById("posttestGate");
+  const posttestConfirm = document.getElementById("posttestConfirm");
+  const posttestCancel = document.getElementById("posttestCancel");
   const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
   const goPosttest = () => {
     const name = getStudentName();
@@ -329,8 +332,27 @@ function initTopbarChrome() {
     try { logger?.logEvent("goto_posttest_clicked", { from: "free" }); } catch (_) {}
     try { window.location.assign(url); } catch (_) { window.location.href = url; }
   };
+  const openPosttestGate = () => {
+    if (!posttestGate) return goPosttest();
+    posttestGate.classList.add("show");
+    posttestGate.setAttribute("aria-hidden", "false");
+    try { posttestConfirm?.focus(); } catch (_) {}
+  };
+  const closePosttestGate = () => {
+    if (!posttestGate) return;
+    posttestGate.classList.remove("show");
+    posttestGate.setAttribute("aria-hidden", "true");
+    try { posttestBtn?.focus(); } catch (_) {}
+  };
   if (exitBtn && !isTutorial) exitBtn.addEventListener("click", goPosttest);
-  if (posttestBtn && !isTutorial) posttestBtn.addEventListener("click", goPosttest);
+  if (posttestBtn && !isTutorial) posttestBtn.addEventListener("click", openPosttestGate);
+  if (posttestConfirm && !isTutorial) posttestConfirm.addEventListener("click", goPosttest);
+  if (posttestCancel && !isTutorial) posttestCancel.addEventListener("click", closePosttestGate);
+  if (posttestGate) {
+    posttestGate.addEventListener("click", (e) => {
+      if (e.target === posttestGate || e.target?.classList?.contains("gateBackdrop")) closePosttestGate();
+    });
+  }
 
   const helpOverlay = document.getElementById("helpOverlay");
   const helpCloseBtn = document.getElementById("helpClose");
@@ -360,7 +382,9 @@ function initTopbarChrome() {
     });
   }
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && helpOverlay?.classList?.contains("show")) closeHelp();
+    if (e.key !== "Escape") return;
+    if (helpOverlay?.classList?.contains("show")) closeHelp();
+    if (posttestGate?.classList?.contains("show")) closePosttestGate();
   });
   if (helpBtn && isTutorial) {
     helpBtn.setAttribute("aria-disabled", "true");
@@ -1891,24 +1915,32 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       this.sideBodyEl.innerHTML = `
         <div class="task3-card">
           <div class="task3-cardHead">
-            <div class="task3-cardTitle">Ziel</div>
+            <div class="task3-cardTitle">Login‑Abfrage</div>
           </div>
           <div class="task3-body">
-            Melde dich im <strong>Konto‑Panel</strong> an, ohne das echte Passwort zu kennen. Du sollst verstehen, <em>warum</em> das bei uns (absichtlich) möglich ist – und wie man es in echten Systemen verhindert.
-          </div>
-        </div>
-
-        <div class="task3-card">
-          <div class="task3-cardHead">
-            <div class="task3-cardTitle">Didaktischer Kontext</div>
-          </div>
-          <div class="task3-body">
-            Hier wird (für die Übung) eine <strong>unsichere</strong> Login‑Abfrage per String‑Verkettung gebaut. Das ist genau der Fehler, der SQL‑Injection ermöglicht.
-            <pre class="task3-output" style="white-space:pre-wrap; margin:12px 0 0 0; min-height:0;">SELECT *
+            <p style="margin:6px 0 0 0;">Die Anmeldung läuft über die Tabelle <strong>users</strong>. Schema:</p>
+            <div style="overflow:auto; -webkit-overflow-scrolling: touch;">
+              <table class="spicker-table spicker-table-compact" aria-label="Schema users">
+                <thead>
+                  <tr><th>Spalte</th><th>Typ</th><th>Hinweis</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>id</td><td>INTEGER</td><td>Primary Key</td></tr>
+                  <tr><td>username</td><td>TEXT</td><td>eindeutig</td></tr>
+                  <tr><td>password</td><td>TEXT</td><td>Passwort</td></tr>
+                  <tr><td>role</td><td>TEXT</td><td>z. B. admin/user</td></tr>
+                  <tr><td>status</td><td>TEXT</td><td>active/locked</td></tr>
+                  <tr><td>created_at</td><td>DATETIME</td><td>Erstellung</td></tr>
+                  <tr><td>last_login</td><td>DATETIME</td><td>letzter Login</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="muted" style="margin:4px 0 8px 0;">Hierfür wird die folgende Abfrage genutzt:</p>
+            <pre class="task3-output" style="white-space:pre-wrap; margin:0; min-height:0;">SELECT id, username, role
 FROM users
 WHERE username = '<span class="muted">EINGABE_USER</span>'
-  AND password = '<span class="muted">EINGABE_PASS</span>';</pre>
-            <div class="muted" style="margin-top:10px;">Wenn Eingaben ungefiltert in die Query wandern, kannst du die WHERE‑Logik manipulieren (z. B. „immer wahr“ + Kommentar).</div>
+  AND password = '<span class="muted">EINGABE_PASS</span>'
+LIMIT 1;</pre>
           </div>
         </div>
 
@@ -1919,22 +1951,14 @@ WHERE username = '<span class="muted">EINGABE_USER</span>'
           <div class="task3-body">
             <ol style="margin:6px 0 0 18px;">
               <li>Öffne rechts oben im Shop das <strong>Konto‑Panel</strong>.</li>
-              <li>Teste Eingaben, die die WHERE‑Bedingung verändern (ohne die komplette Lösung zu verraten: denke an <strong>„immer wahr“</strong> und <strong>Kommentare</strong>).</li>
+              <li>Teste Eingaben, die die WHERE‑Bedingung verändern.</li>
               <li>Ziel: Die Anwendung zeigt <strong>„Login erfolgreich“</strong>.</li>
             </ol>
             <div class="muted" style="margin-top:10px;">Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
           </div>
         </div>
 
-        <div class="task3-card">
-          <div class="task3-cardHead">
-            <div class="task3-cardTitle">Reflexion: Wie verhindert man das?</div>
-          </div>
-          <div class="task3-body">
-            Notiere mindestens <strong>4</strong> konkrete Gegenmaßnahmen (z. B. <strong>Prepared Statements</strong>, Eingabevalidierung/Canonicalization, Least Privilege, sichere ORMs, Logging/Monitoring, WAF).
-            <div class="muted" style="margin-top:10px;">Hinweis: In echten Anwendungen ist SQL‑Injection ein kritischer Sicherheitsfehler – hier ist es eine Lern‑Sandbox.</div>
-          </div>
-        </div>
+        
 `;
     }
 
@@ -2079,33 +2103,39 @@ setEmptyState(isEmpty) {
       <div style="display:flex; flex-direction:column; gap:14px; margin-top:12px;">
         ${statusHtml}
         <div class="spicker-block">
-          <div class="spicker-block-title">Ziel</div>
-          <p style="margin:6px 0 0 0;">Du sollst verstehen, <strong>warum</strong> SQL-Injection moeglich ist und <strong>wie</strong> man es in echten Systemen verhindert.</p>
-        </div>
-
-        <div class="spicker-block">
-          <div class="spicker-block-title">Unsichere Login-Abfrage (Beispiel)</div>
-          <p style="margin:6px 0 0 0;">Diese Query wird absichtlich per String-Verkettung gebaut (Lern-Sandbox):</p>
-          <pre class="output" style="white-space:pre-wrap; margin-top:10px;">SELECT id
+          <div class="spicker-block-title">Login‑Abfrage</div>
+          <p style="margin:6px 0 0 0;">Die Anmeldung läuft über die Tabelle <strong>users</strong>. Schema:</p>
+          <div style="overflow:auto; -webkit-overflow-scrolling: touch;">
+            <table class="spicker-table spicker-table-compact" aria-label="Schema users">
+              <thead>
+                <tr><th>Spalte</th><th>Typ</th><th>Hinweis</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>id</td><td>INTEGER</td><td>Primary Key</td></tr>
+                <tr><td>username</td><td>TEXT</td><td>eindeutig</td></tr>
+                <tr><td>password</td><td>TEXT</td><td>Passwort</td></tr>
+                <tr><td>role</td><td>TEXT</td><td>z. B. admin/user</td></tr>
+                <tr><td>status</td><td>TEXT</td><td>active/locked</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>Erstellung</td></tr>
+                <tr><td>last_login</td><td>DATETIME</td><td>letzter Login</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin:4px 0 8px 0;">Hierfür wird die folgende Abfrage genutzt:</p>
+          <pre class="output" style="white-space:pre-wrap; margin-top:0;">SELECT id, username, role
 FROM users
 WHERE username = '<span class="muted">EINGABE_USER</span>'
   AND password = '<span class="muted">EINGABE_PASS</span>'
 LIMIT 1;</pre>
-          <p class="muted" style="margin:10px 0 0 0;">Wenn Eingaben ungefiltert in die Query wandern, kann man die WHERE-Logik manipulieren (z. B. "immer wahr" + Kommentar).</p>
         </div>
 
         <div class="spicker-block">
           <div class="spicker-block-title">Aufgabenstellung</div>
           <ol type="a" style="margin:6px 0 0 18px;">
-            <li>Versuche dich <strong>in den Login einzuloggen, ohne das Passwort zu kennen</strong>. Oeffne dafuer rechts oben im Shop das <strong>Konto-Panel</strong> und teste Eingaben, die die WHERE-Bedingung veraendern.</li>
-            <li>Recherchiere im Internet, <strong>wie man sich vor SQL-Injection schuetzt</strong>, und schreibe deine Gedanken stichpunktartig auf.</li>
+            <li>Versuche dich <strong>in den Login einzuloggen, ohne das Passwort zu kennen</strong>. Öffne dafür rechts oben im Shop das <strong>Konto‑Panel</strong> und teste Eingaben, die die WHERE‑Bedingung verändern.</li>
+            <li>Recherchiere im Internet, <strong>wie man sich vor SQL‑Injection schützt</strong>, und schreibe deine Gedanken stichpunktartig auf.</li>
           </ol>
-          <div class="muted" style="margin-top:8px;">Ziel: Die Anwendung zeigt <strong>"Login erfolgreich"</strong>. Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
-        </div>
-
-        <div class="spicker-block">
-          <div class="spicker-block-title">Hinweis</div>
-          <p style="margin:6px 0 0 0;">Diese Aufgabe ist eine Lern-Sandbox. In echten Anwendungen ist SQL-Injection ein kritischer Sicherheitsfehler.</p>
+          <div class="muted" style="margin-top:8px;">Ziel: Die Anwendung zeigt <strong>„Login erfolgreich“</strong>. Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
         </div>
       </div>
     `;

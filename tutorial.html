@@ -91,7 +91,6 @@
       border: 1px solid rgba(255,255,255,.38);
     }
 
-
     /* Shop-Wordmark (wie im Shop) */
     .logo{
       font-family: "Roboto", var(--sans);
@@ -163,7 +162,7 @@
       font-size: var(--small);
     }
 
-    /* Theory: Apple-like card + minimal highlights */
+    /* Theory block */
     .theory{
       border-radius: var(--radiusMd);
       border: 1px solid var(--hair2);
@@ -193,6 +192,16 @@
     .theoryBody ul{margin: 8px 0 0 18px; padding:0}
     .theoryBody li{margin: 6px 0}
 
+    /* Task block (distinct color) */
+    .theory.taskBlock{
+      background: linear-gradient(180deg, rgba(0,122,255,.08), rgba(255,255,255,.70));
+      border: 1px solid rgba(0,122,255,.18);
+    }
+    .theory.taskBlock .theoryHead{
+      background: linear-gradient(180deg, rgba(175,82,222,.16), rgba(255,255,255,.00));
+      border-bottom: 1px solid rgba(175,82,222,.16);
+    }
+
     /* Minimal highlight set */
     .hi{
       font-weight: 900;
@@ -213,8 +222,6 @@
       border-radius: .62em;
       white-space: nowrap;
     }
-
-    
 
     .hiPK{
       font-weight: 900;
@@ -255,7 +262,7 @@
       white-space: nowrap;
     }
 
-.schemaWrap{margin: 12px 0 14px;}
+    .schemaWrap{margin: 12px 0 14px;}
     .schemaLabel{
       --tone: var(--blue);
       display:inline-flex;
@@ -298,7 +305,7 @@
     .num{color: rgba(11,15,24,.86); font-weight: 900;}
     .op{color: rgba(11,15,24,.86); font-weight: 900;}
 
-    /* Tables: cleaner, with subtle color */
+    /* Tables */
     .tableGroup{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -335,15 +342,12 @@
     .miniTable tr:hover td{background: rgba(0,122,255,.055)}
     .miniTable code{font-family: var(--mono); font-size: 0.95em}
 
-
-    /* Narrow tables (used where screens should not get too wide) */
     .narrowWrap{
       max-width: 680px;
       margin: 0 auto;
     }
     .narrowWrap .miniTable{margin-bottom: 12px}
 
-    /* Simple click-to-show (details/summary) */
     details.reveal{
       border: 1px solid var(--hair2);
       background: rgba(255,255,255,.66);
@@ -367,64 +371,6 @@
       color: rgba(11,15,24,.62);
     }
     details.reveal[open] > summary::after{content:"▴"}
-    /* DISTINCT Visual */
-    .distinctViz{
-      border: 1px solid var(--hair2);
-      background: rgba(255,255,255,.68);
-      border-radius: var(--radiusMd);
-      padding: 12px;
-      box-shadow: var(--shadow2);
-      overflow:hidden;
-      --d: 0;
-    }
-    .rangeRow{
-      display:flex; align-items:center; gap:12px;
-      margin: 2px 0 10px;
-    }
-    .rangeRow label{
-      font-size: var(--small);
-      font-weight: 950;
-      color: rgba(11,15,24,.86);
-      white-space: nowrap;
-    }
-    .rangeRow .val{
-      font-size: var(--small);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    input[type="range"]{
-      -webkit-appearance:none;
-      width: 100%;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(10,15,24,.10);
-      outline:none;
-    }
-    input[type="range"]::-webkit-slider-thumb{
-      -webkit-appearance:none;
-      width: 18px; height: 18px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(175,82,222,1), rgba(0,122,255,.85));
-      box-shadow: 0 12px 24px rgba(175,82,222,.16);
-      border: 2px solid rgba(255,255,255,.90);
-      cursor: pointer;
-    }
-    input[type="range"]::-moz-range-thumb{
-      width: 18px; height: 18px;
-      border-radius: 999px;
-      background: rgba(175,82,222,.96);
-      border: 2px solid rgba(255,255,255,.90);
-      cursor: pointer;
-    }
-    .distinctRaw .dup{
-      opacity: calc(1 - var(--d));
-      filter: blur(calc(var(--d) * 0.7px));
-    }
-    .distinctOut{
-      opacity: var(--d);
-      transform: translateY(calc((1 - var(--d)) * 6px));
-      transition: opacity .12s ease, transform .12s ease;
-    }
 
     .taskCard{
       border: 1px solid var(--hair2);
@@ -536,6 +482,14 @@
     }
     .codeLeft{min-width: 0;}
     .codeRight{min-width: 0;}
+
+
+    .codeLayout.codeSplit{
+      grid-template-columns: minmax(420px, 2fr) minmax(320px, 1fr);
+    }
+    .codeLayout.codeSplit .shopPreviewFrame{
+      height: 560px;
+    }
 
     .matchGrid{
       display:grid;
@@ -649,7 +603,6 @@
     @media (prefers-reduced-motion: reduce){
       .btn, .chip, .pillBtn, .bar{transition:none !important}
       .btn:hover, .chip:hover, .pillBtn:hover{transform:none !important}
-      .distinctOut{transition:none !important}
     }
 
     @media (max-width: 560px){
@@ -661,14 +614,10 @@
     }
 
     @media (max-width: 980px){
-      .codeLayout{
-        grid-template-columns: 1fr;
-      }
-      .shopPreviewFrame{
-        height: 320px;
-      }
+      .codeLayout{ grid-template-columns: 1fr; }
+      .shopPreviewFrame{ height: 320px; }
     }
-  
+
     .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
   </style>
 </head>
@@ -829,10 +778,10 @@
   /* ---------- SQL Highlighting (robust) ---------- */
   const KW_SET = new Set([
     "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","LIMIT",
-    "COUNT","SUM","AVG","MIN","MAX","AS","AND","OR","NOT","ASC","DESC"
+    "COUNT","SUM","AVG","MIN","MAX","AS","AND","OR","NOT","ASC","DESC","IN"
   ]);
 
-function isNumberToken(t){ return /^\d+$/.test(t); }
+  function isNumberToken(t){ return /^\d+$/.test(t); }
   function isOpToken(t){ return /^(<=|>=|<>|=|<|>)$/.test(t); }
   function isWordToken(t){ return /^[A-Za-z_][A-Za-z0-9_]*$/.test(t); }
 
@@ -883,7 +832,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
   /* ---------- Theory highlighting (ONLY key terms) ---------- */
   const THEORY_CODE = new Set([
     "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","LIMIT","AND","OR","NOT",
-    "COUNT","SUM","AVG","MIN","MAX","AS","ASC","DESC"
+    "COUNT","SUM","AVG","MIN","MAX","AS","ASC","DESC","IN"
   ]);
 
   const THEORY_RE = new RegExp(
@@ -893,7 +842,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       "\\bASC\\b","\\bDESC\\b",
       "\\bSELECT\\b","\\bFROM\\b","\\bWHERE\\b","\\bHAVING\\b","\\bDISTINCT\\b","\\bLIMIT\\b",
       "\\bCOUNT\\b","\\bSUM\\b","\\bAVG\\b","\\bMIN\\b","\\bMAX\\b","\\bAS\\b",
-      "\\bAND\\b","\\bOR\\b","\\bNOT\\b",
+      "\\bAND\\b","\\bOR\\b","\\bNOT\\b","\\bIN\\b",
       "\\bPrimärschlüssel\\b",
       "\\bFremdschlüssel\\b",
       "\\bBeziehungstabelle\\b",
@@ -916,14 +865,15 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
     });
   }
 
-  function renderTheory(text, head="Theorie"){
+  function renderTheory(text, head="Theorie", variant="theory"){
     if(!text) return "";
     const body = Array.isArray(text)
       ? text.map(p=>`<p>${highlightTheoryText(escapeHtml(p))}</p>`).join("")
       : `<p>${highlightTheoryText(escapeHtml(text))}</p>`;
 
+    const cls = (variant === "task") ? "theory taskBlock" : "theory";
     return `
-      <section class="theory" aria-label="${escapeAttr(head)}">
+      <section class="${cls}" aria-label="${escapeAttr(head)}">
         <div class="theoryHead">${escapeHtml(head)}</div>
         <div class="theoryBody">${body}</div>
       </section>
@@ -953,66 +903,6 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
     `;
   }
 
-  /* ---------- DISTINCT Visual ---------- */
-  function renderDistinctViz(){
-    const raw = [2,3,3,5,5,5];
-    const distinct = [2,3,5];
-
-    const seen = new Set();
-    const mkRaw = raw.map((v, i)=>{
-      const isDup = seen.has(v);
-      seen.add(v);
-      return `<tr class="${isDup ? "dup" : ""}"><td>${i+1}</td><td>${v}</td></tr>`;
-    }).join("");
-
-    const mkDistinct = distinct.map((v, i)=>`<tr><td>${i+1}</td><td>${v}</td></tr>`).join("");
-
-    return `
-      <div class="schemaWrap">
-        <div class="schemaLabel tone-purple">DISTINCT</div>
-
-        <div class="distinctViz" id="distinctViz" style="--d: 0;">
-          <div class="rangeRow">
-            <label for="distinctSlider">Duplikate ausblenden</label>
-            <input id="distinctSlider" type="range" min="0" max="100" value="0" />
-            <div class="val" id="distinctVal">0%</div>
-          </div>
-
-          <div class="tableGroup">
-            <div class="distinctRaw">
-              <table class="miniTable" aria-label="Beispiel-Tabelle">
-                <thead><tr><th>#</th><th>liefertage</th></tr></thead>
-                <tbody>${mkRaw}</tbody>
-              </table>
-            </div>
-
-            <div class="distinctOut">
-              <table class="miniTable" aria-label="Ergebnis DISTINCT">
-                <thead><tr><th>#</th><th>liefertage</th></tr></thead>
-                <tbody>${mkDistinct}</tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function bindDistinctSlider(){
-    const box = document.getElementById("distinctViz");
-    const slider = document.getElementById("distinctSlider");
-    const val = document.getElementById("distinctVal");
-    if(!box || !slider || !val) return;
-
-    const apply = ()=>{
-      const v = Number(slider.value || 0);
-      val.textContent = `${v}%`;
-      box.style.setProperty("--d", String(v/100));
-    };
-    slider.addEventListener("input", apply);
-    apply();
-  }
-
   /* ---------- Pages ---------- */
   const pages = [
     {
@@ -1020,33 +910,37 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       title:"Dein Auftrag",
       context: withName("kurze Mission, klare Schritte."),
       story: [
-        "Du bist gerade zurück im Schulazon-HQ: Im Shop sind einige Buttons noch gesperrt, weil dafür saubere SQL-Abfragen nötig sind.",
-        "Wir machen jetzt einen schnellen Grundlagen-Check – damit du danach wieder sicher abfragen, filtern und sortieren kannst."
+        "Du bist zurück im Schulazon-HQ: Einige Shop-Buttons sind gesperrt, weil dafür saubere SQL-Abfragen nötig sind.",
+        "Wir machen jetzt einen schnellen Grundlagen-Refresh – damit du danach wieder sicher abfragen, filtern und sortieren kannst."
       ]
     },
     {
       id:"story_2",
       title:"Was du gleich wieder drauf hast",
-      context: "Alles in kleinen Portionen – pro Seite genau ein Thema.",
+      context: "Pro Thema: erst Theorie, direkt darunter die passende Aufgabe.",
       recapHtml: `
         <p style="margin:0; font-weight:900; color: rgba(11,15,24,.88);">Heute wiederholen wir:</p>
         <ul>
           <li>Bausteine: <code>SELECT</code>, <code>FROM</code>, <code>WHERE</code>, <code>ORDER BY</code></li>
-          <li><code>DISTINCT</code> (Duplikate entfernen)</li>
+          <li><code>DISTINCT</code> und <code>LIMIT</code></li>
           <li>Bedingungen: Operatoren, <code>AND</code>/<code>OR</code>/<code>NOT</code></li>
           <li>Aggregatfunktionen + Alias (<code>AS</code>)</li>
-          <li><code>GROUP BY</code> und <code>HAVING</code></li>
-          <li>Beziehungen (1:n, n:m) und personenbezogene Daten</li>
+          <li><code>GROUP BY</code> und <code>HAVING</code> (inkl. Tabellenbeispiel)</li>
+          <li>Schlüssel + Verbund: <code>Primärschlüssel</code>, <code>Fremdschlüssel</code>, <code>1:n</code>, <code>n:m</code></li>
+          <li>Personenbezogene Daten</li>
         </ul>
       `
     },
 
     {
       id:"intro",
-      title:"Einleitung",
-      context: withName("gut, dass du dranbleibst. Wir wiederholen die wichtigsten SQL-Grundlagen – Schritt für Schritt."),
+      title:"Einleitung: Bausteine",
+      context: withName("wir starten mit dem Grundmuster – das ist die Schablone für fast alle Abfragen."),
       nameInTheory: true,
-      theory: ["SQL ist die Standardsprache, um Daten aus einer Datenbank abzufragen. Eine SQL-Abfrage besteht aus festen Bausteinen (z. B. SELECT, FROM, WHERE), die du je nach Ziel kombinierst."],
+      theory: [
+        "Eine SQL-Abfrage liefert immer eine Ergebnistabelle. Du baust sie aus festen Bausteinen zusammen: SELECT legt die Spalten fest, FROM die Tabellen, WHERE filtert Zeilen, ORDER BY sortiert.",
+        "Merksatz: Erst Daten auswählen (FROM), dann Zeilen filtern (WHERE), dann sortieren (ORDER BY). Gruppierung (GROUP BY/HAVING) ist ein eigener Schritt."
+      ],
       table: `
         <div class="schemaWrap">
           <div class="schemaLabel tone-blue">Bausteine</div>
@@ -1058,22 +952,22 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
                 <tr><td><code>FROM</code></td><td>Aus welcher(n) Tabelle(n) kommen die Daten</td></tr>
                 <tr><td><code>WHERE</code></td><td>Welche Zeilen sollen ausgewählt werden (Bedingungen)</td></tr>
                 <tr><td><code>ORDER BY</code></td><td>Sortierung der Ergebnistabelle</td></tr>
-                <tr><td>Aggregat / <code>GROUP BY</code> / <code>HAVING</code></td><td>Zusammenfassen und Filtern von Gruppen</td></tr>
+                <tr><td><code>GROUP BY</code> / <code>HAVING</code></td><td>Gruppieren und Gruppen filtern</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       `
-    
     },
-    
+
+    /* Aufgabe direkt unter „Bausteine“ */
     {
       id:"task_match_blocks",
       type:"match",
       title:"Aufgabe 1/7: Zuordnen",
-      context: "kurz zum Warmwerden: ordne Baustein ck zu.",
+      context: "Warm-up: ordne Baustein und Zweck zu.",
       nameInPrompt: true,
-      theory: "Klicke zuerst links (Baustein), dann rechts (Zweck). Wenn alles richtig ist, kannst du weiter.",
+      theory: "Klicke zuerst links (Baustein), dann rechts (Zweck). Wenn alles stimmt, kannst du weiter.",
       left: [{key:"SELECT",label:"SELECT"},{key:"FROM",label:"FROM"},{key:"WHERE",label:"WHERE"},{key:"ORDER BY",label:"ORDER BY"}],
       right: [
         {key:"SELECT",label:"Welche Spalten sollen angezeigt werden"},
@@ -1082,20 +976,15 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
         {key:"ORDER BY",label:"Wie wird sortiert"}
       ]
     },
-    {
-      id:"keys",
-      title:"Schlüssel",
-      context: "Schlüssel sorgen dafür, dass Datensätze eindeutig sind und Tabellen verbunden werden können.",
-      theory: ["Ein Primärschlüssel identifiziert einen Datensatz eindeutig. Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle, um Tabellen zu verbinden: z. B. verweist produkte.kategorie_id auf kategorien.id; jeder Wert in produkte.kategorie_id muss in kategorien.id existieren."],
-      sqlTone: "tone-blue",
-      sqlMarks: { id: "pkTok", kategorie_id: "fkTok" },
-      sql: ["-- Beispiel (Shop-DB)","produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"]
-    },
+
     {
       id:"select",
-      title:"SELECT … FROM …",
-      context: "Damit legst du fest, welche Spalten du aus welcher Tabelle sehen willst.",
-      theory: ["Das Sternchen (*) steht für „alle Spalten“. DISTINCT sorgt dafür, dass gleiche Werte in der Ergebnisspalte nur einmal vorkommen. LIMIT begrenzt die Anzahl der ausgegebenen Zeilen (für reproduzierbare Ergebnisse meist zusammen mit ORDER BY)."],
+      title:"SELECT … FROM … (inkl. DISTINCT/LIMIT)",
+      context: "Damit legst du fest, welche Spalten aus welcher Tabelle im Ergebnis stehen.",
+      theory: [
+        "SELECT bestimmt die Spalten im Ergebnis. Das Sternchen (*) bedeutet „alle Spalten“.",
+        "DISTINCT entfernt Duplikate in der Ausgabespalte (gibt jeden Wert nur einmal aus). LIMIT begrenzt die Anzahl der Zeilen – sinnvoll vor allem zusammen mit ORDER BY, damit die Ausgabe reproduzierbar ist."
+      ],
       sqlTone: "tone-blue",
       sql: [
         "-- alle Spalten, alle Datensätze",
@@ -1115,7 +1004,6 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
         "FROM produkte",
         "LIMIT 2;"
       ],
-
       afterSql: `
         <div class="schemaWrap">
           <div class="schemaLabel tone-blue">Beispiel-Ergebnisse (anklicken)</div>
@@ -1129,9 +1017,9 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
                   <tr><th>id</th><th>name</th><th>liefertage</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>1</td><td>USB‑Kabel</td><td>2</td></tr>
+                  <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
                   <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
-                  <tr><td>3</td><td>Notebook‑Ständer</td><td>3</td></tr>
+                  <tr><td>3</td><td>Notebook-Ständer</td><td>3</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1141,9 +1029,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
             <summary><code>SELECT liefertage</code></summary>
             <div class="narrowWrap" style="margin-top:10px;">
               <table class="miniTable" aria-label="Ergebnis: SELECT liefertage">
-                <thead>
-                  <tr><th><code>SELECT liefertage</code></th></tr>
-                </thead>
+                <thead><tr><th><code>SELECT liefertage</code></th></tr></thead>
                 <tbody>
                   <tr><td>2</td></tr>
                   <tr><td>3</td></tr>
@@ -1157,9 +1043,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
             <summary><code>SELECT DISTINCT liefertage</code></summary>
             <div class="narrowWrap" style="margin-top:10px;">
               <table class="miniTable" aria-label="Ergebnis: SELECT DISTINCT liefertage">
-                <thead>
-                  <tr><th><code>SELECT DISTINCT liefertage</code></th></tr>
-                </thead>
+                <thead><tr><th><code>SELECT DISTINCT liefertage</code></th></tr></thead>
                 <tbody>
                   <tr><td>2</td></tr>
                   <tr><td>3</td></tr>
@@ -1177,7 +1061,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
                   <tr><th>id</th><th>name</th><th>liefertage</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>1</td><td>USB‑Kabel</td><td>2</td></tr>
+                  <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
                   <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
                 </tbody>
               </table>
@@ -1185,24 +1069,49 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
           </details>
         </div>
       `
-},
+    },
+
+    /* Programmieraufgabe: direkt nach SELECT/FROM */
+    {
+      id:"code_all_products",
+      type:"code",
+      title:"Programmieraufgabe: Alle Produkte",
+      context: "Im Shop gibt es Buttons wie „Alle Produkte“, mit dem man sich alle Produkte anzeigen lassen kann. Leider wurde er noch nicht programmiert. Hilf uns bitte, die passende SQL-Abfrage zu formulieren. Trage sie im Lückentext ein.",
+      template:[
+        "SELECT ", {blank:"*"},
+        "\nFROM ", {blank:"produkte"},
+        ";"
+      ],
+      unlockTaskId: "all",
+      showShop: true,
+      feedbackOk: "Korrekt. „Alle Produkte“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht. Erwartet ist SELECT * FROM produkte;.",
+      check: (sql)=> testAll(sql, [/select\s+\*/i, /from\s+produkte\b/i])
+    },
+
+
+    /* Aufgabe direkt unter „SELECT …“ */
     {
       id:"task_distinct",
       type:"fill",
       title:"Aufgabe 2/7: Lücke",
-      context:"20 Sekunden: das Wort muss sitzen.",
+      context:"20 Sekunden: der Begriff muss sitzen.",
       nameInPrompt: true,
       prompt:"Liefert jede Lieferzeit nur einmal:",
       template:["SELECT ",{blank:"DISTINCT"}," liefertage","\nFROM produkte;"],
       feedbackOk:"Richtig. DISTINCT entfernt Duplikate.",
       feedbackNo:"Nicht ganz. Gesucht ist DISTINCT."
     },
+
     {
       id:"where",
-      title:"WHERE",
+      title:"WHERE (Filtern von Zeilen)",
       context: "Mit WHERE wählst du die passenden Zeilen aus.",
       nameInTheory: true,
-      theory: ["WHERE filtert Zeilen: Nur Datensätze, die die Bedingung erfüllen, kommen ins Ergebnis. Mehrere Bedingungen kannst du mit AND und OR verknüpfen; NOT kehrt eine Bedingung um."],
+      theory: [
+        "WHERE filtert einzelne Zeilen: Nur Datensätze, die die Bedingung erfüllen, kommen ins Ergebnis.",
+        "Mehrere Bedingungen kombinierst du mit AND (beide wahr) und OR (mindestens eine wahr). NOT kehrt eine Bedingung um."
+      ],
       table: `
         <div class="schemaWrap">
           <div class="schemaLabel tone-teal">Operatoren & Logik</div>
@@ -1220,7 +1129,7 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
               <tbody>
                 <tr><td><code>AND</code></td><td>beide Bedingungen müssen wahr sein</td></tr>
                 <tr><td><code>OR</code></td><td>mindestens eine Bedingung muss wahr sein</td></tr>
-                <tr><td><code>NOT</code></td><td>macht „wahr“ zu „falsch“ (und umgekehrt)</td></tr>
+                <tr><td><code>NOT</code></td><td>kehrt wahr/falsch um</td></tr>
               </tbody>
             </table>
           </div>
@@ -1229,46 +1138,59 @@ function isNumberToken(t){ return /^\d+$/.test(t); }
       sqlTone: "tone-teal",
       sql: ["SELECT *","FROM produkte","WHERE preis < 20 AND lagerbestand > 0;"]
     },
+
+    /* Aufgabe direkt unter „WHERE“ */
     {
       id:"task_where",
       type:"fill",
       title:"Aufgabe 3/7: Lücke",
-      context:"sauber lesen: beide Bedingungen gleichzeitig.",
+      context:"Sauber lesen: beide Bedingungen gleichzeitig.",
       prompt:"„Preis unter 20 und auf Lager“:",
       template:["SELECT *","\nFROM produkte","\nWHERE preis < 20 ",{blank:"AND"}," lagerbestand > 0;"],
       feedbackOk:"Richtig. AND = beide müssen gelten.",
       feedbackNo:"Nicht ganz. Gesucht ist AND."
     },
 
-    
+    /* Programmieraufgabe: direkt nach WHERE */
     {
-      id:"code_express",
+      id:"code_price_25_50",
       type:"code",
-      title:"Programmieraufgabe: Expresslieferung freischalten",
-      context: "Im Shop gibt es den Button Expresslieferung. Implementiere die SQL, die nur Produkte mit liefertage = 1 zeigt. Bei Erfolg wird der Button freigeschaltet.",
-      starter: `SELECT *
-FROM produkte
-WHERE liefertage = 1;`,
-      unlockTaskId: "express",
+      title:"Programmieraufgabe: Preis zwischen 25 und 50",
+      context: "Im Shop gibt es den Filter „25–50 €“. Leider wurde er noch nicht programmiert. Formuliere die passende SQL-Abfrage. Trage nur die fehlenden Teile im Lückentext ein.",
+      template:[
+        "SELECT *",
+        "\nFROM produkte",
+        "\nWHERE preis ", {blank:"BETWEEN 25 AND 50||>= 25 AND preis <= 50||>=25 AND preis<=50"},
+        ";"
+      ],
+      unlockTaskId: "price-50",
       showShop: true,
-      feedbackOk: "Stark. Expresslieferung ist freigeschaltet.",
-      feedbackNo: "Noch nicht korrekt. Tipp: WHERE liefertage = 1.",
-      check: (sql)=> testAll(sql, [/select\b/, /from\s+produkte\b/, /where\b/, /liefertage\s*=\s*1/])
+      feedbackOk: "Richtig. Der Filter „25–50 €“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht. Akzeptiert: BETWEEN 25 AND 50 oder >= 25 AND preis <= 50.",
+      check: (sql)=> testAny(sql, [/where\s+preis\s+between\s+25\s+and\s+50/i, /where\s+preis\s*>=\s*25\s+and\s+preis\s*<=\s*50/i])
     },
+
+
+    /* Freischalt-Aufgabe bleibt eigene Seite */
 
     {
       id:"order",
-      title:"ORDER BY",
+      title:"ORDER BY (Sortieren)",
       context: "ORDER BY sortiert die Ergebnistabelle.",
-      theory: ["ORDER BY sortiert die Ergebnistabelle nach einer oder mehreren Spalten. Du kannst aufsteigend (ASC) oder absteigend (DESC) sortieren."],
+      theory: [
+        "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
+        "ASC sortiert aufsteigend (z. B. billig → teuer), DESC absteigend (teuer → billig)."
+      ],
       sqlTone: "tone-blue",
       sql: ["-- billigste Produkte zuerst","SELECT *","FROM produkte","ORDER BY preis ASC;"]
     },
+
+    /* Aufgabe direkt unter „ORDER BY“ */
     {
       id:"task_order",
       type:"fill",
       title:"Aufgabe 4/7: Lücke",
-      context:"teuer → billig: ein Wort.",
+      context:"Teuer → billig: ein Wort.",
       nameInPrompt: true,
       prompt:"Sortiere teuer → billig:",
       template:["SELECT *","\nFROM produkte","\nORDER BY preis ",{blank:"DESC"},";"],
@@ -1276,27 +1198,36 @@ WHERE liefertage = 1;`,
       feedbackNo:"Nicht ganz. Gesucht ist DESC."
     },
 
-    
+    /* Programmieraufgabe: direkt nach ORDER BY */
     {
-      id:"code_price_desc",
+      id:"code_price_asc",
       type:"code",
-      title:"Programmieraufgabe: Preis absteigend",
-      context: "Im Shop gibt es eine Sortierung Preis absteigend. Schreibe die SQL, die Produkte nach preis absteigend sortiert. Bei Erfolg wird die Sortierung freigeschaltet.",
-      starter: `SELECT *
-FROM produkte
-ORDER BY preis DESC;`,
-      unlockTaskId: "priceDesc",
+      title:"Programmieraufgabe: ORDER BY preis aufsteigend",
+      context: "Im Shop gibt es die Sortierung „Preis ↑“. Leider wurde sie noch nicht programmiert. Formuliere die passende SQL-Abfrage im Lückentext.",
+      template:[
+        "SELECT *",
+        "\nFROM produkte",
+        "\nORDER BY preis ", {blank:"ASC"},
+        ";"
+      ],
+      unlockTaskId: "priceAsc",
       showShop: true,
-      feedbackOk: "Gut. Sortierung Preis absteigend ist freigeschaltet.",
-      feedbackNo: "Noch nicht korrekt. Tipp: ORDER BY preis DESC.",
-      check: (sql)=> testAll(sql, [/select\b/, /from\s+produkte\b/, /order\s+by\s+preis\s+desc/])
+      feedbackOk: "Korrekt. Sortierung „Preis ↑“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht. Erwartet ist ORDER BY preis ASC.",
+      check: (sql)=> testAll(sql, [/order\s+by\s+preis\s+asc/i])
     },
+
+
+    /* Freischalt-Aufgabe bleibt eigene Seite */
 
     {
       id:"agg",
-      title:"Aggregat & AS",
+      title:"Aggregat & AS (Zusammenfassen + Alias)",
       context: "Aggregatfunktionen fassen viele Zeilen zusammen; AS benennt Ergebnis-Spalten um.",
-      theory: ["Aggregatfunktionen fassen viele Zeilen zu einem Ergebniswert zusammen (z. B. Anzahl, Minimum, Durchschnitt). Mit AS gibst du Spalten im Ergebnis einen verständlichen Namen (Alias)."],
+      theory: [
+        "Aggregatfunktionen reduzieren viele Zeilen auf Kennzahlen (z. B. COUNT, AVG). Das Ergebnis ist dann typischerweise eine einzelne Zeile (oder eine Zeile pro Gruppe, falls GROUP BY genutzt wird).",
+        "AS vergibt einen Alias: Das ist nur ein Name in der Ergebnis-Tabelle, keine Änderung an der Datenbank."
+      ],
       table: `
         <div class="schemaWrap">
           <div class="schemaLabel tone-amber">Aggregatfunktionen</div>
@@ -1315,9 +1246,16 @@ ORDER BY preis DESC;`,
         </div>
       `,
       sqlTone: "tone-amber",
-      sql: ["SELECT COUNT(*) AS anzahl_produkte","FROM produkte;","","SELECT AVG(preis) AS durchschnittspreis","FROM produkte;"]
+      sql: [
+        "SELECT COUNT(*) AS anzahl_produkte",
+        "FROM produkte;",
+        "",
+        "SELECT AVG(preis) AS durchschnittspreis",
+        "FROM produkte;"
+      ]
     },
 
+    /* Aufgabe direkt unter „Aggregat“ */
     {
       id:"task_agg_new",
       type:"fill_multi",
@@ -1331,36 +1269,83 @@ ORDER BY preis DESC;`,
       feedbackOk:"Richtig. SUM bildet eine Summe, MAX liefert den größten Wert.",
       feedbackNo:"Mindestens eine Lücke ist falsch. Gesucht sind SUM und MAX."
     },
-        {
+
+    {
       id:"group",
-      title:"GROUP BY & HAVING",
+      title:"GROUP BY & HAVING (Gruppen bilden und filtern)",
       context: "GROUP BY gruppiert Zeilen; HAVING filtert Gruppen.",
-      theory: ["GROUP BY fasst Zeilen mit gleichem Gruppenschlüssel zusammen (z. B. pro Kategorie). WHERE filtert einzelne Zeilen vor dem Gruppieren; HAVING filtert Gruppen nach dem Gruppieren."],
-            table: `
+      theory: [
+        "GROUP BY bildet Gruppen aus Zeilen mit gleichem Schlüssel (z. B. pro liefertage). Für jede Gruppe kannst du Aggregatwerte berechnen (AVG, COUNT, …).",
+        "Wichtig: WHERE filtert einzelne Zeilen VOR dem Gruppieren; HAVING filtert Gruppen NACH dem Gruppieren (weil dort erst Aggregatwerte existieren)."
+      ],
+      table: `
         <details class="reveal">
-          <summary>Beispiel anzeigen</summary>
+          <summary>Anschauliches Tabellenbeispiel (GROUP BY vs. HAVING)</summary>
 
           <div class="schemaWrap" style="margin-top:10px;">
-            <div class="schemaLabel tone-purple">Beispiel (Ergebnis)</div>
-            <div class="narrowWrap">
-              <table class="miniTable" aria-label="Ergebnis: GROUP BY">
+            <div class="schemaLabel tone-purple">Ausgangsdaten (produkte)</div>
+            <div class="tableGroup">
+              <table class="miniTable" aria-label="Ausgangsdaten">
                 <thead>
-                  <tr><th colspan="2"><code>GROUP BY kategorie_id</code></th></tr>
-                  <tr><th>kategorie_id</th><th>anzahl</th></tr>
+                  <tr><th>id</th><th>name</th><th>liefertage</th><th>preis</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>1</td><td>2</td></tr>
-                  <tr><td>2</td><td>1</td></tr>
-                  <tr><td>3</td><td>2</td></tr>
+                  <tr><td>1</td><td>USB-Kabel</td><td>1</td><td>25</td></tr>
+                  <tr><td>2</td><td>Mauspad</td><td>1</td><td>15</td></tr>
+                  <tr><td>3</td><td>Ständer</td><td>2</td><td>30</td></tr>
+                  <tr><td>4</td><td>Hub</td><td>2</td><td>10</td></tr>
+                  <tr><td>5</td><td>Tastatur</td><td>3</td><td>40</td></tr>
                 </tbody>
               </table>
+
+              <table class="miniTable" aria-label="GROUP BY Ergebnis">
+                <thead>
+                  <tr><th colspan="3"><code>GROUP BY liefertage</code></th></tr>
+                  <tr><th>liefertage</th><th>AVG(preis)</th><th>COUNT(*)</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>20.0</td><td>2</td></tr>
+                  <tr><td>2</td><td>20.0</td><td>2</td></tr>
+                  <tr><td>3</td><td>40.0</td><td>1</td></tr>
+                </tbody>
+              </table>
+
+              <table class="miniTable" aria-label="HAVING Ergebnis">
+                <thead>
+                  <tr><th colspan="2"><code>HAVING AVG(preis) &gt;= 20</code></th></tr>
+                  <tr><th>liefertage</th><th>durchschnittspreis</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>20.0</td></tr>
+                  <tr><td>2</td><td>20.0</td></tr>
+                  <tr><td>3</td><td>40.0</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:10px; font-size: var(--small); color: rgba(11,15,24,.74); line-height: 1.55;">
+              <b>Interpretation:</b> HAVING arbeitet auf Gruppen (z. B. „alle Produkte mit 2 Liefertagen“) – deshalb passt HAVING zu Bedingungen mit AVG/COUNT/SUM.
             </div>
           </div>
         </details>
       `,
       sqlTone: "tone-purple",
-      sql: ["SELECT kategorie_id, COUNT(*) AS anzahl","FROM produkte","GROUP BY kategorie_id","HAVING COUNT(*) >= 2;"]
+      sql: [
+        "-- Durchschnittspreis pro Lieferzeit, dann Gruppen filtern",
+        "SELECT liefertage, AVG(preis) AS durchschnittspreis",
+        "FROM produkte",
+        "GROUP BY liefertage",
+        "HAVING AVG(preis) >= 20;",
+        "",
+        "-- Alternative: Anzahl pro Kategorie (gleiches Prinzip)",
+        "SELECT kategorie_id, COUNT(*) AS anzahl",
+        "FROM produkte",
+        "GROUP BY kategorie_id",
+        "HAVING COUNT(*) >= 2;"
+      ]
     },
+
+    /* Aufgabe direkt unter „GROUP BY & HAVING“ */
     {
       id:"task_having",
       type:"fill",
@@ -1368,58 +1353,97 @@ ORDER BY preis DESC;`,
       context: "HAVING filtert Gruppen (nach GROUP BY).",
       nameInPrompt: true,
       prompt:"Filtere Lieferzeiten mit einem Durchschnittspreis von mindestens 20€:",
-      template:["SELECT liefertage, AVG(preis) AS durchschnittspreis","\nFROM produkte","\nGROUP BY liefertage","\n",{blank:"HAVING"}," AVG(preis) >= 20;"],
+      template:[
+        "SELECT liefertage, AVG(preis) AS durchschnittspreis",
+        "\nFROM produkte",
+        "\nGROUP BY liefertage",
+        "\n",
+        {blank:"HAVING"},
+        " AVG(preis) >= 20;"
+      ],
       feedbackOk:"Richtig. HAVING filtert Gruppen nach dem GROUP BY.",
       feedbackNo:"Nicht ganz. Gesucht ist HAVING."
     },
 
-    
+    /* Programmieraufgabe: direkt nach GROUP BY/HAVING */
     {
-      id:"code_bestseller",
+      id:"code_bestseller2",
       type:"code",
-      title:"Programmieraufgabe: Bestseller freischalten",
-      context: "Im Shop gibt es den Button Bestseller. Zeige Produkte, die insgesamt mindestens 300 verkauft wurden. Nutze SUM(anzahl), GROUP BY und HAVING. Bei Erfolg wird der Button freigeschaltet.",
-      starter: `SELECT p.*
-FROM produkte p
-WHERE p.id IN (
-  SELECT produkt_id
-  FROM verkaeufe
-  GROUP BY produkt_id
-  HAVING SUM(anzahl) >= 300
-);`,
+      title:"Programmieraufgabe: Bestseller",
+      context: "Im Shop gibt es den Button „Bestseller“. Er soll Produkte zeigen, die insgesamt mindestens 300-mal verkauft wurden. Nutze Aggregat + GROUP BY + HAVING. Trage die fehlenden Teile im Lückentext ein.",
+      template:[
+        "SELECT p.*",
+        "\nFROM produkte p",
+        "\nWHERE p.id IN (",
+        "\n  SELECT produkt_id",
+        "\n  FROM verkaeufe",
+        "\n  ", {blank:"GROUP BY"}, " produkt_id",
+        "\n  ", {blank:"HAVING"}, " ", {blank:"SUM"}, "(anzahl) >= 300",
+        "\n);"
+      ],
       unlockTaskId: "bestseller",
       showShop: true,
-      feedbackOk: "Sehr gut. Bestseller ist freigeschaltet.",
-      feedbackNo: "Noch nicht korrekt. Nutze SUM + GROUP BY + HAVING und beziehe verkaeufe/anzahl ein.",
-      check: (sql)=> testAll(sql, [/sum\s*\(/, /group\s+by\b/, /having\b/, /anzahl/, /verk/])
+      feedbackOk: "Sehr gut. „Bestseller“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht. Nutze GROUP BY + HAVING + SUM(anzahl) >= 300 (in der Unterabfrage).",
+      check: (sql)=> testAll(sql, [/from\s+verk/i, /group\s+by\s+produkt_id/i, /having\b/i, /sum\s*\(\s*anzahl\s*\)\s*>=\s*300/i])
     },
 
+
+    /* Freischalt-Aufgabe bleibt eigene Seite */
+
+    /* Schlüssel + 1:n + n:m zusammen auf EINER Theorie-Seite */
     {
-      id:"rel_1n",
-      title:"Verbund 1:n",
-      context: "1:n bedeutet: ein Datensatz gehört zu vielen Datensätzen auf der anderen Seite.",
-      theory: ["Eine 1:n-Beziehung bedeutet: Ein Datensatz auf der „1-Seite“ gehört zu vielen Datensätzen auf der „n-Seite“. In Tabellen setzt man das um, indem man den Primärschlüssel der „1-Seite“ als Fremdschlüssel in der Tabelle der „n-Seite“ speichert."],
+      id:"rel_bundle",
+      title:"Verbund: Schlüssel, 1:n und n:m",
+      context: "So verbindest du Tabellen sauber (und verstehst, warum es funktioniert).",
+      theory: [
+        "Ein Primärschlüssel identifiziert einen Datensatz eindeutig (z. B. kategorien.id). Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle (z. B. produkte.kategorie_id → kategorien.id).",
+        "Bei 1:n liegt der Fremdschlüssel auf der n-Seite: Viele Produkte gehören zu einer Kategorie.",
+        "Bei n:m brauchst du eine Beziehungstabelle: z. B. warenkorb verbindet nutzer und produkte; sie speichert beide Fremdschlüssel (n:m wird zu zwei 1:n)."
+      ],
       sqlTone: "tone-teal",
+      sqlMarks: { id: "pkTok", kategorie_id: "fkTok", nutzer_id: "fkTok", produkt_id: "fkTok" },
       sql: [
-        "-- Produkte mit Kategorienamen (ohne JOIN)",
+        "-- Schema-Idee (vereinfacht)",
+        "kategorien(id, name)",
+        "produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)",
+        "nutzer(id, name)",
+        "warenkorb(nutzer_id, produkt_id, menge)",
+        "",
+        "-- 1:n: Produkt → Kategorie (ohne JOIN, über WHERE-Verknüpfung)",
         "SELECT produkte.name, kategorien.name AS kategorie",
         "FROM produkte, kategorien",
-        "WHERE produkte.kategorie_id = kategorien.id;"
-      ]
-    },
-    {
-      id:"rel_nm",
-      title:"Verbund n:m",
-      context: "n:m bedeutet: viele passen zu vielen – dafür nutzt man eine Beziehungstabelle.",
-      theory: ["Eine n:m-Beziehung bedeutet: Viele Datensätze aus Tabelle A passen zu vielen Datensätze aus Tabelle B. Das setzt man mit einer zusätzlichen Beziehungstabelle um, die die beiden Primärschlüssel als Fremdschlüssel speichert; oft bilden diese beiden Fremdschlüssel zusammen den Primärschlüssel der Beziehungstabelle."],
-      sqlTone: "tone-teal",
-      sql: [
-        "-- Warenkorb mit Nutzer + Produkt (ohne JOIN)",
+        "WHERE produkte.kategorie_id = kategorien.id;",
+        "",
+        "-- n:m: Warenkorb verbindet Nutzer und Produkt (ohne JOIN, über zwei Bedingungen)",
         "SELECT nutzer.name, produkte.name, warenkorb.menge",
         "FROM warenkorb, nutzer, produkte",
         "WHERE warenkorb.nutzer_id = nutzer.id AND warenkorb.produkt_id = produkte.id;"
       ]
     },
+
+    /* Programmieraufgabe: direkt nach Verbund/Schlüssel */
+    {
+      id:"code_category_sport",
+      type:"code",
+      title:"Programmieraufgabe: Kategorie Sport",
+      context: "Im Shop gibt es den Filter „Sport“. Er soll alle Produkte anzeigen, deren Kategorie „sport“ ist. Nutze die Tabellen produkte + kategorien (ohne JOIN-Keyword, über FROM ... WHERE). Trage die fehlenden Teile im Lückentext ein.",
+      template:[
+        "SELECT *",
+        "\nFROM produkte, kategorien",
+        "\nWHERE produkte.kategorie_id = kategorien.id",
+        "\nAND kategorien.name = ", {blank:"'sport'||\"sport\""},
+        ";"
+      ],
+      unlockTaskId: "cat-sport",
+      showShop: true,
+      feedbackOk: "Korrekt. Filter „Sport“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht. Tipp: Verknüpfe über produkte.kategorie_id = kategorien.id und filtere kategorien.name = 'sport'.",
+      check: (sql)=> testAll(sql, [/from\s+produkte\s*,\s*kategorien/i, /produkte\.kategorie_id\s*=\s*kategorien\.id/i, /kategorien\.name\s*=\s*['\"]sport['\"]/i])
+    },
+
+
+    /* Aufgabe direkt unter Verbund-Seite */
     {
       id:"task_rel",
       type:"fill",
@@ -1434,7 +1458,7 @@ WHERE p.id IN (
         {blank:"warenkorb.produkt_id = produkte.id||warenkorb.produkt_id=produkte.id||produkte.id = warenkorb.produkt_id||produkte.id=warenkorb.produkt_id"},
         ";"
       ],
-      feedbackOk:"Richtig. So verbindest du Tabellen ohne JOIN über FROM ... WHERE ...",
+      feedbackOk:"Richtig. So verbindest du Tabellen (klassisch: FROM … WHERE …).",
       feedbackNo:"Nicht ganz. Gesucht ist die Verknüpfung zwischen warenkorb.produkt_id und produkte.id."
     },
 
@@ -1444,7 +1468,10 @@ WHERE p.id IN (
       title:"Personenbezogene Daten",
       context: withName("das ist nicht „nur Theorie“ – das ist echte Verantwortung."),
       nameInTheory: true,
-      theory: ["Personenbezogene Daten sind Informationen, die sich direkt oder indirekt auf eine bestimmte Person beziehen (also eine Person erkennbar machen). Sie sind besonders geschützt (u. a. durch Gesetze und die Datenschutz-Grundverordnung);"],
+      theory: [
+        "Personenbezogene Daten sind Informationen, die eine Person direkt oder indirekt identifizierbar machen (z. B. Name, E-Mail, Kunden-ID in Kombination mit Verhalten).",
+        "Solche Daten sind besonders geschützt (u. a. durch Gesetze und die Datenschutz-Grundverordnung). SQL-Abfragen sollten daher immer zweckgebunden und datensparsam sein."
+      ],
       ackLabel: "Verstanden",
       nextLabel: "Weiter"
     },
@@ -1502,7 +1529,6 @@ WHERE p.id IN (
         highlightShopTarget(currentTargetTaskId);
       } catch {}
     }, { once: true });
-    // Fallback: falls kein SHOP_READY ankommt, trotzdem Locks anwenden
     setTimeout(()=>{
       if(!shopReady){
         shopReady = true;
@@ -1520,24 +1546,36 @@ WHERE p.id IN (
         const style = doc.createElement("style");
         style.id = "tutorialTargetStyle";
         style.textContent = `
+          @keyframes tutorialPulse{
+            0%{ box-shadow: 0 0 0 8px rgba(0,122,255,.30), 0 0 26px rgba(0,122,255,.62); transform: scale(1); }
+            50%{ box-shadow: 0 0 0 14px rgba(0,122,255,.34), 0 0 42px rgba(0,122,255,.88); transform: scale(1.01); }
+            100%{ box-shadow: 0 0 0 8px rgba(0,122,255,.30), 0 0 26px rgba(0,122,255,.62); transform: scale(1); }
+          }
+          @keyframes tutorialBadge{
+            0%{ transform: translateY(0) scale(1); }
+            50%{ transform: translateY(-1px) scale(1.06); }
+            100%{ transform: translateY(0) scale(1); }
+          }
           .tutorial-target{
             position: relative !important;
-            outline: 2px solid rgba(0,122,255,.9);
-            box-shadow: 0 0 0 6px rgba(0,122,255,.18);
+            outline: 3px solid rgba(0,122,255,.98);
+            box-shadow: 0 0 0 8px rgba(0,122,255,.30), 0 0 26px rgba(0,122,255,.62);
+            animation: tutorialPulse 1.05s ease-in-out infinite;
           }
           .tutorial-target::after{
             content: "ZIEL";
             position: absolute;
-            top: -10px;
-            right: -10px;
-            padding: 2px 6px;
+            top: -12px;
+            right: -12px;
+            padding: 3px 7px;
             font-size: 10px;
-            font-weight: 900;
-            letter-spacing: .04em;
+            font-weight: 950;
+            letter-spacing: .08em;
             border-radius: 999px;
-            background: rgba(0,122,255,.95);
+            background: rgba(0,122,255,.98);
             color: white;
-            box-shadow: 0 8px 16px rgba(0,122,255,.25);
+            box-shadow: 0 10px 22px rgba(0,122,255,.35);
+            animation: tutorialBadge 1.05s ease-in-out infinite;
           }
         `;
         doc.head.appendChild(style);
@@ -1556,7 +1594,6 @@ WHERE p.id IN (
 
   /* ---------- Renderers ---------- */
   function renderFill(p){
-    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
     const prompt = p.nameInPrompt ? addNamePrefixText(p.prompt) : p.prompt;
 
     const tpl = p.template.map(part=>{
@@ -1566,7 +1603,7 @@ WHERE p.id IN (
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-            ${renderTheory(prompt, "Aufgabe")}
+      ${renderTheory(prompt, "Aufgabe", "task")}
       <div class="taskCard"><pre class="sql">${tpl}</pre></div>
       <button class="btn" id="checkBtn" style="margin-top:12px;">Prüfen</button>
       <div class="feedback" id="fb"></div>
@@ -1601,11 +1638,9 @@ WHERE p.id IN (
   }
 
   function renderFillMulti(p){
-    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
-
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-            ${renderTheory(p.nameInPrompt ? addNamePrefixText("Fülle beide Lücken korrekt.") : "Fülle beide Lücken korrekt.", "Aufgabe")}
+      ${renderTheory(p.nameInPrompt ? addNamePrefixText("Fülle beide Lücken korrekt.") : "Fülle beide Lücken korrekt.", "Aufgabe", "task")}
       ${p.blocks.map((b, idx)=>{
         const parts = b.template.split("______");
         const before = escapeHtml(parts[0] ?? "");
@@ -1651,13 +1686,97 @@ WHERE p.id IN (
     setTimeout(()=>inputs[0]?.focus(), 30);
   }
 
+  
+  function buildSqlFromTemplate(template, inputs){
+    let out = "";
+    let i = 0;
+    for(const part of (template || [])){
+      if(typeof part === "string") out += part;
+      else { out += (inputs[i]?.value ?? ""); i++; }
+    }
+    return out;
+  }
+
   function renderCodeTask(p){
     const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
     const alreadyUnlocked = !!p.unlockTaskId && isTaskUnlocked(p.unlockTaskId);
+    const isFill = Array.isArray(p.template);
 
+    if(isFill){
+      const tpl = p.template.map(part=>{
+        if(typeof part === "string") return escapeHtml(part);
+        return `<span class="blank"><input data-answer="${escapeAttr(part.blank)}" type="text" placeholder="." autocomplete="off" spellcheck="false"/></span>`;
+      }).join("");
+
+      el("screen").innerHTML = `
+        <h2 class="qTitle">${escapeHtml(p.title)}</h2>
+        <div class="codeLayout codeSplit">
+          <div class="codeLeft">${renderShopPreview()}</div>
+          <div class="codeRight">
+            ${renderTheory(ctx, "Aufgabe", "task")}
+            <div class="taskCard"><pre class="sql">${tpl}</pre></div>
+            <button class="btn ${alreadyUnlocked ? "disabled":""}" id="checkBtn" style="margin-top:12px;">
+              ${alreadyUnlocked ? "Bereits freigeschaltet" : "Prüfen"}
+            </button>
+            <div class="feedback ${alreadyUnlocked ? "show ok":""}" id="fb">${alreadyUnlocked ? escapeHtml(p.feedbackOk || "Bereits freigeschaltet.") : ""}</div>
+          </div>
+        </div>
+        <div class="btnRow">
+          <button class="btn ghost" id="backBtn">Zurück</button>
+          <button class="btn primary ${alreadyUnlocked ? "" : "disabled"}" id="nextBtn">Verstanden</button>
+        </div>
+      `;
+
+      currentTargetTaskId = p.unlockTaskId || null;
+      bindShopPreview();
+
+      const inputs = [...document.querySelectorAll(".codeRight .blank input")];
+      const fb = el("fb");
+      const nextBtn = el("nextBtn");
+      const checkBtn = el("checkBtn");
+
+      el("backBtn").addEventListener("click", ()=>{ state.i--; render(); });
+
+      if(checkBtn){
+        checkBtn.addEventListener("click", ()=>{
+          if(alreadyUnlocked) return;
+
+          const blanksOk = inputs.every(inp => isCorrectAnswer(inp.value, inp.dataset.answer));
+          const builtSql = buildSqlFromTemplate(p.template, inputs);
+          const extraOk = (typeof p.check === "function") ? !!p.check(builtSql) : true;
+          const ok = blanksOk && extraOk;
+
+          fb.textContent = ok ? (p.feedbackOk || "Korrekt.") : (p.feedbackNo || "Noch nicht korrekt.");
+          fb.classList.add("show");
+          fb.classList.toggle("ok", ok);
+          fb.classList.toggle("bad", !ok);
+
+          if(ok){
+            unlockTask(p.unlockTaskId);
+            checkBtn.classList.add("disabled");
+            checkBtn.textContent = "Freigeschaltet";
+            nextBtn.classList.remove("disabled");
+            nextBtn.focus();
+          } else {
+            const firstBad = inputs.find(inp => !isCorrectAnswer(inp.value, inp.dataset.answer));
+            (firstBad || inputs[0])?.focus();
+          }
+        });
+      }
+
+      nextBtn.addEventListener("click", ()=>{
+        if(nextBtn.classList.contains("disabled")) return;
+        state.i++; render();
+      });
+
+      setTimeout(()=>inputs[0]?.focus(), 30);
+      return;
+    }
+
+    /* Fallback: Textarea-Code-Task (Kompatibilität) */
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-      ${renderTheory(ctx, "Programmieraufgabe")}
+      ${renderTheory(ctx, "Programmieraufgabe", "task")}
       <div class="codeLayout">
         <div class="codeLeft">
           <div class="taskCard">
@@ -1665,7 +1784,7 @@ WHERE p.id IN (
             <textarea id="codeInput" class="codeEditor" spellcheck="false" autocomplete="off" autocapitalize="off">${escapeHtml(p.starter || "")}</textarea>
           </div>
           <button class="btn ${alreadyUnlocked ? "disabled":""}" id="checkBtn" style="margin-top:12px;">
-            ${alreadyUnlocked ? "Bereits freigeschaltet" : "Pruefen & freischalten"}
+            ${alreadyUnlocked ? "Bereits freigeschaltet" : "Prüfen & freischalten"}
           </button>
           <div class="feedback ${alreadyUnlocked ? "show ok":""}" id="fb">${alreadyUnlocked ? escapeHtml(p.feedbackOk || "Bereits freigeschaltet.") : ""}</div>
         </div>
@@ -1674,7 +1793,7 @@ WHERE p.id IN (
         </div>
       </div>
       <div class="btnRow">
-        <button class="btn ghost" id="backBtn">Zurueck</button>
+        <button class="btn ghost" id="backBtn">Zurück</button>
         <button class="btn primary ${alreadyUnlocked ? "" : "disabled"}" id="nextBtn">Verstanden</button>
       </div>
     `;
@@ -1723,8 +1842,8 @@ WHERE p.id IN (
     setTimeout(()=>input?.focus(), 30);
   }
 
-  function renderMatch(p){
-    const ctx = p.nameInPrompt ? addNamePrefixText(p.context) : p.context;
+
+function renderMatch(p){
     const theory = p.nameInPrompt ? addNamePrefixText(p.theory) : p.theory;
 
     const right = p.right.slice();
@@ -1738,7 +1857,7 @@ WHERE p.id IN (
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-            ${renderTheory(theory, "Aufgabe")}
+      ${renderTheory(theory, "Aufgabe", "task")}
       <div class="matchGrid">
         <div class="matchCol">
           <div class="matchTitle">Baustein</div>
@@ -1826,12 +1945,11 @@ WHERE p.id IN (
   }
 
   function renderAck(p){
-    const ctx = p.context || "";
     const theoryText = p.nameInTheory ? addNamePrefixText(p.theory) : p.theory;
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-            ${theoryText ? renderTheory(theoryText) : ``}
+      ${theoryText ? renderTheory(theoryText) : ``}
 
       <button class="btn primary" id="ackBtn" style="width:100%; margin-top: 6px;">${escapeHtml(p.ackLabel || "Verstanden")}</button>
 
@@ -1872,13 +1990,12 @@ WHERE p.id IN (
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
-            ${story}
+      ${story}
       ${recap}
       ${theoryText ? renderTheory(theoryText) : ``}
       ${p.table ? p.table : ``}
       ${p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue", p.sqlMarks || null) : ``}
       ${p.afterSql ? p.afterSql : ``}
-      ${p.distinctViz ? renderDistinctViz() : ``}
       <div class="btnRow">
         <button class="btn ghost ${state.i===0 ? "disabled":""}" id="backBtn">Zurück</button>
         <button class="btn primary" id="nextBtn">Verstanden</button>
@@ -1895,7 +2012,6 @@ WHERE p.id IN (
       render();
     });
 
-
     if(p.finish){
       const btn = el("nextBtn");
       if(btn){
@@ -1907,8 +2023,6 @@ WHERE p.id IN (
         clone.addEventListener("click", goToFreeMode);
       }
     }
-
-    if(p.distinctViz) bindDistinctSlider();
   }
 
   function render(){
@@ -1926,7 +2040,6 @@ WHERE p.id IN (
 
     renderInfo(p);
   }
-
 
   function goToFreeMode(){
     const n = (state.name || "").toString().trim();
@@ -1960,3 +2073,4 @@ WHERE p.id IN (
 </script>
 </body>
 </html>
+
