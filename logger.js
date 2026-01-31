@@ -1,26 +1,19 @@
-/* Schulazon Evaluation Logger (client-side only) */
+/* Schulazon Evaluation Logger (client-side only) - v2 schema (de) */
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "schulazon_eval_log_v1";
-  const STUDENT_KEY = "schulazon_student_id_v1";
-  const SESSION_KEY = "schulazon_session_id_v1";
-  const LAST_SEEN_KEY = "schulazon_last_seen_v1";
-  const IDLE_THRESHOLD_MS = 10 * 1000;
+  // Storage keys (v2)
+  const STORAGE_KEY = "schulazon_eval_log_v2";
+  const STUDENT_KEY = "schulazon_schueler_id_v2";
+  const SESSION_KEY = "schulazon_session_id_v2";
 
-  const now = () => Date.now();
+  const LONG_PAUSE_MS = 3 * 60 * 1000; // >3 minutes
+  const nowMs = () => Date.now();
+  const isoNow = () => new Date().toISOString();
 
-  function safeParse(json) {
-    try { return JSON.parse(json); } catch { return null; }
-  }
-
-  function safeGet(storage, key) {
-    try { return storage && storage.getItem(key); } catch { return ""; }
-  }
-
-  function safeSet(storage, key, val) {
-    try { storage && storage.setItem(key, val); } catch {}
-  }
+  function safeParse(json) { try { return JSON.parse(json); } catch { return null; } }
+  function safeGet(storage, key) { try { return storage && storage.getItem(key); } catch { return ""; } }
+  function safeSet(storage, key, val) { try { storage && storage.setItem(key, val); } catch {} }
 
   function randomId(prefix) {
     try {
@@ -30,7 +23,7 @@
     return `${prefix}${rnd.slice(0, 16)}`;
   }
 
-  // FNV-1a 32-bit hash (short, stable, non-PII)
+  // FNV-1a 32-bit hash (short, stable)
   function fnv1a(str) {
     let h = 0x811c9dc5;
     for (let i = 0; i < str.length; i++) {
@@ -50,375 +43,604 @@
     }
   }
 
-  function pad2(n) {
-    return String(n).padStart(2, "0");
+  function isTutorialPage() {
+    const p = pageName().toLowerCase();
+    if (p.includes("tutorial")) return true;
+    const mode = document?.body?.dataset?.mode;
+    return mode === "tutorial";
   }
 
-  function formatStampLocal(d) {
-    const yyyy = d.getFullYear();
-    const mm = pad2(d.getMonth() + 1);
-    const dd = pad2(d.getDate());
-    const hh = pad2(d.getHours());
-    const min = pad2(d.getMinutes());
-    return `${yyyy}-${mm}-${dd}_${hh}${min}`;
+  function isFreeMode() {
+    return (document?.body?.dataset?.mode) === "free";
   }
 
   function ensureBaseData(raw) {
-    const data = raw && typeof raw === "object" ? raw : {};
-    data.version = data.version || 1;
-    data.meta = data.meta && typeof data.meta === "object" ? data.meta : {};
-    data.meta.mode_path = Array.isArray(data.meta.mode_path) ? data.meta.mode_path : [];
-    data.meta.created_at = data.meta.created_at || new Date().toISOString();
-    data.meta.user_agent = data.meta.user_agent || navigator.userAgent;
+    const d = raw && typeof raw === "object" ? raw : {};
+    d.version = Number.isFinite(d.version) ? d.version : 1;
+    d.aufgezeichnet_am = d.aufgezeichnet_am || null;
 
-    data.pretest = data.pretest && typeof data.pretest === "object" ? data.pretest : {};
-    data.posttest = data.posttest && typeof data.posttest === "object" ? data.posttest : {};
+    d.schueler = d.schueler && typeof d.schueler === "object" ? d.schueler : {};
+    d.schueler.schueler_id = d.schueler.schueler_id || "";
 
-    data.free_mode = data.free_mode && typeof data.free_mode === "object" ? data.free_mode : {};
-    data.free_mode.tasks = data.free_mode.tasks && typeof data.free_mode.tasks === "object" ? data.free_mode.tasks : {};
-    data.free_mode.attempts = Array.isArray(data.free_mode.attempts) ? data.free_mode.attempts : [];
-    data.free_mode.score_events = Array.isArray(data.free_mode.score_events) ? data.free_mode.score_events : [];
-    data.free_mode.pause_events = Array.isArray(data.free_mode.pause_events) ? data.free_mode.pause_events : [];
-    data.free_mode.tools = data.free_mode.tools && typeof data.free_mode.tools === "object" ? data.free_mode.tools : {};
+    // Tests
+    d.pretest = d.pretest && typeof d.pretest === "object" ? d.pretest : {};
+    d.posttest = d.posttest && typeof d.posttest === "object" ? d.posttest : {};
 
-    const toolDefaults = (t) => ({
-      opens: t && Number.isFinite(t.opens) ? t.opens : 0,
-      duration_ms: t && Number.isFinite(t.duration_ms) ? t.duration_ms : 0,
-      events: Array.isArray(t?.events) ? t.events : []
+    // Tutorial
+    d.tutorial = d.tutorial && typeof d.tutorial === "object" ? d.tutorial : {};
+    d.tutorial.gemacht = !!d.tutorial.gemacht;
+    d.tutorial.abgeschlossen = !!d.tutorial.abgeschlossen;
+    d.tutorial.startzeit = d.tutorial.startzeit || null;
+    d.tutorial.endzeit = d.tutorial.endzeit || null;
+    d.tutorial.dauer_ms = Number.isFinite(d.tutorial.dauer_ms) ? d.tutorial.dauer_ms : null;
+    d.tutorial.letzte_seite = Number.isFinite(d.tutorial.letzte_seite) ? d.tutorial.letzte_seite : null;
+    d.tutorial.seiten_gesamt = Number.isFinite(d.tutorial.seiten_gesamt) ? d.tutorial.seiten_gesamt : null;
+    d.tutorial.spruenge = Number.isFinite(d.tutorial.spruenge) ? d.tutorial.spruenge : 0;
+    d.tutorial.aufgaben_im_tutorial = d.tutorial.aufgaben_im_tutorial && typeof d.tutorial.aufgaben_im_tutorial === "object"
+      ? d.tutorial.aufgaben_im_tutorial : {};
+
+    // Free mode
+    d.freier_modus = d.freier_modus && typeof d.freier_modus === "object" ? d.freier_modus : {};
+    d.freier_modus.startzeit = d.freier_modus.startzeit || null;
+    d.freier_modus.endzeit = d.freier_modus.endzeit || null;
+    d.freier_modus.dauer_ms = Number.isFinite(d.freier_modus.dauer_ms) ? d.freier_modus.dauer_ms : null;
+
+    d.freier_modus.aufgaben_reihenfolge = Array.isArray(d.freier_modus.aufgaben_reihenfolge) ? d.freier_modus.aufgaben_reihenfolge : [];
+    d.freier_modus.aufgaben = d.freier_modus.aufgaben && typeof d.freier_modus.aufgaben === "object" ? d.freier_modus.aufgaben : {};
+    d.freier_modus.hilfen = d.freier_modus.hilfen && typeof d.freier_modus.hilfen === "object" ? d.freier_modus.hilfen : {};
+    d.freier_modus.hilfen.spicker = d.freier_modus.hilfen.spicker && typeof d.freier_modus.hilfen.spicker === "object" ? d.freier_modus.hilfen.spicker : {};
+    d.freier_modus.hilfen.hilfe = d.freier_modus.hilfen.hilfe && typeof d.freier_modus.hilfen.hilfe === "object" ? d.freier_modus.hilfen.hilfe : {};
+    d.freier_modus.hilfen.schema = d.freier_modus.hilfen.schema && typeof d.freier_modus.hilfen.schema === "object" ? d.freier_modus.hilfen.schema : {};
+
+    ["spicker","hilfe","schema"].forEach(k => {
+      d.freier_modus.hilfen[k].oeffnungen = Number.isFinite(d.freier_modus.hilfen[k].oeffnungen) ? d.freier_modus.hilfen[k].oeffnungen : 0;
+      d.freier_modus.hilfen[k].zeit_ms = Number.isFinite(d.freier_modus.hilfen[k].zeit_ms) ? d.freier_modus.hilfen[k].zeit_ms : 0;
     });
-    data.free_mode.tools.schema = toolDefaults(data.free_mode.tools.schema);
-    data.free_mode.tools.spicker = toolDefaults(data.free_mode.tools.spicker);
-    data.free_mode.tools.help = toolDefaults(data.free_mode.tools.help);
+    d.freier_modus.hilfen.erste_hilfe_nach_ms = Number.isFinite(d.freier_modus.hilfen.erste_hilfe_nach_ms) ? d.freier_modus.hilfen.erste_hilfe_nach_ms : null;
 
-    data.free_mode.bonus = data.free_mode.bonus && typeof data.free_mode.bonus === "object" ? data.free_mode.bonus : {};
-    data.free_mode.bonus.events = Array.isArray(data.free_mode.bonus.events) ? data.free_mode.bonus.events : [];
+    d.freier_modus.pausen_lang = Array.isArray(d.freier_modus.pausen_lang) ? d.freier_modus.pausen_lang : [];
 
-    data.free_mode.summary = data.free_mode.summary && typeof data.free_mode.summary === "object" ? data.free_mode.summary : {};
-    data.free_mode.active_time_ms = Number.isFinite(data.free_mode.active_time_ms) ? data.free_mode.active_time_ms : 0;
-    data.free_mode.idle_time_ms = Number.isFinite(data.free_mode.idle_time_ms) ? data.free_mode.idle_time_ms : 0;
-    data.free_mode.order_counter = Number.isFinite(data.free_mode.order_counter) ? data.free_mode.order_counter : 0;
-    data.free_mode._last_sql_hash = data.free_mode._last_sql_hash && typeof data.free_mode._last_sql_hash === "object"
-      ? data.free_mode._last_sql_hash : {};
+    d.freier_modus.shop = d.freier_modus.shop && typeof d.freier_modus.shop === "object" ? d.freier_modus.shop : {};
+    d.freier_modus.shop.button_tests = Array.isArray(d.freier_modus.shop.button_tests) ? d.freier_modus.shop.button_tests : [];
 
-    data.events = Array.isArray(data.events) ? data.events : [];
-    return data;
+    // Internal state (not exported)
+    d._intern = d._intern && typeof d._intern === "object" ? d._intern : {};
+    d._intern.session_id = d._intern.session_id || "";
+    d._intern.order_counter = Number.isFinite(d._intern.order_counter) ? d._intern.order_counter : 0;
+    d._intern.last_action_ms = Number.isFinite(d._intern.last_action_ms) ? d._intern.last_action_ms : nowMs();
+    d._intern.tool_open_ms = d._intern.tool_open_ms && typeof d._intern.tool_open_ms === "object" ? d._intern.tool_open_ms : {};
+    d._intern.hidden_started_ms = Number.isFinite(d._intern.hidden_started_ms) ? d._intern.hidden_started_ms : null;
+    d._intern.free_started_ms = Number.isFinite(d._intern.free_started_ms) ? d._intern.free_started_ms : null;
+    d._intern.tutorial_started_ms = Number.isFinite(d._intern.tutorial_started_ms) ? d._intern.tutorial_started_ms : null;
+
+    d.events = Array.isArray(d.events) ? d.events : []; // optional audit trail
+    return d;
   }
 
-  const stored = safeParse(safeGet(localStorage, STORAGE_KEY));
-  const data = ensureBaseData(stored);
+  // Migration from v1 (best-effort)
+  function migrateV1ToV2(v1) {
+    if (!v1 || typeof v1 !== "object") return null;
+    const v2 = {};
+    v2.version = 1;
+    v2.aufgezeichnet_am = null;
+    v2.schueler = { schueler_id: v1?.meta?.student_id || "" };
+
+    // Pre/Post: keep payload if already rich, else map common keys
+    const mapTest = (src) => {
+      const t = {};
+      const started = src?.started_at_ms ? new Date(src.started_at_ms).toISOString() : src?.startzeit || null;
+      const ended = src?.ended_at_ms ? new Date(src.ended_at_ms).toISOString() : src?.endzeit || null;
+      t.startzeit = started;
+      t.endzeit = ended;
+      t.dauer_ms = Number.isFinite(src?.duration_ms) ? src.duration_ms : (src?.started_at_ms && src?.ended_at_ms ? (src.ended_at_ms - src.started_at_ms) : null);
+      // answers
+      t.antworten = src?.antworten || src?.answers || {};
+      // score
+      const richtig = Number.isFinite(src?.score?.richtig) ? src.score.richtig : (Number.isFinite(src?.score_raw) ? src.score_raw : null);
+      const gesamt = Number.isFinite(src?.score?.gesamt) ? src.score.gesamt : (Number.isFinite(src?.max_score) ? src.max_score : null);
+      if (Number.isFinite(richtig) || Number.isFinite(gesamt)) t.score = { richtig: richtig ?? 0, gesamt: gesamt ?? 0 };
+      // likert
+      t.likert = src?.likert || {};
+      if (Number.isFinite(src?.likert_motivation)) t.likert.motivation = src.likert_motivation;
+      if (Number.isFinite(src?.likert_selfefficacy)) t.likert.selbstvertrauen_sql = src.likert_selfefficacy;
+      if (Number.isFinite(src?.confidence)) t.sicherheit = src.confidence;
+      return t;
+    };
+    v2.pretest = mapTest(v1.pretest || {});
+    v2.posttest = mapTest(v1.posttest || {});
+
+    // Tutorial: unknown in v1
+    v2.tutorial = {
+      gemacht: false, abgeschlossen: false,
+      startzeit: null, endzeit: null, dauer_ms: null,
+      letzte_seite: null, seiten_gesamt: null, spruenge: 0,
+      aufgaben_im_tutorial: {}
+    };
+
+    // Free mode: map tasks+tools+pauses
+    const fm = v1.free_mode || {};
+    const startzeit = Number.isFinite(fm.started_at_ms) ? new Date(fm.started_at_ms).toISOString() : null;
+    const endzeit = Number.isFinite(fm.ended_at_ms) ? new Date(fm.ended_at_ms).toISOString() : null;
+    const dauer_ms = Number.isFinite(fm.session_duration_ms) ? fm.session_duration_ms
+      : (Number.isFinite(fm.started_at_ms) && Number.isFinite(fm.ended_at_ms) ? (fm.ended_at_ms - fm.started_at_ms) : null);
+
+    const hilfen = { spicker:{oeffnungen:0,zeit_ms:0}, hilfe:{oeffnungen:0,zeit_ms:0}, schema:{oeffnungen:0,zeit_ms:0}, erste_hilfe_nach_ms:null };
+    const tools = fm.tools || {};
+    if (tools.spicker) { hilfen.spicker.oeffnungen = tools.spicker.opens||0; hilfen.spicker.zeit_ms = tools.spicker.duration_ms||0; }
+    if (tools.help) { hilfen.hilfe.oeffnungen = tools.help.opens||0; hilfen.hilfe.zeit_ms = tools.help.duration_ms||0; }
+    if (tools.schema) { hilfen.schema.oeffnungen = tools.schema.opens||0; hilfen.schema.zeit_ms = tools.schema.duration_ms||0; }
+
+    const aufgaben = {};
+    const aufgaben_reihenfolge = [];
+    const tasks = fm.tasks || {};
+    Object.keys(tasks).forEach((taskId) => {
+      const t = tasks[taskId] || {};
+      aufgaben[taskId] = {
+        bearbeitungs_reihenfolge: t.order_index || null,
+        gestartet: t.start_time_ms ? new Date(t.start_time_ms).toISOString() : null,
+        geloest: t.solved_time_ms ? new Date(t.solved_time_ms).toISOString() : null,
+        dauer_ms: (t.start_time_ms && t.solved_time_ms) ? (t.solved_time_ms - t.start_time_ms) : null,
+        geloest_ok: !!t.solved_time_ms,
+        fehlversuche: t.attempts_wrong || 0,
+        hilfe_level_max: (t.solution_viewed ? "musterloesung" : (t.used_hint_count ? "tipp_1" : "keine")),
+        feedback_verlauf: [],
+        fehler_kategorien: {}
+      };
+      if (Number.isFinite(t.order_index)) aufgaben_reihenfolge.push(taskId);
+    });
+
+    // Pauses: keep long blurs/idle if present
+    const pausen_lang = [];
+    (fm.pause_events || []).forEach((pe) => {
+      if (!pe || !pe.start_ms || !pe.end_ms) return;
+      const delta = pe.end_ms - pe.start_ms;
+      if (delta > LONG_PAUSE_MS) {
+        pausen_lang.push({
+          startzeit: new Date(pe.start_ms).toISOString(),
+          endzeit: new Date(pe.end_ms).toISOString(),
+          dauer_ms: delta,
+          grund: pe.reason === "blur" ? "tab_inaktiv" : "keine_aktion"
+        });
+      }
+    });
+
+    v2.freier_modus = {
+      startzeit, endzeit, dauer_ms,
+      aufgaben_reihenfolge,
+      aufgaben,
+      hilfen,
+      pausen_lang,
+      shop: { button_tests: [] }
+    };
+
+    v2._intern = {};
+    v2.events = Array.isArray(v1.events) ? v1.events : [];
+    return v2;
+  }
+
+  // Load stored data
+  const storedV2 = safeParse(safeGet(localStorage, STORAGE_KEY));
+  let data = ensureBaseData(storedV2);
+
+  // If no v2 but v1 exists, migrate
+  if (!storedV2) {
+    const v1 = safeParse(safeGet(localStorage, "schulazon_eval_log_v1"));
+    const migrated = migrateV1ToV2(v1);
+    if (migrated) {
+      data = ensureBaseData(migrated);
+      persist();
+    }
+  }
 
   function persist() {
     try { safeSet(localStorage, STORAGE_KEY, JSON.stringify(data)); } catch {}
   }
 
-  function setPath(obj, path, value) {
+  function ensureSessionId() {
+    const existing = safeGet(localStorage, SESSION_KEY);
+    if (existing) {
+      data._intern.session_id = existing;
+      return existing;
+    }
+    const sid = randomId("sess_");
+    data._intern.session_id = sid;
+    safeSet(localStorage, SESSION_KEY, sid);
+    return sid;
+  }
+
+  function getSchuelerId() {
+    const fromLS = safeGet(localStorage, STUDENT_KEY);
+    if (fromLS) return fromLS;
+    return data.schueler.schueler_id || "";
+  }
+
+  function setSchuelerId(id) {
+    const clean = String(id || "").trim();
+    if (!clean) return;
+    data.schueler.schueler_id = clean;
+    safeSet(localStorage, STUDENT_KEY, clean);
+    persist();
+  }
+
+  function ensureSchuelerId() {
+    const current = getSchuelerId();
+    if (current) return current;
+    const sid = randomId("S-");
+    setSchuelerId(sid);
+    return sid;
+  }
+
+  function ensureSchuelerIdFromName(name) {
+    const n = (name || "").toString().trim();
+    if (!n) return;
+    // do not overwrite existing stable id
+    if (getSchuelerId()) return;
+    const hash = fnv1a(n.toLowerCase());
+    setSchuelerId(`S-${hash}`);
+  }
+
+  // ---- Long pause detection ----
+  function maybeRecordGapPause(currentMs, reason) {
+    const last = data._intern.last_action_ms;
+    if (!Number.isFinite(last) || last <= 0) {
+      data._intern.last_action_ms = currentMs;
+      return;
+    }
+    const gap = currentMs - last;
+    if (gap > LONG_PAUSE_MS && isFreeMode()) {
+      data.freier_modus.pausen_lang.push({
+        startzeit: new Date(last).toISOString(),
+        endzeit: new Date(currentMs).toISOString(),
+        dauer_ms: gap,
+        grund: reason || "keine_aktion"
+      });
+    }
+    data._intern.last_action_ms = currentMs;
+  }
+
+  function touch(reason) {
+    const t = nowMs();
+    maybeRecordGapPause(t, reason);
+    // mark first help time (in free mode)
+    if (isFreeMode() && data.freier_modus.startzeit) {
+      const startMs = Date.parse(data.freier_modus.startzeit);
+      if (Number.isFinite(startMs) && data.freier_modus.hilfen.erste_hilfe_nach_ms == null) {
+        // only set when help is opened (touch() is also used elsewhere)
+      }
+    }
+    persist();
+  }
+
+  // ---- Tutorial helpers ----
+  function tutorialStart(seitenGesamt) {
+    data.tutorial.gemacht = true;
+    if (!data.tutorial.startzeit) {
+      data.tutorial.startzeit = isoNow();
+      data._intern.tutorial_started_ms = nowMs();
+    }
+    if (Number.isFinite(seitenGesamt)) data.tutorial.seiten_gesamt = seitenGesamt;
+    persist();
+  }
+
+  function tutorialProgress(letzteSeite, seitenGesamt) {
+    data.tutorial.gemacht = true;
+    if (!data.tutorial.startzeit) tutorialStart(seitenGesamt);
+    if (Number.isFinite(letzteSeite)) data.tutorial.letzte_seite = letzteSeite;
+    if (Number.isFinite(seitenGesamt)) data.tutorial.seiten_gesamt = seitenGesamt;
+    persist();
+  }
+
+  function tutorialJump() {
+    data.tutorial.gemacht = true;
+    data.tutorial.spruenge = (data.tutorial.spruenge || 0) + 1;
+    persist();
+  }
+
+  function tutorialComplete() {
+    data.tutorial.gemacht = true;
+    data.tutorial.abgeschlossen = true;
+    if (!data.tutorial.startzeit) tutorialStart(data.tutorial.seiten_gesamt);
+    data.tutorial.endzeit = isoNow();
+    const startMs = data._intern.tutorial_started_ms || (data.tutorial.startzeit ? Date.parse(data.tutorial.startzeit) : null);
+    const endMs = data.tutorial.endzeit ? Date.parse(data.tutorial.endzeit) : null;
+    if (Number.isFinite(startMs) && Number.isFinite(endMs)) data.tutorial.dauer_ms = endMs - startMs;
+    persist();
+  }
+
+  // ---- Free mode helpers ----
+  function ensureFreeModeStart() {
+    if (!isFreeMode()) return;
+    if (!data.freier_modus.startzeit) {
+      data.freier_modus.startzeit = isoNow();
+      data._intern.free_started_ms = nowMs();
+    }
+  }
+
+  function ensureTask(taskId) {
+    ensureFreeModeStart();
+    if (!taskId) return null;
+    const tasks = data.freier_modus.aufgaben;
+    if (!tasks[taskId]) {
+      tasks[taskId] = {
+        bearbeitungs_reihenfolge: null,
+        gestartet: null,
+        geloest: null,
+        dauer_ms: null,
+        geloest_ok: false,
+        fehlversuche: 0,
+        hilfe_level_max: "keine",
+        feedback_verlauf: [],
+        fehler_kategorien: {}
+      };
+    }
+    return tasks[taskId];
+  }
+
+  const HELP_RANK = { "keine": 0, "tipp_1": 1, "tipp_2": 2, "musterloesung": 3 };
+  function maxHelp(a, b) {
+    const ra = HELP_RANK[a] ?? 0;
+    const rb = HELP_RANK[b] ?? 0;
+    return (rb > ra) ? b : a;
+  }
+
+  // ---- Public logging API ----
+  function logEvent(typ, payload) {
+    // optional audit trail
+    try {
+      data.events.push({ zeit: isoNow(), typ: String(typ || ""), daten: payload ?? null });
+    } catch {}
+    touch();
+  }
+
+  function recordTestResult(kind, payload) {
+    const k = (kind === "posttest") ? "posttest" : "pretest";
+    const src = payload && typeof payload === "object" ? payload : {};
+    const out = {};
+
+    // Accept either german fields or common legacy fields
+    out.startzeit = src.startzeit || (Number.isFinite(src.started_at_ms) ? new Date(src.started_at_ms).toISOString() : null);
+    out.endzeit = src.endzeit || (Number.isFinite(src.ended_at_ms) ? new Date(src.ended_at_ms).toISOString() : null);
+    out.dauer_ms = Number.isFinite(src.dauer_ms) ? src.dauer_ms : (Number.isFinite(src.duration_ms) ? src.duration_ms : null);
+    if (!Number.isFinite(out.dauer_ms) && out.startzeit && out.endzeit) {
+      const a = Date.parse(out.startzeit), b = Date.parse(out.endzeit);
+      if (Number.isFinite(a) && Number.isFinite(b)) out.dauer_ms = b - a;
+    }
+
+    out.antworten = src.antworten || src.answers || {};
+    const richtig = Number.isFinite(src?.score?.richtig) ? src.score.richtig : (Number.isFinite(src.score_raw) ? src.score_raw : null);
+    const gesamt = Number.isFinite(src?.score?.gesamt) ? src.score.gesamt : (Number.isFinite(src.max_score) ? src.max_score : null);
+    out.score = {
+      richtig: Number.isFinite(richtig) ? richtig : 0,
+      gesamt: Number.isFinite(gesamt) ? gesamt : (Array.isArray(Object.keys(out.antworten)) ? Object.keys(out.antworten).length : 0)
+    };
+
+    out.likert = src.likert && typeof src.likert === "object" ? src.likert : {};
+    if (Number.isFinite(src.likert_motivation)) out.likert.motivation = src.likert_motivation;
+    if (Number.isFinite(src.likert_selfefficacy)) out.likert.selbstvertrauen_sql = src.likert_selfefficacy;
+
+    if (Number.isFinite(src.sicherheit)) out.sicherheit = src.sicherheit;
+    if (Number.isFinite(src.confidence)) out.sicherheit = src.confidence;
+
+    data[k] = out;
+    persist();
+  }
+
+  function trackTaskOpen(taskId) {
+    if (!isFreeMode()) return;
+    ensureFreeModeStart();
+    const id = String(taskId || "").trim();
+    if (!id) return;
+
+    const t = ensureTask(id);
+    if (!t) return;
+
+    if (!t.bearbeitungs_reihenfolge) {
+      data._intern.order_counter += 1;
+      t.bearbeitungs_reihenfolge = data._intern.order_counter;
+      data.freier_modus.aufgaben_reihenfolge.push(id);
+    }
+    if (!t.gestartet) t.gestartet = isoNow();
+    logEvent("aufgabe_geoeffnet", { task_id: id });
+    touch();
+  }
+
+  function trackAttempt(opts = {}) {
+    if (!isFreeMode()) return;
+    ensureFreeModeStart();
+    const taskId = String(opts.taskId || "").trim();
+    if (!taskId) return;
+    const t = ensureTask(taskId);
+    if (!t) return;
+
+    // Ensure started
+    if (!t.gestartet) t.gestartet = isoNow();
+    if (!t.bearbeitungs_reihenfolge) {
+      data._intern.order_counter += 1;
+      t.bearbeitungs_reihenfolge = data._intern.order_counter;
+      data.freier_modus.aufgaben_reihenfolge.push(taskId);
+    }
+
+    // Normalize result
+    const rawRes = (opts.result || "").toString().toLowerCase();
+    const ergebnis = (rawRes === "correct" || rawRes === "richtig") ? "richtig" : "falsch";
+
+    const helpLevel = (opts.helpLevel || opts.hilfeLevel || "keine").toString().trim().toLowerCase();
+    const hl = (helpLevel === "musterloesung" || helpLevel === "solution") ? "musterloesung"
+      : (helpLevel === "tipp_2" || helpLevel === "hint2") ? "tipp_2"
+      : (helpLevel === "tipp_1" || helpLevel === "hint1" || helpLevel === "hint") ? "tipp_1"
+      : "keine";
+
+    const feedbackText = (opts.feedbackText || opts.feedback || opts.message || "").toString();
+
+    // Fehlversuche zählen
+    if (ergebnis === "falsch") t.fehlversuche += 1;
+
+    // help max
+    t.hilfe_level_max = maxHelp(t.hilfe_level_max || "keine", hl);
+
+    // optional error category
+    const cat = (opts.errorCategory || opts.fehlerKategorie || "").toString().trim();
+    if (cat) {
+      t.fehler_kategorien[cat] = (t.fehler_kategorien[cat] || 0) + 1;
+    }
+
+    t.feedback_verlauf.push({
+      zeit: isoNow(),
+      ergebnis,
+      feedback_text: feedbackText,
+      hilfe_level: hl
+    });
+
+    if (ergebnis === "richtig") {
+      t.geloest_ok = true;
+      if (!t.geloest) t.geloest = isoNow();
+      // compute duration
+      const a = t.gestartet ? Date.parse(t.gestartet) : null;
+      const b = t.geloest ? Date.parse(t.geloest) : null;
+      if (Number.isFinite(a) && Number.isFinite(b)) t.dauer_ms = b - a;
+      logEvent("aufgabe_geloest", { task_id: taskId });
+    } else {
+      logEvent("aufgabe_pruefen_falsch", { task_id: taskId, hilfe_level: hl });
+    }
+
+    touch();
+    persist();
+  }
+
+  function trackSolved(taskId) {
+    // Backwards compatibility: treat as correct attempt without extra info
+    trackAttempt({ taskId, result: "correct", feedbackText: "OK", helpLevel: "keine" });
+  }
+
+  function trackHint(taskId, level) {
+    // record help level usage without attempt (optional)
+    if (!isFreeMode()) return;
+    const id = String(taskId || "").trim();
+    if (!id) return;
+    const t = ensureTask(id);
+    if (!t) return;
+    const hl = (level === 2) ? "tipp_2" : "tipp_1";
+    t.hilfe_level_max = maxHelp(t.hilfe_level_max || "keine", hl);
+    logEvent("tipp_genutzt", { task_id: id, level: hl });
+    touch();
+  }
+
+  function trackSolutionViewed(taskId) {
+    if (!isFreeMode()) return;
+    const id = String(taskId || "").trim();
+    if (!id) return;
+    const t = ensureTask(id);
+    if (!t) return;
+    t.hilfe_level_max = maxHelp(t.hilfe_level_max || "keine", "musterloesung");
+    logEvent("musterloesung_angezeigt", { task_id: id });
+    touch();
+  }
+
+  function trackToolOpen(toolName) {
+    if (!isFreeMode()) return;
+    ensureFreeModeStart();
+    const raw = (toolName || "").toString().toLowerCase();
+    const k = (raw === "help" || raw === "hilfe") ? "hilfe" : (raw === "spicker") ? "spicker" : "schema";
+    data.freier_modus.hilfen[k].oeffnungen += 1;
+    data._intern.tool_open_ms[k] = nowMs();
+
+    // first help time
+    if (data.freier_modus.hilfen.erste_hilfe_nach_ms == null && data.freier_modus.startzeit) {
+      const startMs = Date.parse(data.freier_modus.startzeit);
+      const delta = nowMs() - startMs;
+      if (Number.isFinite(delta) && delta >= 0) data.freier_modus.hilfen.erste_hilfe_nach_ms = delta;
+    }
+
+    logEvent("hilfe_geoeffnet", { tool: k });
+    touch();
+  }
+
+  function trackToolClose(toolName) {
+    if (!isFreeMode()) return;
+    const raw = (toolName || "").toString().toLowerCase();
+    const k = (raw === "help" || raw === "hilfe") ? "hilfe" : (raw === "spicker") ? "spicker" : "schema";
+    const started = data._intern.tool_open_ms[k];
+    if (Number.isFinite(started)) {
+      const delta = nowMs() - started;
+      if (delta > 0) data.freier_modus.hilfen[k].zeit_ms += delta;
+    }
+    data._intern.tool_open_ms[k] = null;
+    logEvent("hilfe_geschlossen", { tool: k });
+    touch();
+  }
+
+  function recordShopButtonTest(taskId, erfolg) {
+    if (!isFreeMode()) return;
+    ensureFreeModeStart();
+    data.freier_modus.shop.button_tests.push({
+      zeit: isoNow(),
+      task_id: String(taskId || "").trim(),
+      erfolg: !!erfolg
+    });
+    logEvent("shop_button_test", { task_id: String(taskId || "").trim(), erfolg: !!erfolg });
+    touch();
+  }
+
+  function updateDurations() {
+    // Tutorial duration if on tutorial page
+    if (data.tutorial.startzeit && !data.tutorial.endzeit && isTutorialPage()) {
+      // still running; don't set end
+    }
+    // Free mode duration
+    if (data.freier_modus.startzeit && isFreeMode()) {
+      // keep running; duration computed on export
+    }
+  }
+
+  function set(path, value) {
     if (!path) return;
     const parts = String(path).split(".");
-    let cur = obj;
+    let cur = data;
     for (let i = 0; i < parts.length - 1; i++) {
       const k = parts[i];
       if (!cur[k] || typeof cur[k] !== "object") cur[k] = {};
       cur = cur[k];
     }
     cur[parts[parts.length - 1]] = value;
-  }
-
-  function getStudentId() {
-    const existing = safeGet(localStorage, STUDENT_KEY);
-    if (existing) return existing;
-    if (data.meta.student_id) return data.meta.student_id;
-    return "";
-  }
-
-  function setStudentId(id, source) {
-    const clean = String(id || "").trim();
-    if (!clean) return;
-    data.meta.student_id = clean;
-    data.meta.student_id_source = source || data.meta.student_id_source || "random";
-    safeSet(localStorage, STUDENT_KEY, clean);
-    persist();
-  }
-
-  function ensureStudentIdFromName(name) {
-    const n = (name || "").toString().trim();
-    if (!n) return;
-    const current = getStudentId();
-    if (current && data.meta.student_id_source && data.meta.student_id_source !== "random") return;
-    const hash = fnv1a(n.toLowerCase());
-    setStudentId(`S-${hash}`, "name_hash");
-  }
-
-  function ensureStudentId() {
-    const current = getStudentId();
-    if (current) return current;
-    const generated = `S-${randomId("").slice(0, 8)}`;
-    setStudentId(generated, "random");
-    return generated;
-  }
-
-  function ensureSessionId() {
-    let sid = safeGet(sessionStorage, SESSION_KEY);
-    if (!sid) {
-      sid = randomId("sess_");
-      safeSet(sessionStorage, SESSION_KEY, sid);
-    }
-    data.meta.session_id = sid;
-    return sid;
-  }
-
-  function addModePath() {
-    const p = pageName();
-    const arr = data.meta.mode_path || [];
-    if (arr[arr.length - 1] !== p) arr.push(p);
-    data.meta.mode_path = arr;
-  }
-
-  function logEvent(type, payload) {
-    const evt = {
-      ts: now(),
-      type: String(type || "event"),
-      payload: payload && typeof payload === "object" ? payload : {}
-    };
-    data.events.push(evt);
-    data.meta.last_event_time = evt.ts;
-    persist();
-  }
-
-  function set(path, value) {
-    setPath(data, path, value);
-    data.meta.last_event_time = now();
-    persist();
-  }
-
-  function ensureFreeModeStart() {
-    if (!data.free_mode.started_at_ms) {
-      data.free_mode.started_at_ms = now();
-    }
-  }
-
-  function ensureTask(taskId, difficulty) {
-    const id = String(taskId || "").trim();
-    if (!id) return null;
-    if (!data.free_mode.tasks[id]) {
-      data.free_mode.tasks[id] = {
-        task_id: id,
-        start_time_ms: null,
-        first_submit_time_ms: null,
-        solved_time_ms: null,
-        attempts_total: 0,
-        attempts_wrong: 0,
-        used_hint_count: 0,
-        used_scaffold_count: 0,
-        solution_viewed: false,
-        difficulty: null,
-        order_index: null
-      };
-    }
-    const t = data.free_mode.tasks[id];
-    if (difficulty && !t.difficulty) t.difficulty = difficulty;
-    if (t.order_index == null) {
-      data.free_mode.order_counter += 1;
-      t.order_index = data.free_mode.order_counter;
-    }
-    if (!t.start_time_ms) t.start_time_ms = now();
-    data.free_mode.last_task_id = id;
-    return t;
-  }
-
-  function trackTaskOpen(taskId, difficulty) {
-    ensureFreeModeStart();
-    const t = ensureTask(taskId, difficulty);
-    if (!t) return;
-    logEvent("task_open", { task_id: t.task_id, order_index: t.order_index, difficulty: t.difficulty });
-  }
-
-  function trackAttempt(opts = {}) {
-    ensureFreeModeStart();
-    const taskId = String(opts.taskId || "").trim();
-    if (!taskId) return;
-    const t = ensureTask(taskId, opts.difficulty);
-    if (!t) return;
-
-    const sql = (opts.sql || "").toString();
-    const sqlLength = sql.length;
-    const hash = fnv1a(sql);
-    const lastHash = data.free_mode._last_sql_hash[taskId] || "";
-    const changed = lastHash ? (hash !== lastHash) : false;
-    data.free_mode._last_sql_hash[taskId] = hash;
-
-    t.attempts_total += 1;
-    if (!t.first_submit_time_ms) t.first_submit_time_ms = now();
-    if (opts.result !== "correct") t.attempts_wrong += 1;
-
-    const attempt = {
-      timestamp: now(),
-      task_id: taskId,
-      sql_length: sqlLength,
-      changed_since_last_submit: changed,
-      result: opts.result || "error",
-      error_type: opts.errorType || null
-    };
-    data.free_mode.attempts.push(attempt);
-    logEvent("task_submit", attempt);
-    persist();
-  }
-
-  function trackSolved(taskId) {
-    ensureFreeModeStart();
-    const t = ensureTask(taskId);
-    if (!t) return;
-    if (!t.solved_time_ms) t.solved_time_ms = now();
-    logEvent("task_solved", { task_id: t.task_id });
-    persist();
-  }
-
-  function trackHint(taskId) {
-    ensureFreeModeStart();
-    const t = ensureTask(taskId);
-    if (!t) return;
-    t.used_hint_count += 1;
-    logEvent("hint_used", { task_id: t.task_id });
-    persist();
-  }
-
-  function trackScaffold(taskId) {
-    ensureFreeModeStart();
-    const t = ensureTask(taskId);
-    if (!t) return;
-    t.used_scaffold_count += 1;
-    logEvent("scaffold_used", { task_id: t.task_id });
-    persist();
-  }
-
-  function trackSolutionViewed(taskId) {
-    ensureFreeModeStart();
-    const t = ensureTask(taskId);
-    if (!t) return;
-    t.solution_viewed = true;
-    logEvent("solution_viewed", { task_id: t.task_id });
-    persist();
-  }
-
-  function trackBonusStart() {
-    ensureFreeModeStart();
-    data.free_mode.bonus.started = true;
-    const evt = { type: "bonus_start", ts: now() };
-    data.free_mode.bonus.events.push(evt);
-    logEvent("bonus_start", {});
-    persist();
-  }
-
-  function trackBonusFinish() {
-    ensureFreeModeStart();
-    data.free_mode.bonus.finished = true;
-    const evt = { type: "bonus_finish", ts: now() };
-    data.free_mode.bonus.events.push(evt);
-    logEvent("bonus_finish", {});
-    persist();
-  }
-
-  function trackScoreChange(newScore) {
-    ensureFreeModeStart();
-    const prev = Number.isFinite(data.free_mode.last_score) ? data.free_mode.last_score : null;
-    if (prev != null && prev === newScore) return;
-    const delta = prev == null ? newScore : (newScore - prev);
-    data.free_mode.last_score = newScore;
-    const evt = { timestamp: now(), new_score: newScore, delta };
-    data.free_mode.score_events.push(evt);
-    logEvent("score_change", evt);
-    persist();
-  }
-
-  function trackToolOpen(kind) {
-    ensureFreeModeStart();
-    const k = String(kind || "");
-    const bucket = data.free_mode.tools[k];
-    if (!bucket) return;
-    const ts = now();
-    bucket.opens += 1;
-    bucket._open_at = ts;
-    bucket.events.push({ type: "open", ts });
-    logEvent(`${k}_open`, {});
-    persist();
-  }
-
-  function trackToolClose(kind) {
-    const k = String(kind || "");
-    const bucket = data.free_mode.tools[k];
-    if (!bucket) return;
-    const ts = now();
-    const start = Number(bucket._open_at) || null;
-    if (!start) return;
-    const dur = Math.max(0, ts - start);
-    bucket.duration_ms += dur;
-    bucket._open_at = null;
-    bucket.events.push({ type: "close", ts });
-    logEvent(`${k}_close`, {});
-    persist();
-  }
-
-  function updateSummary() {
-    const tasks = data.free_mode.tasks || {};
-    const ids = Object.keys(tasks);
-    const tasksSolved = ids.filter(id => !!tasks[id].solved_time_ms).length;
-    const attemptsTotal = ids.reduce((acc, id) => acc + (tasks[id].attempts_total || 0), 0);
-    const attemptsWrong = ids.reduce((acc, id) => acc + (tasks[id].attempts_wrong || 0), 0);
-    const hintsTotal = ids.reduce((acc, id) => acc + (tasks[id].used_hint_count || 0), 0);
-    const scaffoldsTotal = ids.reduce((acc, id) => acc + (tasks[id].used_scaffold_count || 0), 0);
-    data.free_mode.summary = {
-      tasks_solved: tasksSolved,
-      attempts_total: attemptsTotal,
-      attempts_wrong: attemptsWrong,
-      hints_total: hintsTotal,
-      scaffolds_total: scaffoldsTotal,
-      schema_opens: data.free_mode.tools.schema.opens || 0,
-      schema_duration_ms: data.free_mode.tools.schema.duration_ms || 0,
-      spicker_opens: data.free_mode.tools.spicker.opens || 0,
-      spicker_duration_ms: data.free_mode.tools.spicker.duration_ms || 0,
-      active_time_ms: data.free_mode.active_time_ms || 0,
-      idle_time_ms: data.free_mode.idle_time_ms || 0
-    };
-  }
-
-  function recordTestResult(kind, payload) {
-    const k = kind === "posttest" ? "posttest" : "pretest";
-    const base = payload && typeof payload === "object" ? payload : {};
-    data[k] = base;
-    if (data.pretest && data.posttest && Number.isFinite(data.pretest.score_raw) && Number.isFinite(data.posttest.score_raw)) {
-      const pre = data.pretest.score_raw;
-      const post = data.posttest.score_raw;
-      const max = data.posttest.max_score || data.pretest.max_score || null;
-      data.posttest.delta_score_raw = post - pre;
-      if (max && (max - pre) > 0) data.posttest.normalized_gain = (post - pre) / (max - pre);
-      else data.posttest.normalized_gain = null;
-    }
-    if (Number.isFinite(data.pretest?.duration_ms) && Number.isFinite(data.posttest?.duration_ms)) {
-      data.meta.performance_vs_time = {
-        pretest_time_ms: data.pretest.duration_ms,
-        posttest_time_ms: data.posttest.duration_ms,
-        total_test_time_ms: data.pretest.duration_ms + data.posttest.duration_ms
-      };
-    }
     persist();
   }
 
   function exportJson() {
-    updateSummary();
-    if (data.free_mode.started_at_ms) {
-      data.free_mode.session_duration_ms = now() - data.free_mode.started_at_ms;
-      data.free_mode.ended_at_ms = now();
+    // finalize times
+    data.aufgezeichnet_am = isoNow();
+
+    if (data.tutorial.startzeit && !data.tutorial.endzeit && data.tutorial.abgeschlossen) {
+      data.tutorial.endzeit = isoNow();
     }
-    if (data.pretest?.started_at_ms && data.pretest?.ended_at_ms) {
-      data.pretest.duration_ms = data.pretest.ended_at_ms - data.pretest.started_at_ms;
+    if (data.tutorial.startzeit && data.tutorial.endzeit && !Number.isFinite(data.tutorial.dauer_ms)) {
+      const a = Date.parse(data.tutorial.startzeit), b = Date.parse(data.tutorial.endzeit);
+      if (Number.isFinite(a) && Number.isFinite(b)) data.tutorial.dauer_ms = b - a;
     }
-    if (data.posttest?.started_at_ms && data.posttest?.ended_at_ms) {
-      data.posttest.duration_ms = data.posttest.ended_at_ms - data.posttest.started_at_ms;
+
+    if (data.freier_modus.startzeit) {
+      data.freier_modus.endzeit = isoNow();
+      const a = Date.parse(data.freier_modus.startzeit), b = Date.parse(data.freier_modus.endzeit);
+      if (Number.isFinite(a) && Number.isFinite(b)) data.freier_modus.dauer_ms = b - a;
     }
-    const sid = ensureStudentId();
-    const stamp = formatStampLocal(new Date());
-    const filename = `schulazon_${sid}_${stamp}.json`;
+
+    // ensure test durations
+    ["pretest", "posttest"].forEach((k) => {
+      const t = data[k];
+      if (t && t.startzeit && t.endzeit && !Number.isFinite(t.dauer_ms)) {
+        const a = Date.parse(t.startzeit), b = Date.parse(t.endzeit);
+        if (Number.isFinite(a) && Number.isFinite(b)) t.dauer_ms = b - a;
+      }
+    });
+
+    const sid = ensureSchuelerId();
+    const filename = `schulazon_${sid}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.json`;
+
+    // Export a copy without internal state
+    const exportPayload = JSON.parse(JSON.stringify(data));
+    delete exportPayload._intern;
+
     try {
-      const payload = JSON.stringify(data, null, 2);
+      const payload = JSON.stringify(exportPayload, null, 2);
       const blob = new Blob([payload], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -431,139 +653,91 @@
     } catch (_) {}
   }
 
-  // ---- Idle / focus tracking (free mode only) ----
-  function startIdleTracking() {
-    const isFree = (document.body && document.body.dataset && document.body.dataset.mode) === "free";
-    if (!isFree) return;
+  // ---- Init ----
+  ensureSessionId();
+  ensureSchuelerId();
+  persist();
 
-    ensureFreeModeStart();
-    let pauseReason = null;
-    let pauseStart = null;
-    let activeStart = now();
-    let idleTimer = null;
-
-    const beginPause = (reason) => {
-      if (pauseReason) return;
-      pauseReason = reason;
-      pauseStart = now();
-      const activeDelta = pauseStart - activeStart;
-      if (activeDelta > 0) data.free_mode.active_time_ms += activeDelta;
-      data.free_mode.pause_events.push({ start_ms: pauseStart, end_ms: null, reason });
-      persist();
-    };
-
-    const endPause = () => {
-      if (!pauseReason) return;
-      const end = now();
-      const last = data.free_mode.pause_events[data.free_mode.pause_events.length - 1];
-      if (last && !last.end_ms) last.end_ms = end;
-      const delta = end - pauseStart;
-      if (delta > 0) data.free_mode.idle_time_ms += delta;
-      pauseReason = null;
-      pauseStart = null;
-      activeStart = end;
-      persist();
-    };
-
-    const resetIdleTimer = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      if (!document.hasFocus()) return;
-      idleTimer = setTimeout(() => beginPause("idle"), IDLE_THRESHOLD_MS);
-    };
-
-    const onInteraction = () => {
-      if (pauseReason === "idle") endPause();
-      resetIdleTimer();
-    };
-
-    window.addEventListener("blur", () => {
-      if (pauseReason === "idle") endPause();
-      beginPause("blur");
-    });
-    window.addEventListener("focus", () => {
-      if (pauseReason === "blur") endPause();
-      resetIdleTimer();
-    });
-
-    ["mousedown", "keydown", "touchstart", "mousemove"].forEach((evt) => {
-      document.addEventListener(evt, onInteraction, { passive: true });
-    });
-
-    resetIdleTimer();
-  }
-
-  function showIdBadgeIfNeeded() {
-    const hasNameInput = !!document.querySelector("#nameInput, [name='name']");
-    const hasName = !!(safeGet(sessionStorage, "schulazon_name") || safeGet(localStorage, "schulazon_name"));
-    const fromQuery = (() => {
-      try {
-        const qp = new URLSearchParams(location.search);
-        return (qp.get("name") || "").trim();
-      } catch {
-        return "";
-      }
-    })();
-    if (hasNameInput || hasName || fromQuery) return;
-
-    const id = ensureStudentId();
-    const badge = document.createElement("div");
-    badge.textContent = `ID: ${id}`;
-    badge.setAttribute("aria-label", `Student ID ${id}`);
-    badge.style.position = "fixed";
-    badge.style.bottom = "12px";
-    badge.style.right = "12px";
-    badge.style.padding = "8px 10px";
-    badge.style.background = "rgba(0,0,0,0.72)";
-    badge.style.color = "#fff";
-    badge.style.borderRadius = "999px";
-    badge.style.fontSize = "12px";
-    badge.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    badge.style.zIndex = "9999";
-    badge.style.pointerEvents = "none";
-    document.body.appendChild(badge);
-  }
-
-  function onUnload() {
-    const p = pageName();
-    const stamp = now();
-    data.meta.last_seen_page = p;
-    data.meta.last_event_time = stamp;
-    safeSet(localStorage, LAST_SEEN_KEY, JSON.stringify({ page: p, ts: stamp }));
+  // Auto-mark tutorial start if on tutorial page
+  if (isTutorialPage()) {
+    data.tutorial.gemacht = true;
+    if (!data.tutorial.startzeit) {
+      data.tutorial.startzeit = isoNow();
+      data._intern.tutorial_started_ms = nowMs();
+    }
     persist();
   }
 
-  // Init
-  ensureSessionId();
-  ensureStudentId();
-  addModePath();
-  data.meta.last_seen_page = pageName();
-  persist();
-  showIdBadgeIfNeeded();
-  startIdleTracking();
-  window.addEventListener("beforeunload", onUnload);
+  // Long pause detection: visibility (tab inactive)
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") onUnload();
+    const t = nowMs();
+    if (document.visibilityState === "hidden") {
+      data._intern.hidden_started_ms = t;
+    } else if (document.visibilityState === "visible") {
+      const hs = data._intern.hidden_started_ms;
+      data._intern.hidden_started_ms = null;
+      if (Number.isFinite(hs)) {
+        const delta = t - hs;
+        if (delta > LONG_PAUSE_MS && isFreeMode()) {
+          data.freier_modus.pausen_lang.push({
+            startzeit: new Date(hs).toISOString(),
+            endzeit: new Date(t).toISOString(),
+            dauer_ms: delta,
+            grund: "tab_inaktiv"
+          });
+          persist();
+        }
+        // also update last action to avoid double-counting
+        data._intern.last_action_ms = t;
+      }
+    }
   });
 
+  // Touch on basic interactions to detect long gaps
+  ["mousedown","keydown","touchstart"].forEach((evt) => {
+    document.addEventListener(evt, () => touch("keine_aktion"), { passive: true });
+  });
+
+  
   window.studyLogger = {
+    // data (debug only)
     data,
-    logEvent,
-    set,
-    persist,
-    ensureStudentIdFromName,
+
+    // ID helpers (neu + kompatibel)
+    ensureSchuelerId,
+    ensureSchuelerIdFromName,
+    ensureStudentId: ensureSchuelerId,
+    ensureStudentIdFromName: ensureSchuelerIdFromName,
+
+    // Tests
+    recordTestResult,
+
+    // Tutorial helpers
+    tutorialStart,
+    tutorialProgress,
+    tutorialJump,
+    tutorialComplete,
+
+    // Free mode
     trackTaskOpen,
     trackAttempt,
     trackSolved,
     trackHint,
-    trackScaffold,
+    trackScaffold: (taskId) => trackHint(taskId, 1),
     trackSolutionViewed,
     trackToolOpen,
     trackToolClose,
-    trackBonusStart,
-    trackBonusFinish,
-    trackScoreChange,
-    updateSummary,
-    recordTestResult,
+    recordShopButtonTest,
+
+    // Generic / compatibility
+    logEvent,
+    set,
+    persist,
+    updateSummary: () => {},
+    trackBonusStart: () => {},
+    trackBonusFinish: () => {},
+    trackScoreChange: () => {},
     exportJson
   };
+
 })();
