@@ -34,9 +34,9 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Helvetica, Arial;
 
-  --base: clamp(16px, 1.15vw + 10px, 18px);
-  --small: clamp(13px, 0.9vw + 9px, 15px);
-  --sql: clamp(13px, 0.95vw + 9px, 15px);
+  --base: clamp(18px, 1.35vw + 12px, 21px);
+  --small: clamp(14px, 0.95vw + 10px, 16px);
+  --sql: clamp(14px, 1.05vw + 10px, 16px);
 }
 
 *{box-sizing:border-box}
@@ -72,12 +72,13 @@ body{
   align-items:center;
   justify-content:space-between;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 10px 10px;
   border-radius: var(--radiusLg);
-  /* Less translucency to avoid “see-through” artifacts */
-  background: rgba(255,255,255,.94);
-  border: 1px solid rgba(10,15,24,.10);
-  box-shadow: 0 10px 34px rgba(10,15,24,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
+  border: 1px solid rgba(10,15,24,.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
   position: relative;
   z-index: 200;
 }
@@ -214,9 +215,11 @@ body{
 /* Free mode topbar: premium icons without increasing bar height */
 body[data-mode="free"] .topbar{
   padding: 10px 10px;
-  border-color: rgba(10,15,24,.12);
-  background: rgba(255,255,255,.95);
-  box-shadow: 0 16px 40px rgba(10,15,24,.10);
+  border-color: rgba(10,15,24,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
+  box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 body[data-mode="free"] .pill,
 body[data-mode="free"] .pillBtn{
@@ -385,7 +388,7 @@ body[data-mode="free"] .shell{
 }
 body[data-mode="free"] .topbar{
   background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
-  border-color: rgba(10,15,24,.06);
+  border-color: rgba(10,15,24,.08);
   box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

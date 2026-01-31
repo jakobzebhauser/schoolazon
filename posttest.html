@@ -78,6 +78,7 @@
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
     }
+    .topbar .pill, .topbar .pillBtn{border-radius: 14px;}
 
     .brand{display:flex; align-items:center; gap:12px;}
     .appIcon{
@@ -855,43 +856,43 @@
   const baseQuestions = [
     { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib alle Spalten und alle Datensätze der Tabelle „produkte“ aus.",
+      prompt:"Gib die passende Abfrage an, sodass alle Spalten und alle Datensätze der Tabelle „produkte“ ausgegeben werden.",
       options:["SELECT name FROM produkte;","SELECT * FROM produkte;","SELECT produkte FROM *;","GET * FROM produkte;"],
       correctIndex: 1
     },
     { id:"q2", type:"mc", title:"Produkte unter 20 €",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Zeige alle Produkte mit einem Preis kleiner als 20 €.",
+      prompt:"Gib die passende Abfrage an, sodass alle Produkte mit einem Preis kleiner als 20 € angezeigt werden.",
       options:["SELECT * FROM produkte WHERE preis < 20;","SELECT preis < 20 FROM produkte;","SELECT * produkte preis < 20;","FILTER preis < 20 FROM produkte;"],
       correctIndex: 0
     },
     { id:"q3", type:"mc", title:"Durchschnittspreis berechnen",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Berechne den durchschnittlichen Preis aller Produkte.",
+      prompt:"Gib die passende Abfrage an, sodass der durchschnittliche Preis aller Produkte berechnet wird.",
       options:["SELECT AVG(preis) FROM produkte;","SELECT MEAN(preis) FROM produkte;","SELECT COUNT(preis)/SUM(preis) FROM produkte;","SELECT MID(preis) FROM produkte;"],
       correctIndex: 0
     },
     { id:"q4", type:"mc", title:"Nur unterschiedliche Lieferzeiten",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib jede Lieferzeit nur einmal (ohne Duplikate) aus.",
+      prompt:"Gib die passende Abfrage an, sodass jede Lieferzeit nur einmal (ohne Duplikate) ausgegeben wird.",
       options:["SELECT DISTINCT liefertage FROM produkte;","SELECT UNIQUE liefertage FROM produkte;","SELECT GROUP liefertage FROM produkte;","SELECT ALL liefertage FROM produkte;"],
       correctIndex: 0
     },
     { id:"q5", type:"fill", title:"Sortieren nach Preis",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Ergänze das fehlende Schlüsselwort, damit alle Produkte nach Preis aufsteigend sortiert werden.",
+      prompt:"Ergänze die Abfrage so, dass alle Produkte nach Preis aufsteigend sortiert werden.",
       template:"SELECT * FROM produkte ______ preis ASC;",
       correct:["ORDER BY"]
     },
     { id:"q6", type:"fill", title:"Zwei Bedingungen (UND)",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Ergänze den fehlenden Operator, damit beide Bedingungen gleichzeitig gelten.",
+      prompt:"Ergänze die Abfrage so, dass beide Bedingungen gleichzeitig gelten.",
       template:"SELECT *\nFROM produkte\nWHERE preis < 50 ______ lagerbestand > 0;",
       correct:["AND"]
     },
     { id:"q7", type:"fill", title:"Produkt und Kategorie verbinden",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"],
-      prompt:"Ergänze die fehlende Bedingung, damit jedes Produkt mit seiner passenden Kategorie verknüpft wird.",
+      prompt:"Ergänze die Abfrage so, dass jedes Produkt mit seiner passenden Kategorie verknüpft wird.",
       template:"SELECT produkte.name, kategorien.name\nFROM produkte, kategorien\nWHERE ____________________________;",
       correct:[
         "produkte.kategorie_id = kategorien.id",
@@ -902,13 +903,13 @@
     },
     { id:"q8", type:"fill", title:"Produkte im Warenkorb",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","warenkorb(produkt_id, menge, nutzer_id)"],
-      prompt:"Ergänze die fehlende Tabelle, damit Produkte mit dem Warenkorb verknüpft werden.",
+      prompt:"Ergänze die Abfrage so, dass Produkte mit dem Warenkorb verknüpft werden.",
       template:"SELECT produkte.name\nFROM produkte, ________\nWHERE produkte.id = warenkorb.produkt_id;",
       correct:["warenkorb"]
     },
     { id:"r1", type:"likert", title:"Realweltbezug",
       schema:[],
-      prompt:"Ich verstehe, wofür SQL in realen digitalen Systemen eingesetzt wird (z. B. Online-Shops, Apps, Unternehmenssoftware)."
+      prompt:"Bewerte: Ich verstehe, wofür SQL in realen digitalen Systemen eingesetzt wird (z. B. Apps)."
     },
     { id:"r2", type:"likert", title:"Realweltbezug",
       schema:[],
