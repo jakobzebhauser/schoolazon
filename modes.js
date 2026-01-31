@@ -1085,7 +1085,7 @@ renderShell() {
 </svg>
 </button>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-3)">
+                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-1)">
   <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
 </button>
 
@@ -1118,7 +1118,7 @@ renderShell() {
   </div>
   <pre class="task3-hintBody" id="scaffoldText" style="white-space:pre-wrap; margin:0;"></pre>
   <div class="task3-hintActions">
-    <button class="btn btn-primary" id="scaffoldConfirm" type="button" style="display:none;">Codeger\u00fcst anzeigen (-3)</button>
+    <button class="btn btn-primary" id="scaffoldConfirm" type="button" style="display:none;">Codeger\u00fcst anzeigen (-1)</button>
   </div>
 </div>
 
@@ -2558,11 +2558,11 @@ async unlockCurrent() {
     this._pendingScaffoldTaskId = id;
     const score = this.computeScore();
     const msg =
-      `Wenn du dir das Codeger\u00fcst anzeigen lässt, verlierst du 3 Score-Punkte.
-Aktueller Score: ${score}.
+      `Wenn du dir das Codeger\u00fcst anzeigen lässt, verlierst du 1 Score-Punkt.
+ Aktueller Score: ${score}.
 
-Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u00fcst f\u00fcr diese Aufgabe dauerhaft.`;
-    this.openScaffoldCard(msg, { mode: 'confirm', title: 'Codeger\u00fcst anzeigen?', confirmLabel: 'Codeger\u00fcst anzeigen (-3)' });
+ Wenn du fortf\u00e4hrst, wird dein Score um 1 reduziert und du siehst das Ger\u00fcst f\u00fcr diese Aufgabe dauerhaft.`;
+    this.openScaffoldCard(msg, { mode: 'confirm', title: 'Codeger\u00fcst anzeigen?', confirmLabel: 'Codeger\u00fcst anzeigen (-1)' });
   }
 
   openConfirmOverlay(opts = {}) {
@@ -2681,7 +2681,7 @@ Wenn du fortf\u00e4hrst, wird dein Score um 3 reduziert und du siehst das Ger\u0
     const mode = (opts && opts.mode) ? String(opts.mode) : 'hint';
     const isConfirm = mode === 'confirm';
     const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Codeger\u00fcst anzeigen?' : 'Codeger\u00fcst');
-    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Codeger\u00fcst anzeigen (-3)';
+    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Codeger\u00fcst anzeigen (-1)';
 
     if (this.scaffoldTitleEl) this.scaffoldTitleEl.textContent = title;
     if (this.scaffoldConfirmBtn) this.scaffoldConfirmBtn.style.display = isConfirm ? '' : 'none';
@@ -2883,7 +2883,7 @@ if (H[taskId]) return H[taskId];
     const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
     const scaffolds = Object.keys(this.scaffoldUsed || {}).filter(k => !!this.scaffoldUsed[k]).length;
     const bonus = this.sqliDone ? 10 : 0;
-    const scaffoldPenalty = scaffolds * 3;
+    const scaffoldPenalty = scaffolds * 1;
     return Math.max(0, base + bonus - hints - scaffoldPenalty);
   }
 

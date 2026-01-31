@@ -1017,17 +1017,17 @@ pre.sql.sqlFill .blank input{
   const pages = [
     {
       id:"story_1",
-      title:"Dein Auftrag",
+      title:"Wiederholung",
       context: withName("kurze Mission, klare Schritte."),
       story: [
-        "Du bist zurück im Schulazon-HQ: Einige Shop-Buttons sind gesperrt, weil dafür saubere SQL-Abfragen nötig sind.",
-        "Wir machen jetzt einen schnellen Grundlagen-Refresh – damit du danach wieder sicher abfragen, filtern und sortieren kannst."
+        "Willkommen bei Schulazon! Bevor du in den Shop eintauchst, wollen wir mit dir noch einmal die Grundlagen von SQL auffrischen.",
+        "In diesem Tutorial lernst du die wichtigsten Bausteine von SQL-Abfragen kennen – und wie du sie anwendest, um Daten aus einer Datenbank abzurufen."
       ]
     },
 
     {
       id:"intro",
-      title:"Einleitung: Bausteine",
+      title:"Einleitung",
       context: withName("wir starten mit dem Grundmuster – das ist die Schablone für fast alle Abfragen."),
       nameInTheory: true,
       theory: [
@@ -1072,11 +1072,11 @@ pre.sql.sqlFill .blank input{
 
     {
       id:"select",
-      title:"SELECT … FROM … (inkl. DISTINCT/LIMIT)",
+      title:"SELECT & FROM)",
       context: "Damit legst du fest, welche Spalten aus welcher Tabelle im Ergebnis stehen.",
       theory: [
         "SELECT bestimmt die Spalten im Ergebnis. Das Sternchen (*) bedeutet „alle Spalten“.",
-        "DISTINCT entfernt Duplikate in der Ausgabespalte (gibt jeden Wert nur einmal aus). LIMIT begrenzt die Anzahl der Zeilen – sinnvoll vor allem zusammen mit ORDER BY, damit die Ausgabe reproduzierbar ist."
+        "DISTINCT entfernt Duplikate in der Ausgabespalte (gibt jeden Wert nur einmal aus). LIMIT begrenzt die Anzahl der Zeilen."
       ],
       sqlTone: "tone-blue",
       sql: [
@@ -1341,6 +1341,76 @@ pre.sql.sqlFill .blank input{
 
     /* Freischalt-Aufgabe bleibt eigene Seite */
 
+    /* Schlüssel + 1:n + n:m zusammen auf EINER Theorie-Seite */
+    {
+      id:"rel_bundle",
+      title:"Verbund: Schlüssel, 1:n und n:m",
+      context: "So verbindest du Tabellen sauber (und verstehst, warum es funktioniert).",
+      theory: [
+        "Ein Primärschlüssel identifiziert einen Datensatz eindeutig (z. B. kategorien.id). Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle (z. B. produkte.kategorie_id → kategorien.id).",
+        "Bei 1:n liegt der Fremdschlüssel auf der n-Seite: Viele Produkte gehören zu einer Kategorie.",
+        "Bei n:m brauchst du eine Beziehungstabelle: z. B. warenkorb verbindet nutzer und produkte; sie speichert beide Fremdschlüssel (n:m wird zu zwei 1:n)."
+      ],
+      sqlTone: "tone-teal",
+      sqlMarks: { id: "pkTok", kategorie_id: "fkTok", nutzer_id: "fkTok", produkt_id: "fkTok" },
+      sql: [
+        "-- Schema-Idee (vereinfacht)",
+        "kategorien(id, name)",
+        "produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)",
+        "nutzer(id, name)",
+        "warenkorb(nutzer_id, produkt_id, menge)",
+        "",
+        "-- 1:n: Produkt → Kategorie (ohne JOIN, über WHERE-Verknüpfung)",
+        "SELECT produkte.name, kategorien.name AS kategorie",
+        "FROM produkte, kategorien",
+        "WHERE produkte.kategorie_id = kategorien.id;",
+        "",
+        "-- n:m: Warenkorb verbindet Nutzer und Produkt (ohne JOIN, über zwei Bedingungen)",
+        "SELECT nutzer.name, produkte.name, warenkorb.menge",
+        "FROM warenkorb, nutzer, produkte",
+        "WHERE warenkorb.nutzer_id = nutzer.id AND warenkorb.produkt_id = produkte.id;"
+      ],
+      afterSql: `
+        <div class="schemaWrap">
+          <div class="schemaLabel tone-teal">Schlüssel-Markierung</div>
+          <div class="keyToggleRow">
+            <button class="pillBtn" id="togglePK" type="button">PK: an</button>
+            <button class="pillBtn" id="toggleFK" type="button">FK: an</button>
+          </div>
+          <div style="margin-top:8px; font-size: var(--small); color: rgba(11,15,24,.68); line-height: 1.55;">
+            Schalte die Markierung aus, wenn du nur die Logik sehen willst.
+          </div>
+        </div>
+      `
+    },
+
+    /* Programmieraufgabe: direkt nach Verbund/Schlüssel */
+    {
+      id:"code_category_sport",
+      type:"code",
+      title:"Aufgabe 5/6: Kategorie Sport",
+      context: "Im Shop gibt es den Filter „Sport“. Er soll alle Produkte anzeigen, deren Kategorie „sport“ ist. Nutze die Tabellen produkte + kategorien (ohne JOIN-Keyword, über FROM ... WHERE). Trage nur den Verbund über den Fremdschlüssel ein.",
+      template:[
+        "SELECT *",
+        "\nFROM produkte, kategorien",
+        "\nWHERE ", {blank:"produkte.kategorie_id = kategorien.id||produkte.kategorie_id=kategorien.id"},
+        "\nAND kategorien.name = 'sport';"
+      ],
+      unlockTaskId: "cat-sport",
+      showShop: true,
+      hints: [
+        "Du musst die Tabellen verbinden (Fremdschlüssel → Primärschlüssel).",
+        "Nutze WHERE produkte.kategorie_id = kategorien.id (und danach AND kategorien.name = 'sport')."
+      ],
+      solution: "SELECT *\nFROM produkte, kategorien\nWHERE produkte.kategorie_id = kategorien.id\nAND kategorien.name = 'sport';",
+      feedbackOk: "Korrekt. Filter „Sport“ ist freigeschaltet.",
+      feedbackNo: "Noch nicht korrekt.",
+      check: (sql)=> testAll(sql, [/from\s+produkte\s*,\s*kategorien/i, /produkte\.kategorie_id\s*=\s*kategorien\.id/i, /kategorien\.name\s*=\s*['\"]sport['\"]/i])
+    },
+
+
+    /* Freischalt-Aufgabe bleibt eigene Seite */
+
     {
       id:"agg",
       title:"Aggregat & AS (Zusammenfassen + Alias)",
@@ -1496,8 +1566,8 @@ pre.sql.sqlFill .blank input{
         {
       id:"code_bestseller2",
       type:"code",
-      title:"Aufgabe 5/6: Meine Top-Produkte",
-      context: "Im Konto-Bereich gibt es den Button „Meine Top-Produkte anzeigen“. Gesucht sind die 2 Produkte mit der höchsten Summe der verkauften Stückzahlen. Dazu: SUM(v.anzahl) pro Produkt bilden und pro Produkt gruppieren. Fülle die Lücken aus.",
+      title:"Aufgabe 6/6: Meine Top-Produkte",
+      context: "Im Konto-Bereich gibt es den Button „Meine Top-Produkte anzeigen“. Gesucht sind die 2 Produkte mit der höchsten Summe der verkauften Stückzahlen. Ausgegeben werden soll der Produktename und die Gesamtanzahl der Verkäufe (mit dem Spaltenname: gesamt_verkaeufe). Nutze hierfür v.anzahl. Außerdem soll über die Produkte.ID gruppiert werden. Fülle die Lücken aus.",
       template:[
         "SELECT p.name, ", {blank:"SUM(v.anzahl)"}, " AS gesamt_verkaeufe",
         "\nFROM produkte p, verkäufe v",
@@ -1524,76 +1594,6 @@ pre.sql.sqlFill .blank input{
         /order\s+by\s+gesamt_verkaeufe\s+desc/i,
         /limit\s+2/i
       ])
-    },
-
-
-
-    /* Freischalt-Aufgabe bleibt eigene Seite */
-    /* Schlüssel + 1:n + n:m zusammen auf EINER Theorie-Seite */
-    {
-      id:"rel_bundle",
-      title:"Verbund: Schlüssel, 1:n und n:m",
-      context: "So verbindest du Tabellen sauber (und verstehst, warum es funktioniert).",
-      theory: [
-        "Ein Primärschlüssel identifiziert einen Datensatz eindeutig (z. B. kategorien.id). Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle (z. B. produkte.kategorie_id → kategorien.id).",
-        "Bei 1:n liegt der Fremdschlüssel auf der n-Seite: Viele Produkte gehören zu einer Kategorie.",
-        "Bei n:m brauchst du eine Beziehungstabelle: z. B. warenkorb verbindet nutzer und produkte; sie speichert beide Fremdschlüssel (n:m wird zu zwei 1:n)."
-      ],
-      sqlTone: "tone-teal",
-      sqlMarks: { id: "pkTok", kategorie_id: "fkTok", nutzer_id: "fkTok", produkt_id: "fkTok" },
-      sql: [
-        "-- Schema-Idee (vereinfacht)",
-        "kategorien(id, name)",
-        "produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)",
-        "nutzer(id, name)",
-        "warenkorb(nutzer_id, produkt_id, menge)",
-        "",
-        "-- 1:n: Produkt → Kategorie (ohne JOIN, über WHERE-Verknüpfung)",
-        "SELECT produkte.name, kategorien.name AS kategorie",
-        "FROM produkte, kategorien",
-        "WHERE produkte.kategorie_id = kategorien.id;",
-        "",
-        "-- n:m: Warenkorb verbindet Nutzer und Produkt (ohne JOIN, über zwei Bedingungen)",
-        "SELECT nutzer.name, produkte.name, warenkorb.menge",
-        "FROM warenkorb, nutzer, produkte",
-        "WHERE warenkorb.nutzer_id = nutzer.id AND warenkorb.produkt_id = produkte.id;"
-      ],
-      afterSql: `
-        <div class="schemaWrap">
-          <div class="schemaLabel tone-teal">Schlüssel-Markierung</div>
-          <div class="keyToggleRow">
-            <button class="pillBtn" id="togglePK" type="button">PK: an</button>
-            <button class="pillBtn" id="toggleFK" type="button">FK: an</button>
-          </div>
-          <div style="margin-top:8px; font-size: var(--small); color: rgba(11,15,24,.68); line-height: 1.55;">
-            Schalte die Markierung aus, wenn du nur die Logik sehen willst.
-          </div>
-        </div>
-      `
-    },
-
-    /* Programmieraufgabe: direkt nach Verbund/Schlüssel */
-    {
-      id:"code_category_sport",
-      type:"code",
-      title:"Aufgabe 6/6: Kategorie Sport",
-      context: "Im Shop gibt es den Filter „Sport“. Er soll alle Produkte anzeigen, deren Kategorie „sport“ ist. Nutze die Tabellen produkte + kategorien (ohne JOIN-Keyword, über FROM ... WHERE). Trage nur den Verbund über den Fremdschlüssel ein.",
-      template:[
-        "SELECT *",
-        "\nFROM produkte, kategorien",
-        "\nWHERE ", {blank:"produkte.kategorie_id = kategorien.id||produkte.kategorie_id=kategorien.id"},
-        "\nAND kategorien.name = 'sport';"
-      ],
-      unlockTaskId: "cat-sport",
-      showShop: true,
-      hints: [
-        "Du musst die Tabellen verbinden (Fremdschlüssel → Primärschlüssel).",
-        "Nutze WHERE produkte.kategorie_id = kategorien.id (und danach AND kategorien.name = 'sport')."
-      ],
-      solution: "SELECT *\nFROM produkte, kategorien\nWHERE produkte.kategorie_id = kategorien.id\nAND kategorien.name = 'sport';",
-      feedbackOk: "Korrekt. Filter „Sport“ ist freigeschaltet.",
-      feedbackNo: "Noch nicht korrekt.",
-      check: (sql)=> testAll(sql, [/from\s+produkte\s*,\s*kategorien/i, /produkte\.kategorie_id\s*=\s*kategorien\.id/i, /kategorien\.name\s*=\s*['\"]sport['\"]/i])
     },
 
 
