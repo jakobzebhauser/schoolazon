@@ -2170,7 +2170,18 @@ function renderInfo(p){
     if(completed){
       try{ logger?.tutorialComplete(); }catch(_){}
     } else {
-      try{ logger?.logEvent("tutorial_abort", { step: state.i + 1 }); }catch(_){}
+      const page = pages[state.i] || {};
+      try{ logger?.set("tutorial.end_time_ms", null); }catch(_){}
+      try{ logger?.set("tutorial.duration_ms", null); }catch(_){}
+      try{ logger?.set("meta.eval_state.tutorial_completed", null); }catch(_){}
+      try{
+        logger?.logEvent("tutorial_abort", {
+          step_index: state.i + 1,
+          page_id: page.id || null,
+          page_title: page.title || null,
+          to: "free"
+        });
+      }catch(_){}
     }
     const n = (state.name || "").toString().trim();
     try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}

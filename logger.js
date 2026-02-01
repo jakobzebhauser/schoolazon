@@ -145,7 +145,8 @@
         last_action_ms: nowMs(),
         hidden_started_ms: null,
         tool_open_ms: {},
-        free_started_ms: null
+        free_started_ms: null,
+        last_attempt: {}
       }
     };
   }
@@ -223,6 +224,7 @@
     d._intern.hidden_started_ms = Number.isFinite(d._intern.hidden_started_ms) ? d._intern.hidden_started_ms : null;
     d._intern.tool_open_ms = ensureObj(d._intern.tool_open_ms);
     d._intern.free_started_ms = Number.isFinite(d._intern.free_started_ms) ? d._intern.free_started_ms : null;
+    d._intern.last_attempt = ensureObj(d._intern.last_attempt);
     return d;
   }
 
@@ -596,6 +598,14 @@
     const lastHash = data.free_mode._last_sql_hash[taskId];
     const nextHash = hashSql(sql);
     const changed = lastHash ? (lastHash !== nextHash) : false;
+    const now = nowMs();
+    const lastAttempt = data._intern.last_attempt[taskId];
+    if (lastAttempt && (now - lastAttempt.ts) < 400 && lastAttempt.hash === nextHash && lastAttempt.result === result) {
+      data._intern.last_action_ms = now;
+      persist();
+      return;
+    }
+    data._intern.last_attempt[taskId] = { ts: now, hash: nextHash, result };
     data.free_mode._last_sql_hash[taskId] = nextHash;
 
     t.attempts_total += 1;
@@ -603,7 +613,7 @@
     if (!t.first_submit_time_ms) t.first_submit_time_ms = nowMs();
 
     data.free_mode.attempts.push({
-      timestamp: nowMs(),
+      timestamp: now,
       task_id: taskId,
       sql_length: sqlLen,
       changed_since_last_submit: !!changed,
@@ -616,7 +626,7 @@
       logEvent("task_solved", { task_id: taskId });
     }
     logEvent("task_submit", {
-      timestamp: nowMs(),
+      timestamp: now,
       task_id: taskId,
       sql_length: sqlLen,
       changed_since_last_submit: !!changed,
@@ -959,38 +969,6 @@
     };
   }
 
-  function buildIndexBlock() {
-    const steps = data?.meta?.eval_flow?.steps || [];
-    let startTs = null;
-    for (let i = 0; i < steps.length; i++) {
-      const s = steps[i];
-      if (s && (s.step === "start" || s.step === "index")) {
-        startTs = s.ts;
-        break;
-      }
-    }
-    let endTs = null;
-    const preStart = pickFirstNumber(data?.pretest?.started_at_ms, data?.meta?.eval_state?.pretest_started);
-    if (validTs(preStart)) {
-      endTs = preStart;
-    } else if (startTs != null) {
-      const idx = steps.findIndex((s) => s && (s.step === "start" || s.step === "index") && s.ts === startTs);
-      for (let i = idx + 1; i < steps.length; i++) {
-        const s = steps[i];
-        if (s && Number.isFinite(s.ts)) {
-          endTs = s.ts;
-          break;
-        }
-      }
-    }
-    const started_at_ms = validTs(startTs) ? startTs : 0;
-    const ended_at_ms = validTs(endTs) ? endTs : 0;
-    const duration_ms = (started_at_ms && ended_at_ms && ended_at_ms >= started_at_ms)
-      ? (ended_at_ms - started_at_ms)
-      : 0;
-    return { started_at_ms, ended_at_ms, duration_ms };
-  }
-
   function buildFlowBlock() {
     const tutorialCompleted = validTs(data?.tutorial?.end_time_ms) || validTs(data?.meta?.eval_state?.tutorial_completed);
     const path = tutorialCompleted ? "tutorial_then_free" : "free_direct";
@@ -1104,7 +1082,6 @@
       date: formatDateLocal(),
       student_id: data.meta.student_id || ensureSchuelerId(),
       flow: buildFlowBlock(),
-      index: buildIndexBlock(),
       pretest: buildTestBlock("pretest"),
       tutorial: buildTutorialBlock(),
       free_mode: buildFreeModeBlock(),

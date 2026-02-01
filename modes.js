@@ -1049,7 +1049,10 @@ LIMIT 2;`,
 
   async mount() {
   this.renderShell();
-  try { this.logger?.logEvent("free_mode_start", {}); } catch (_) {}
+  try {
+    const tutorialUnlocked = Object.keys(this.unlockedSource || {}).filter(id => this.unlockedSource[id] === "tutorial");
+    this.logger?.logEvent("free_mode_start", { tutorial_unlocked: tutorialUnlocked, tutorial_unlocked_count: tutorialUnlocked.length });
+  } catch (_) {}
 
   // 1) Shop initialisieren + Buttons sperren
   await this.shop.ready;
