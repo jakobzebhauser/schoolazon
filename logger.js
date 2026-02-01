@@ -53,6 +53,16 @@
     }
   }
 
+  function evalStepFromPage(p) {
+    const pl = (p || "").toString().toLowerCase();
+    if (pl.includes("pretest")) return "pretest";
+    if (pl.includes("tutorial")) return "tutorial";
+    if (pl.includes("free")) return "free";
+    if (pl.includes("posttest")) return "posttest";
+    if (pl.includes("index")) return "start";
+    return null;
+  }
+
   function baseData() {
     return {
       version: 1,
@@ -69,6 +79,20 @@
           pretest_time_ms: null,
           posttest_time_ms: null,
           total_test_time_ms: null
+        },
+        eval_flow: {
+          steps: [],
+          warnings: []
+        },
+        eval_state: {
+          pretest_started: null,
+          pretest_completed: null,
+          tutorial_started: null,
+          tutorial_completed: null,
+          free_started: null,
+          free_completed: null,
+          posttest_started: null,
+          posttest_completed: null
         }
       },
       pretest: {},
@@ -144,6 +168,18 @@
     d.meta.performance_vs_time = ensureObj(d.meta.performance_vs_time);
     ["pretest_time_ms","posttest_time_ms","total_test_time_ms"].forEach(k => {
       if (!Number.isFinite(d.meta.performance_vs_time[k])) d.meta.performance_vs_time[k] = null;
+    });
+    d.meta.eval_flow = ensureObj(d.meta.eval_flow);
+    d.meta.eval_flow.steps = ensureArray(d.meta.eval_flow.steps);
+    d.meta.eval_flow.warnings = ensureArray(d.meta.eval_flow.warnings);
+    d.meta.eval_state = ensureObj(d.meta.eval_state);
+    [
+      "pretest_started","pretest_completed",
+      "tutorial_started","tutorial_completed",
+      "free_started","free_completed",
+      "posttest_started","posttest_completed"
+    ].forEach((k) => {
+      if (!Number.isFinite(d.meta.eval_state[k])) d.meta.eval_state[k] = null;
     });
 
     d.pretest = ensureObj(d.pretest);
@@ -403,6 +439,40 @@
     return mode === "tutorial";
   }
 
+  function pushFlowWarning(reason, step, page) {
+    try {
+      data.meta.eval_flow.warnings.push({ ts: nowMs(), reason: String(reason || ""), step: step || null, page: page || null });
+    } catch {}
+    try { logEvent("flow_warning", { reason, step, page }); } catch {}
+    touch();
+  }
+
+  function markEvalStep(step, page) {
+    if (!step) return;
+    const p = page || pageName();
+    const flow = data.meta.eval_flow;
+    const last = flow.steps[flow.steps.length - 1];
+    if (!last || last.step !== step || last.page !== p) {
+      flow.steps.push({ step, page: p, ts: nowMs() });
+    }
+
+    const st = data.meta.eval_state;
+    const key = `${step}_started`;
+    if (st && st[key] == null) st[key] = nowMs();
+
+    // Basic flow sanity checks (expected: pretest -> [tutorial] -> free -> posttest)
+    const hasPre = Number.isFinite(st.pretest_started);
+    const hasFree = Number.isFinite(st.free_started);
+    if (step === "tutorial" && !hasPre) pushFlowWarning("tutorial_before_pretest", step, p);
+    if (step === "free" && !hasPre) pushFlowWarning("free_before_pretest", step, p);
+    if (step === "posttest" && !hasPre) pushFlowWarning("posttest_before_pretest", step, p);
+    if (step === "posttest" && !hasFree) pushFlowWarning("posttest_before_free", step, p);
+    if (step === "tutorial" && Number.isFinite(st.posttest_started)) pushFlowWarning("tutorial_after_posttest", step, p);
+    if (step === "free" && Number.isFinite(st.posttest_started)) pushFlowWarning("free_after_posttest", step, p);
+
+    persist();
+  }
+
   // ---- meta helpers ----
   function updateMetaOnEvent() {
     const p = pageName();
@@ -419,6 +489,9 @@
     if (!data.free_mode.started_at_ms) {
       data.free_mode.started_at_ms = nowMs();
       data._intern.free_started_ms = data.free_mode.started_at_ms;
+    }
+    if (!Number.isFinite(data.meta.eval_state.free_started)) {
+      data.meta.eval_state.free_started = nowMs();
     }
   }
 
@@ -475,6 +548,8 @@
 
     if (k === "pretest") data.meta.performance_vs_time.pretest_time_ms = out.duration_ms;
     if (k === "posttest") data.meta.performance_vs_time.posttest_time_ms = out.duration_ms;
+    if (k === "pretest") data.meta.eval_state.pretest_completed = nowMs();
+    if (k === "posttest") data.meta.eval_state.posttest_completed = nowMs();
     if (Number.isFinite(data.meta.performance_vs_time.pretest_time_ms) && Number.isFinite(data.meta.performance_vs_time.posttest_time_ms)) {
       data.meta.performance_vs_time.total_test_time_ms = data.meta.performance_vs_time.pretest_time_ms + data.meta.performance_vs_time.posttest_time_ms;
     }
@@ -728,6 +803,9 @@
     if (Number.isFinite(data.tutorial.start_time_ms) && Number.isFinite(data.tutorial.end_time_ms)) {
       data.tutorial.duration_ms = data.tutorial.end_time_ms - data.tutorial.start_time_ms;
     }
+    if (!Number.isFinite(data.meta.eval_state.tutorial_completed)) {
+      data.meta.eval_state.tutorial_completed = nowMs();
+    }
     persist();
   }
 
@@ -761,6 +839,9 @@
     finalizeOpenTools();
     data.free_mode.ended_at_ms = nowMs();
     data.free_mode.session_duration_ms = data.free_mode.ended_at_ms - data.free_mode.started_at_ms;
+    if (!Number.isFinite(data.meta.eval_state.free_completed)) {
+      data.meta.eval_state.free_completed = data.free_mode.ended_at_ms;
+    }
     logEvent("free_mode_end", { reason: reason || "unknown" });
     updateSummary();
     persist();
@@ -796,15 +877,19 @@
   ensureSessionId();
   if (!data.meta.student_id) ensureSchuelerId();
   updateMetaOnEvent();
+  try { markEvalStep(evalStepFromPage(pageName()), pageName()); } catch {}
+  try { logEvent("page_view", { page: pageName(), step: evalStepFromPage(pageName()) }); } catch {}
   persist();
 
   if (isTutorialPage()) {
     if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = nowMs();
+    if (!Number.isFinite(data.meta.eval_state.tutorial_started)) data.meta.eval_state.tutorial_started = nowMs();
     persist();
   }
 
   window.addEventListener("beforeunload", () => {
     try {
+      if (isTutorialPage()) tutorialComplete();
       if (isFreeMode()) finalizeFreeMode("page_unload");
       else finalizeOpenTools();
     } catch {}

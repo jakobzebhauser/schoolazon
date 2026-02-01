@@ -851,7 +851,7 @@
   <!-- Evaluation Logger -->
   <script src="logger.js"></script>
 <script>
-  const TOTAL_SEC = 6 * 60;
+  const TOTAL_SEC = 8 * 60;
 
   const baseQuestions = [
     { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
@@ -894,12 +894,10 @@
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","kategorien(id, name)"],
       prompt:"Ergänze die Abfrage so, dass jedes Produkt mit seiner passenden Kategorie verknüpft wird.",
       template:"SELECT produkte.name, kategorien.name\nFROM produkte, kategorien\nWHERE ____________________________;",
-      correct:[
-        "produkte.kategorie_id = kategorien.id",
-        "kategorien.id = produkte.kategorie_id",
-        "produkte.kategorie_id == kategorien.id",
-        "kategorien.id == produkte.kategorie_id"
-      ]
+      correct:[   "produkte.kategorie_id = kategorien.id",
+  "kategorien.id = produkte.kategorie_id",
+  "produkte.kategorie_id == kategorien.id",
+  "kategorien.id == produkte.kategorie_id" ]
     },
     { id:"q8", type:"fill", title:"Produkte im Warenkorb",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)","warenkorb(produkt_id, menge, nutzer_id)"],
@@ -913,7 +911,7 @@
     },
     { id:"r2", type:"likert", title:"Realweltbezug",
       schema:[],
-      prompt:"Ich kann mehrere konkrete Beispiele nennen, in welchen realen Systemen SQL genutzt wird, und kurz erklären, wofür."
+      prompt:"Bewerte: Ich kann mehrere konkrete Beispiele nennen, in welchen realen Systemen SQL genutzt wird, und kurz erklären, wofür."
     }
   ];
 
@@ -936,6 +934,21 @@
   const logger = window.studyLogger;
 
   const el = (id) => document.getElementById(id);
+
+  // Back-Button im Browser deaktivieren (Evaluation)
+  (function disableBackNavigation(){
+    const warn = () => {
+      try{ window.alert("Zurück ist im Evaluationsmodus nicht erlaubt."); }catch(_){}
+      try{ window.studyLogger?.logEvent("nav_blocked", { reason: "back" }); }catch(_){}
+    };
+    try{
+      history.pushState({__noBack:true}, "", location.href);
+      window.addEventListener("popstate", ()=>{
+        warn();
+        try{ history.pushState({__noBack:true}, "", location.href); }catch(_){}
+      });
+    }catch(_){}
+  })();
 
   function pad2(n){ return String(n).padStart(2,"0"); }
   function fmtMMSS(sec){
@@ -1413,13 +1426,16 @@
   }
 
   function startTest(){
-    // Questions random; MC options random (and correctIndex recalculated).
-    questions = shuffle(baseQuestions).map(q=>{
+    // Likert zuerst, danach die 8 Wissensfragen in zufälliger Reihenfolge (MC-Optionen random).
+    const likertQs = baseQuestions.filter((q)=> q.type === "likert");
+    const contentQs = baseQuestions.filter((q)=> q.type !== "likert");
+    const shuffledContent = shuffle(contentQs).map(q=>{
       if(q.type !== "mc") return q;
       const correctOpt = q.options[q.correctIndex];
       const opts = shuffle(q.options);
       return { ...q, options: opts, correctIndex: opts.indexOf(correctOpt) };
     });
+    questions = [...likertQs, ...shuffledContent];
 
     state.startedAt = Date.now();
     state.endedAt = null;
@@ -1457,9 +1473,8 @@
     }catch{}
   }
   function goHomeConfirm(){
-    const ok = window.confirm("Willst du wirklich zur Startseite? Alle aktuellen Spielstände gehen verloren.");
-    if(!ok) return;
-    window.location.href = "index.html";
+    try{ window.alert("Im Evaluationsmodus nicht möglich."); }catch(_){}
+    try{ logger?.logEvent("nav_blocked", { reason: "home" }); }catch(_){}
   }
   el("fsBtn").addEventListener("click", toggleFullscreen);
   el("homeBtn")?.addEventListener("click", goHomeConfirm);

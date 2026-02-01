@@ -75,6 +75,7 @@ const ALL_TASK_IDS = [
     const keys = [
       "schulazon_name",
       "schulazon_unlocked_v1",
+      "schulazon_unlocked_source_v1",
       "schulazon_hint_used_v1",
       "schulazon_scaffold_used_v1",
       "schulazon_sqli_done_v1",
@@ -262,6 +263,21 @@ function getStudentName() {
 
 function initTopbarChrome() {
   const logger = window.studyLogger;
+
+  // Back-Button im Browser deaktivieren (Evaluation)
+  (function disableBackNavigation(){
+    const warn = () => {
+      try { window.alert("Zurück ist im Evaluationsmodus nicht erlaubt."); } catch (_) {}
+      try { logger?.logEvent("nav_blocked", { reason: "back" }); } catch (_) {}
+    };
+    try {
+      history.pushState({ __noBack: true }, "", location.href);
+      window.addEventListener("popstate", () => {
+        warn();
+        try { history.pushState({ __noBack: true }, "", location.href); } catch (_) {}
+      });
+    } catch (_) {}
+  })();
   // 1) Persist name if provided in query
   try {
     const qp = new URLSearchParams(window.location.search);
@@ -311,9 +327,8 @@ function initTopbarChrome() {
   }
   if (homeBtn) {
     homeBtn.addEventListener("click", () => {
-      const ok = window.confirm("Willst du wirklich zur Startseite? Alle aktuellen Spielstände gehen verloren.");
-      if (!ok) return;
-      try { window.location.assign("index.html"); } catch (_) { window.location.href = "index.html"; }
+      try { window.alert("Im Evaluationsmodus nicht möglich."); } catch (_) {}
+      try { logger?.logEvent("nav_blocked", { reason: "home" }); } catch (_) {}
     });
   }
 
@@ -532,6 +547,7 @@ class FreeMode {
     this.hintUsed = {};
     this.scaffoldUsed = {};
     this.sqliDone = false;
+    this.unlockedSource = {};
 
     // gespeicherte Freischalt‑SQL pro Aufgabe
     this.solutionSql = {};
@@ -570,6 +586,12 @@ class FreeMode {
             this.unlocked[k] = !!data[k];
           });
         }
+      }
+
+      const rawUnlockedSource = localStorage.getItem('schulazon_unlocked_source_v1');
+      if (rawUnlockedSource) {
+        const data = JSON.parse(rawUnlockedSource);
+        if (data && typeof data === 'object') this.unlockedSource = data;
       }
 
       const rawHints = localStorage.getItem('schulazon_hint_used_v1');
@@ -1789,6 +1811,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       const title = this.escapeHtml(t.title || id);
       const cat = this.escapeHtml(this.getCategoryLabel(id));
       const tags = [];
+      if (this.unlockedSource?.[id] === "tutorial") tags.push('<span class="spicker-tag tutorial">Tutorial</span>');
       if (this.hintUsed?.[id]) tags.push('<span class="spicker-tag hint">Tipp</span>');
       if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codeger\u00fcst</span>');
       const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.join('')}</div>` : '';

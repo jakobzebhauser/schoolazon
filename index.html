@@ -203,6 +203,13 @@
 
     .modeCard:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
     .modeCard:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
+    .modeCard.disabled{
+      opacity: .45;
+      filter: grayscale(0.9);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .modeCard.disabled::before{opacity:.35}
 
     .modeTitle{
       margin: 0;
@@ -554,6 +561,22 @@
     });
   }
 
+  function lockToPretestOnly(){
+    const allow = document.querySelector('.modeCard[href="pretest.html"]');
+    document.querySelectorAll(".modeCard").forEach((card)=>{
+      if(card === allow) return;
+      card.classList.add("disabled");
+      card.setAttribute("aria-disabled", "true");
+      card.setAttribute("tabindex", "-1");
+      if(card.tagName === "A"){
+        card.dataset.href = card.getAttribute("href") || "";
+        card.removeAttribute("href");
+      } else if(card.tagName === "BUTTON"){
+        card.disabled = true;
+      }
+    });
+  }
+
   function showNameGate(){
     const gate = el("nameGate");
     const modes = el("modesSection");
@@ -721,12 +744,13 @@
 
 
 
+  lockToPretestOnly();
   bindNameGate();
   bindFullscreen();
   const importBtn = el("importFreeBtn");
-  if(importBtn) importBtn.addEventListener("click", showImportGate);
+  if(importBtn && !importBtn.disabled) importBtn.addEventListener("click", showImportGate);
   const teachingBtn = el("teachingModeBtn");
-  if(teachingBtn) teachingBtn.addEventListener("click", showComingSoon);
+  if(teachingBtn && !teachingBtn.disabled) teachingBtn.addEventListener("click", showComingSoon);
   const importCancel = el("importCancel");
   if(importCancel) importCancel.addEventListener("click", hideImportGate);
   const importFile = el("importFile");

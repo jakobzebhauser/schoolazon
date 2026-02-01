@@ -1725,6 +1725,11 @@ body.timeup #pillTimer{
   background: rgba(175,82,222,.10);
   color: rgba(120,40,180,.92);
 }
+.spicker-tag.tutorial{
+  border-color: rgba(52,199,89,.30);
+  background: rgba(52,199,89,.12);
+  color: rgba(20,130,70,.95);
+}
 
 .spicker-chapter{
   display:flex;
