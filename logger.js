@@ -802,10 +802,13 @@
   }
 
   function tutorialStart(totalSteps) {
-    if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = nowMs();
-    if (Number.isFinite(totalSteps)) data.tutorial.total_steps = totalSteps;
-    persist();
-  }
+  const t = nowMs();
+  if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = t;
+  if (!Number.isFinite(data.meta.eval_state.tutorial_started)) data.meta.eval_state.tutorial_started = t;
+  if (Number.isFinite(totalSteps)) data.tutorial.total_steps = totalSteps;
+  persist();
+}
+
 
   function tutorialProgress(lastStep, totalSteps) {
     if (!data.tutorial.start_time_ms) tutorialStart(totalSteps);
@@ -970,12 +973,21 @@
   }
 
   function buildFlowBlock() {
-    const tutorialCompleted = validTs(data?.tutorial?.end_time_ms) || validTs(data?.meta?.eval_state?.tutorial_completed);
-    const path = tutorialCompleted ? "tutorial_then_free" : "free_direct";
-    return {
-      path
-    };
-  }
+  const steps = Array.isArray(data?.meta?.eval_flow?.steps) ? data.meta.eval_flow.steps : [];
+
+  const sawTutorialStep = steps.some(s =>
+    s?.step === "tutorial" || String(s?.page || "").toLowerCase().includes("tutorial")
+  );
+
+  const tutorialStarted =
+    sawTutorialStep ||
+    validTs(data?.tutorial?.start_time_ms) ||
+    validTs(data?.meta?.eval_state?.tutorial_started);
+
+  const path = tutorialStarted ? "tutorial_then_free" : "free_direct";
+  return { path };
+}
+
 
   function buildFreeModeBlock() {
     const fm = ensureObj(data.free_mode);
