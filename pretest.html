@@ -959,6 +959,21 @@
     return (qp.get("name") || "").trim();
   }
 
+  function getStudentId(){
+    let id = "";
+    try{
+      if(state.name) logger?.ensureStudentIdFromName(state.name);
+    }catch(_){}
+    try{ id = logger?.data?.meta?.student_id || ""; }catch(_){}
+    if(!id){
+      try{ id = localStorage.getItem("schulazon_schueler_id_v2") || ""; }catch(_){}
+    }
+    if(!id){
+      try{ id = logger?.ensureStudentId?.() || ""; }catch(_){}
+    }
+    return id;
+  }
+
   function pad2(n){ return String(n).padStart(2,"0"); }
   function fmtMMSS(sec){
     const m = Math.floor(sec/60), s = sec%60;
@@ -1125,6 +1140,55 @@ function promptWithName(q){
     const introContinue = el("introContinue");
     introContinue.addEventListener("click", ()=>{
       if(!state.name){ window.location.href = "index.html"; return; }
+      renderStudentIdNote();
+    });
+  }
+
+  function renderStudentIdNote(){
+    el("progressWrap").style.display = "none";
+    el("pillName").style.display = state.name ? "flex" : "none";
+    el("nameTag").textContent = state.name || "";
+    el("pillStep").style.display = "none";
+    el("pillTimer").style.display = "none";
+    el("subline").textContent = "Bewerbungsgespräch – Schüler-ID";
+
+    const sid = getStudentId();
+
+    el("screen").innerHTML = `
+      <div class="hero">
+        <div style="flex:1">
+          <h2>Bevor wir starten …</h2>
+          <p>Bitte notiere deine persönliche Schüler‑ID. Du brauchst sie später für die Auswertung.</p>
+
+          <div class="schemaWrap" style="margin-top:14px;">
+            <div class="schemaLabel">Schüler‑ID</div>
+            <div class="schemaBox" style="font-size: clamp(17px, 1.25vw + 14px, 22px); letter-spacing: .4px;">
+              ${escapeHtml(sid || "S-????")}
+            </div>
+          </div>
+
+          <div class="checkRow" style="margin-top:14px;">
+            <input id="idAck" type="checkbox" />
+            <div class="txt">Ich habe die Schüler‑ID notiert.</div>
+          </div>
+
+          <div class="btnRow">
+            <div></div>
+            <button class="btn primary disabled" id="idContinue">Weiter zum Test</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const idAck = el("idAck");
+    const idContinue = el("idContinue");
+
+    const sync = ()=> idContinue.classList.toggle("disabled", !idAck.checked);
+    idAck.addEventListener("change", sync);
+    sync();
+
+    idContinue.addEventListener("click", ()=>{
+      if(idContinue.classList.contains("disabled")) return;
       startTest();
     });
   }
@@ -1645,11 +1709,19 @@ function promptWithName(q){
   document.addEventListener("keydown", (e)=>{
     if(e.key !== "Enter") return;
 
-    // Start-Screen: Enter startet, wenn möglich
-    const startBtn = document.getElementById("startBtn");
-    if(startBtn && !startBtn.classList.contains("disabled")){
+    // Intro-Screen: Enter startet, wenn möglich
+    const introContinue = document.getElementById("introContinue");
+    if(introContinue && !introContinue.classList.contains("disabled")){
       e.preventDefault();
-      startBtn.click();
+      introContinue.click();
+      return;
+    }
+
+    // Schueler-ID-Screen: Enter bestaetigt, wenn moeglich
+    const idContinue = document.getElementById("idContinue");
+    if(idContinue && !idContinue.classList.contains("disabled")){
+      e.preventDefault();
+      idContinue.click();
       return;
     }
 
@@ -1666,6 +1738,14 @@ function promptWithName(q){
     if(ackBtn && !ackBtn.classList.contains("disabled")){
       e.preventDefault();
       ackBtn.click();
+      return;
+    }
+
+    // Onboarding: Enter startet, wenn moeglich
+    const startBtn = document.getElementById("startBtn");
+    if(startBtn && !startBtn.classList.contains("disabled")){
+      e.preventDefault();
+      startBtn.click();
       return;
     }
 

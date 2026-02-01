@@ -847,17 +847,260 @@
     persist();
   }
 
+  const KNOWLEDGE_IDS = ["q1","q2","q3","q4","q5","q6","q7","q8"];
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function formatDateLocal(ts) {
+    const d = ts ? new Date(ts) : new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  function validTs(v) {
+    return Number.isFinite(v) && v > 0;
+  }
+
+  function pickFirstNumber(...vals) {
+    for (let i = 0; i < vals.length; i++) {
+      if (Number.isFinite(vals[i])) return vals[i];
+    }
+    return null;
+  }
+
+  function numOrZero(v) {
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function numOrNull(v) {
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function buildLikertFromItems(items) {
+    const out = { r1: 0, r2: 0 };
+    if (!Array.isArray(items)) return out;
+    items.forEach((it) => {
+      const id = it?.item_id;
+      if (id !== "r1" && id !== "r2") return;
+      const v = Number(it?.response);
+      if (Number.isFinite(v)) out[id] = v;
+    });
+    return out;
+  }
+
+  function buildKnowledgeFromItems(items, fallbackScore) {
+    const by_item = {};
+    KNOWLEDGE_IDS.forEach((id) => { by_item[id] = false; });
+    if (Array.isArray(items)) {
+      items.forEach((it) => {
+        const id = it?.item_id;
+        if (id && Object.prototype.hasOwnProperty.call(by_item, id)) {
+          by_item[id] = !!it.correct;
+        }
+      });
+    }
+    let correct_count = Object.values(by_item).filter(Boolean).length;
+    if ((!Array.isArray(items) || items.length === 0) && Number.isFinite(fallbackScore)) {
+      correct_count = fallbackScore;
+    }
+    return { correct_count, by_item };
+  }
+
+  function buildTestBlock(kind) {
+    const src = ensureObj(data[kind]);
+    const items = Array.isArray(src.items) ? src.items : [];
+    const startedRaw = pickFirstNumber(src.started_at_ms, data?.meta?.eval_state?.[`${kind}_started`]);
+    const endedRaw = pickFirstNumber(src.ended_at_ms, data?.meta?.eval_state?.[`${kind}_completed`]);
+    const started_at_ms = validTs(startedRaw) ? startedRaw : 0;
+    const ended_at_ms = validTs(endedRaw) ? endedRaw : 0;
+    let duration_ms = Number.isFinite(src.duration_ms) ? src.duration_ms : 0;
+    if ((!Number.isFinite(duration_ms) || duration_ms <= 0) && started_at_ms && ended_at_ms) {
+      duration_ms = Math.max(0, ended_at_ms - started_at_ms);
+    }
+    return {
+      started_at_ms,
+      ended_at_ms,
+      duration_ms: Number.isFinite(duration_ms) ? duration_ms : 0,
+      likert: buildLikertFromItems(items),
+      knowledge: buildKnowledgeFromItems(items, src.score_raw)
+    };
+  }
+
+  function buildTutorialBlock() {
+    const startedRaw = pickFirstNumber(data?.tutorial?.start_time_ms, data?.meta?.eval_state?.tutorial_started);
+    const endedRaw = pickFirstNumber(data?.tutorial?.end_time_ms, data?.meta?.eval_state?.tutorial_completed);
+    const used = validTs(startedRaw);
+    let duration_ms = Number.isFinite(data?.tutorial?.duration_ms) ? data.tutorial.duration_ms : null;
+    if (used && duration_ms == null && validTs(startedRaw) && validTs(endedRaw)) {
+      duration_ms = Math.max(0, endedRaw - startedRaw);
+    }
+    const completed = used ? validTs(endedRaw) : null;
+    const aborted = used ? !validTs(endedRaw) : null;
+    return {
+      used,
+      started_at_ms: used ? startedRaw : null,
+      ended_at_ms: used && validTs(endedRaw) ? endedRaw : null,
+      duration_ms,
+      completed,
+      aborted
+    };
+  }
+
+  function buildIndexBlock() {
+    const steps = data?.meta?.eval_flow?.steps || [];
+    let startTs = null;
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      if (s && (s.step === "start" || s.step === "index")) {
+        startTs = s.ts;
+        break;
+      }
+    }
+    let endTs = null;
+    const preStart = pickFirstNumber(data?.pretest?.started_at_ms, data?.meta?.eval_state?.pretest_started);
+    if (validTs(preStart)) {
+      endTs = preStart;
+    } else if (startTs != null) {
+      const idx = steps.findIndex((s) => s && (s.step === "start" || s.step === "index") && s.ts === startTs);
+      for (let i = idx + 1; i < steps.length; i++) {
+        const s = steps[i];
+        if (s && Number.isFinite(s.ts)) {
+          endTs = s.ts;
+          break;
+        }
+      }
+    }
+    const started_at_ms = validTs(startTs) ? startTs : 0;
+    const ended_at_ms = validTs(endTs) ? endTs : 0;
+    const duration_ms = (started_at_ms && ended_at_ms && ended_at_ms >= started_at_ms)
+      ? (ended_at_ms - started_at_ms)
+      : 0;
+    return { started_at_ms, ended_at_ms, duration_ms };
+  }
+
+  function buildFlowBlock() {
+    const nextMode = (data?.pretest?.next_mode || "").toString().toLowerCase();
+    const tutorialUsed = validTs(data?.tutorial?.start_time_ms) || validTs(data?.meta?.eval_state?.tutorial_started);
+    const path = (tutorialUsed || nextMode === "tutorial") ? "tutorial_then_free" : "free_direct";
+    return {
+      path
+    };
+  }
+
+  function buildFreeModeBlock() {
+    const fm = ensureObj(data.free_mode);
+    const startedRaw = pickFirstNumber(fm.started_at_ms, data?.meta?.eval_state?.free_started);
+    const endedRaw = pickFirstNumber(fm.ended_at_ms, data?.meta?.eval_state?.free_completed);
+    const started_at_ms = validTs(startedRaw) ? startedRaw : 0;
+    const ended_at_ms = validTs(endedRaw) ? endedRaw : 0;
+    let duration_ms = Number.isFinite(fm.session_duration_ms) ? fm.session_duration_ms : 0;
+    if ((!Number.isFinite(duration_ms) || duration_ms <= 0) && started_at_ms && ended_at_ms) {
+      duration_ms = Math.max(0, ended_at_ms - started_at_ms);
+    }
+
+    const tasks = ensureObj(fm.tasks);
+    const taskIds = Object.keys(tasks);
+    const orderList = taskIds.map((id) => {
+      const t = tasks[id] || {};
+      return {
+        id,
+        order: Number.isFinite(t.order_index) ? t.order_index : null,
+        start: Number.isFinite(t.start_time_ms) ? t.start_time_ms : null
+      };
+    }).sort((a, b) => {
+      if (Number.isFinite(a.order) && Number.isFinite(b.order)) return a.order - b.order;
+      if (Number.isFinite(a.order)) return -1;
+      if (Number.isFinite(b.order)) return 1;
+      if (Number.isFinite(a.start) && Number.isFinite(b.start)) return a.start - b.start;
+      if (Number.isFinite(a.start)) return -1;
+      if (Number.isFinite(b.start)) return 1;
+      return a.id.localeCompare(b.id);
+    });
+    const task_order = orderList.map((t) => t.id);
+
+    const tasksOut = {};
+    taskIds.forEach((id) => {
+      const t = tasks[id] || {};
+      tasksOut[id] = {
+        started_at_ms: numOrNull(t.start_time_ms),
+        first_submit_time_ms: numOrNull(t.first_submit_time_ms),
+        solved_time_ms: numOrNull(t.solved_time_ms),
+        attempts_total: numOrZero(t.attempts_total),
+        attempts_wrong: numOrZero(t.attempts_wrong),
+        used_hint_count: numOrZero(t.used_hint_count),
+        used_scaffold_count: numOrZero(t.used_scaffold_count),
+        solution_viewed: !!t.solution_viewed,
+        difficulty: t.difficulty ?? null,
+        order_index: Number.isFinite(t.order_index) ? t.order_index : null
+      };
+    });
+
+    const tools = ensureObj(fm.tools);
+    const toolHelp = ensureObj(tools.help);
+    const toolSpicker = ensureObj(tools.spicker);
+    const toolSchema = ensureObj(tools.schema);
+
+    const pauseEvents = Array.isArray(fm.pause_events) ? fm.pause_events : [];
+    const spans = pauseEvents
+      .filter(p => p && Number.isFinite(p.start_ms) && Number.isFinite(p.end_ms))
+      .map(p => ({ start_ms: p.start_ms, end_ms: p.end_ms }));
+    const total_ms = Number.isFinite(fm.idle_time_ms)
+      ? fm.idle_time_ms
+      : spans.reduce((acc, p) => acc + Math.max(0, p.end_ms - p.start_ms), 0);
+
+    return {
+      started_at_ms,
+      ended_at_ms,
+      duration_ms: Number.isFinite(duration_ms) ? duration_ms : 0,
+      free_score: Number.isFinite(fm.last_score) ? fm.last_score : 0,
+      tasks_solved: Number.isFinite(fm?.summary?.tasks_solved) ? fm.summary.tasks_solved : 0,
+      tools: {
+        help: { opens: numOrZero(toolHelp.opens), duration_ms: numOrZero(toolHelp.duration_ms) },
+        spicker: { opens: numOrZero(toolSpicker.opens), duration_ms: numOrZero(toolSpicker.duration_ms) },
+        db_schema: { opens: numOrZero(toolSchema.opens), duration_ms: numOrZero(toolSchema.duration_ms) }
+      },
+      task_order,
+      tasks: tasksOut,
+      inactivity: {
+        threshold_ms: LONG_PAUSE_MS,
+        spans,
+        total_ms: numOrZero(total_ms)
+      }
+    };
+  }
+
   function exportJson() {
     updateSummary();
     data.meta.last_seen_page = pageName();
     data.meta.last_event_time = nowMs();
     ensureSchuelerId();
     ensureSessionId();
-    if (isFreeMode()) finalizeFreeMode("export");
+    finalizeOpenTools();
+    if (isFreeMode()) {
+      finalizeFreeMode("export");
+    } else if (data?.free_mode?.started_at_ms && !data?.free_mode?.ended_at_ms) {
+      const endAt = pickFirstNumber(data?.posttest?.started_at_ms, data?.meta?.eval_state?.posttest_started, nowMs());
+      if (Number.isFinite(endAt)) data.free_mode.ended_at_ms = endAt;
+      if (Number.isFinite(data.free_mode.started_at_ms) && Number.isFinite(data.free_mode.ended_at_ms)) {
+        data.free_mode.session_duration_ms = data.free_mode.ended_at_ms - data.free_mode.started_at_ms;
+      }
+    }
+    updateSummary();
 
-    const filename = `schulazon_${data.meta.student_id}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.json`;
-    const exportPayload = JSON.parse(JSON.stringify(data));
-    delete exportPayload._intern;
+    const exportPayload = {
+      version: 1,
+      date: formatDateLocal(),
+      student_id: data.meta.student_id || ensureSchuelerId(),
+      flow: buildFlowBlock(),
+      index: buildIndexBlock(),
+      pretest: buildTestBlock("pretest"),
+      tutorial: buildTutorialBlock(),
+      free_mode: buildFreeModeBlock(),
+      posttest: buildTestBlock("posttest")
+    };
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+    const filename = `schulazon_${exportPayload.student_id || "S"}_${stamp}.json`;
 
     try {
       const payload = JSON.stringify(exportPayload, null, 2);
