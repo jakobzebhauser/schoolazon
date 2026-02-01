@@ -104,6 +104,11 @@
         last_step: null,
         total_steps: null,
         jumps: 0,
+        // "completed" | "aborted" | null
+        end_reason: null,
+        aborted_step: null,
+        aborted_page_id: null,
+        aborted_page_title: null,
         tasks: {}
       },
       free_mode: {
@@ -188,6 +193,11 @@
     d.tutorial = ensureObj(d.tutorial);
     if (!Number.isFinite(d.tutorial.jumps)) d.tutorial.jumps = 0;
     d.tutorial.tasks = ensureObj(d.tutorial.tasks);
+
+    d.tutorial.end_reason = d.tutorial.end_reason || null;
+    if (!Number.isFinite(d.tutorial.aborted_step)) d.tutorial.aborted_step = null;
+    d.tutorial.aborted_page_id = d.tutorial.aborted_page_id || null;
+    d.tutorial.aborted_page_title = d.tutorial.aborted_page_title || null;
 
     d.free_mode = ensureObj(d.free_mode);
     d.free_mode.tasks = ensureObj(d.free_mode.tasks);
@@ -800,15 +810,23 @@
     };
     persist();
   }
-
-  function tutorialStart(totalSteps) {
+function tutorialStart(totalSteps) {
   const t = nowMs();
-  if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = t;
+  const firstStart = !Number.isFinite(data.tutorial.start_time_ms);
+  if (firstStart) {
+    data.tutorial.start_time_ms = t;
+    data.tutorial.end_time_ms = null;
+    data.tutorial.duration_ms = null;
+    data.tutorial.end_reason = null;
+    data.tutorial.aborted_step = null;
+    data.tutorial.aborted_page_id = null;
+    data.tutorial.aborted_page_title = null;
+    try { logEvent("tutorial_start", { total_steps: Number.isFinite(totalSteps) ? totalSteps : null }); } catch {}
+  }
   if (!Number.isFinite(data.meta.eval_state.tutorial_started)) data.meta.eval_state.tutorial_started = t;
   if (Number.isFinite(totalSteps)) data.tutorial.total_steps = totalSteps;
   persist();
 }
-
 
   function tutorialProgress(lastStep, totalSteps) {
     if (!data.tutorial.start_time_ms) tutorialStart(totalSteps);
@@ -821,19 +839,54 @@
     data.tutorial.jumps = (data.tutorial.jumps || 0) + 1;
     persist();
   }
-
-  function tutorialComplete() {
-    if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = nowMs();
-    if (!data.tutorial.end_time_ms) data.tutorial.end_time_ms = nowMs();
+function tutorialComplete() {
+    if (!Number.isFinite(data.tutorial.start_time_ms)) data.tutorial.start_time_ms = nowMs();
+    if (!Number.isFinite(data.tutorial.end_time_ms)) data.tutorial.end_time_ms = nowMs();
     if (Number.isFinite(data.tutorial.start_time_ms) && Number.isFinite(data.tutorial.end_time_ms)) {
       data.tutorial.duration_ms = data.tutorial.end_time_ms - data.tutorial.start_time_ms;
     }
+    data.tutorial.end_reason = "completed";
+    data.tutorial.aborted_step = null;
+    data.tutorial.aborted_page_id = null;
+    data.tutorial.aborted_page_title = null;
+
     if (!Number.isFinite(data.meta.eval_state.tutorial_completed)) {
       data.meta.eval_state.tutorial_completed = nowMs();
     }
+    try { logEvent("tutorial_complete", { total_steps: Number.isFinite(data.tutorial.total_steps) ? data.tutorial.total_steps : null }); } catch {}
     persist();
   }
 
+
+
+  function tutorialAbort(info = {}) {
+    // abort is a "finished" tutorial, but NOT a "completed" tutorial.
+    if (data.tutorial.end_reason === "completed") return;
+    if (data.tutorial.end_reason === "aborted") return;
+
+    if (!Number.isFinite(data.tutorial.start_time_ms)) data.tutorial.start_time_ms = nowMs();
+
+    data.tutorial.end_time_ms = nowMs();
+    if (Number.isFinite(data.tutorial.start_time_ms) && Number.isFinite(data.tutorial.end_time_ms)) {
+      data.tutorial.duration_ms = data.tutorial.end_time_ms - data.tutorial.start_time_ms;
+    }
+
+    data.tutorial.end_reason = "aborted";
+    data.tutorial.aborted_step = Number.isFinite(info.step_index) ? info.step_index : (Number.isFinite(info.step) ? info.step : null);
+    data.tutorial.aborted_page_id = (info.page_id != null) ? String(info.page_id) : null;
+    data.tutorial.aborted_page_title = (info.page_title != null) ? String(info.page_title) : null;
+
+    try {
+      logEvent("tutorial_abort", {
+        step_index: data.tutorial.aborted_step,
+        page_id: data.tutorial.aborted_page_id,
+        page_title: data.tutorial.aborted_page_title,
+        to: info.to || null
+      });
+    } catch {}
+
+    persist();
+  }
   function set(path, value) {
     if (!path) return;
     const parts = String(path).split(".");
@@ -951,43 +1004,64 @@
       knowledge: buildKnowledgeFromItems(items, src.score_raw)
     };
   }
-
-  function buildTutorialBlock() {
+function buildTutorialBlock() {
     const startedRaw = pickFirstNumber(data?.tutorial?.start_time_ms, data?.meta?.eval_state?.tutorial_started);
     const endedRaw = pickFirstNumber(data?.tutorial?.end_time_ms, data?.meta?.eval_state?.tutorial_completed);
     const used = validTs(startedRaw);
+
     let duration_ms = Number.isFinite(data?.tutorial?.duration_ms) ? data.tutorial.duration_ms : null;
     if (used && duration_ms == null && validTs(startedRaw) && validTs(endedRaw)) {
       duration_ms = Math.max(0, endedRaw - startedRaw);
     }
-    const completed = used ? validTs(endedRaw) : null;
-    const aborted = used ? !validTs(endedRaw) : null;
+
+    let end_reason = (data?.tutorial?.end_reason || null);
+    if (!end_reason && used) {
+      if (validTs(data?.meta?.eval_state?.tutorial_completed)) end_reason = "completed";
+      else if (validTs(data?.tutorial?.end_time_ms)) end_reason = "aborted";
+    }
+
+    const completed = used ? (end_reason === "completed") : null;
+    const aborted = used ? (end_reason === "aborted") : null;
+
     return {
       used,
       started_at_ms: used ? startedRaw : null,
       ended_at_ms: used && validTs(endedRaw) ? endedRaw : null,
       duration_ms,
       completed,
-      aborted
+      aborted,
+      aborted_step: (aborted ? (Number.isFinite(data?.tutorial?.aborted_step) ? data.tutorial.aborted_step : null) : null),
+      aborted_page_id: (aborted ? (data?.tutorial?.aborted_page_id || null) : null),
+      aborted_page_title: (aborted ? (data?.tutorial?.aborted_page_title || null) : null)
     };
   }
-
-  function buildFlowBlock() {
+function buildFlowBlock() {
   const steps = Array.isArray(data?.meta?.eval_flow?.steps) ? data.meta.eval_flow.steps : [];
+  const events = Array.isArray(data?.events) ? data.events : [];
 
   const sawTutorialStep = steps.some(s =>
     s?.step === "tutorial" || String(s?.page || "").toLowerCase().includes("tutorial")
   );
 
+  const sawTutorialEvent = events.some(e => {
+    const type = String(e?.type || "");
+    if (type === "tutorial_start" || type === "tutorial_abort" || type === "tutorial_complete") return true;
+    if (type === "page_view") {
+      const p = String(e?.payload?.page || "").toLowerCase();
+      return p.includes("tutorial");
+    }
+    return false;
+  });
+
   const tutorialStarted =
     sawTutorialStep ||
+    sawTutorialEvent ||
     validTs(data?.tutorial?.start_time_ms) ||
     validTs(data?.meta?.eval_state?.tutorial_started);
 
   const path = tutorialStarted ? "tutorial_then_free" : "free_direct";
   return { path };
 }
-
 
   function buildFreeModeBlock() {
     const fm = ensureObj(data.free_mode);
@@ -1124,10 +1198,101 @@
   try { logEvent("page_view", { page: pageName(), step: evalStepFromPage(pageName()) }); } catch {}
   persist();
 
+  function showTutorialUnlocksBannerOnce() {
+    try {
+      const mode = document?.body?.getAttribute("data-mode");
+      if (mode !== "free") return;
+
+      const SHOWN_KEY = "schulazon_tutorial_unlocks_banner_shown_v1";
+      try { if (sessionStorage.getItem(SHOWN_KEY) === "1") return; } catch {}
+      const srcRaw = safeGet("schulazon_unlocked_source_v1") || "{}";
+      const srcMap = safeParse(srcRaw) || {};
+      const ids = Object.keys(srcMap).filter((id) => srcMap[id] === "tutorial");
+
+      if (!ids.length) return;
+
+      try { sessionStorage.setItem(SHOWN_KEY, "1"); } catch {}
+
+      const wrap = document.createElement("div");
+      wrap.setAttribute("data-schulazon-banner", "tutorial-unlocks");
+      wrap.style.position = "fixed";
+      wrap.style.top = "10px";
+      wrap.style.left = "50%";
+      wrap.style.transform = "translateX(-50%)";
+      wrap.style.zIndex = "2147483647";
+      wrap.style.maxWidth = "min(980px, calc(100vw - 22px))";
+      wrap.style.width = "max-content";
+      wrap.style.padding = "10px 12px";
+      wrap.style.borderRadius = "14px";
+      wrap.style.background = "rgba(255,255,255,0.92)";
+      wrap.style.border = "1px solid rgba(10,15,24,0.10)";
+      wrap.style.boxShadow = "0 12px 30px rgba(10,15,24,0.12)";
+      wrap.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+      wrap.style.color = "#0B0F18";
+      wrap.style.backdropFilter = "blur(10px)";
+      wrap.style.webkitBackdropFilter = "blur(10px)";
+
+      const title = document.createElement("div");
+      title.style.fontSize = "14px";
+      title.style.fontWeight = "800";
+      title.textContent = `Im Tutorial bereits freigeschaltet: ${ids.length}`;
+
+      const list = document.createElement("div");
+      list.style.marginTop = "4px";
+      list.style.fontSize = "13px";
+      list.style.opacity = "0.9";
+      list.textContent = ids.join(", ");
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "×";
+      close.setAttribute("aria-label", "Schließen");
+      close.style.marginLeft = "10px";
+      close.style.border = "0";
+      close.style.background = "transparent";
+      close.style.cursor = "pointer";
+      close.style.fontSize = "18px";
+      close.style.lineHeight = "1";
+      close.style.fontWeight = "900";
+      close.style.color = "rgba(11,15,24,0.6)";
+
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "flex-start";
+      row.style.gap = "10px";
+
+      const col = document.createElement("div");
+      col.style.display = "flex";
+      col.style.flexDirection = "column";
+      col.appendChild(title);
+      col.appendChild(list);
+
+      row.appendChild(col);
+      row.appendChild(close);
+      wrap.appendChild(row);
+
+      close.addEventListener("click", () => {
+        try { wrap.remove(); } catch {}
+      });
+
+      document.body.appendChild(wrap);
+
+      try { logEvent("tutorial_unlocks_banner_shown", { count: ids.length, ids }); } catch {}
+      persist();
+    } catch {}
+  }
+
+  try {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", showTutorialUnlocksBannerOnce, { once: true });
+    } else {
+      showTutorialUnlocksBannerOnce();
+    }
+  } catch {}
+
+
   if (isTutorialPage()) {
-    if (!data.tutorial.start_time_ms) data.tutorial.start_time_ms = nowMs();
-    if (!Number.isFinite(data.meta.eval_state.tutorial_started)) data.meta.eval_state.tutorial_started = nowMs();
-    persist();
+    try { tutorialStart(null); } catch {}
   }
 
   window.addEventListener("beforeunload", () => {
@@ -1178,6 +1343,7 @@
     tutorialProgress,
     tutorialJump,
     tutorialComplete,
+    tutorialAbort,
 
     // Free mode
     trackTaskOpen,

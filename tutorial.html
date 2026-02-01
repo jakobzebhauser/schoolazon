@@ -2171,11 +2171,8 @@ function renderInfo(p){
       try{ logger?.tutorialComplete(); }catch(_){}
     } else {
       const page = pages[state.i] || {};
-      try{ logger?.set("tutorial.end_time_ms", null); }catch(_){}
-      try{ logger?.set("tutorial.duration_ms", null); }catch(_){}
-      try{ logger?.set("meta.eval_state.tutorial_completed", null); }catch(_){}
       try{
-        logger?.logEvent("tutorial_abort", {
+        logger?.tutorialAbort({
           step_index: state.i + 1,
           page_id: page.id || null,
           page_title: page.title || null,
