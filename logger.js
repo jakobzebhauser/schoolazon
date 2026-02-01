@@ -629,7 +629,19 @@
   }
 
   function trackSolved(taskId) {
-    trackAttempt({ taskId, result: "correct", sql: "" });
+    if (!isFreeMode()) return;
+    ensureFreeModeStart();
+    const id = String(taskId || "").trim();
+    if (!id) return;
+    const t = ensureTask(id);
+    if (!t) return;
+    const alreadySolved = Number.isFinite(t.solved_time_ms);
+    if (!alreadySolved) {
+      t.solved_time_ms = nowMs();
+      logEvent("task_solved", { task_id: id, source: "unlock" });
+    }
+    updateSummary();
+    persist();
   }
 
   function trackHint(taskId) {
@@ -980,9 +992,8 @@
   }
 
   function buildFlowBlock() {
-    const nextMode = (data?.pretest?.next_mode || "").toString().toLowerCase();
-    const tutorialUsed = validTs(data?.tutorial?.start_time_ms) || validTs(data?.meta?.eval_state?.tutorial_started);
-    const path = (tutorialUsed || nextMode === "tutorial") ? "tutorial_then_free" : "free_direct";
+    const tutorialCompleted = validTs(data?.tutorial?.end_time_ms) || validTs(data?.meta?.eval_state?.tutorial_completed);
+    const path = tutorialCompleted ? "tutorial_then_free" : "free_direct";
     return {
       path
     };
@@ -1132,7 +1143,6 @@
 
   window.addEventListener("beforeunload", () => {
     try {
-      if (isTutorialPage()) tutorialComplete();
       if (isFreeMode()) finalizeFreeMode("page_unload");
       else finalizeOpenTools();
     } catch {}

@@ -2139,7 +2139,7 @@ function renderInfo(p){
         clone.classList.add("primary");
         clone.classList.remove("disabled");
         btn.parentNode.replaceChild(clone, btn);
-        clone.addEventListener("click", goToFreeMode);
+        clone.addEventListener("click", ()=>goToFreeMode({ completed: true }));
       }
     }
 
@@ -2154,6 +2154,7 @@ function renderInfo(p){
     shopReady = false;
     currentTargetTaskId = null;
     const p = pages[state.i];
+    try{ logger?.tutorialProgress(state.i + 1, pages.length); }catch(_){}
 
     if(p.type === "match"){ renderMatch(p); return; }
     if(p.type === "fill"){ renderFill(p); return; }
@@ -2164,7 +2165,13 @@ function renderInfo(p){
     renderInfo(p);
   }
 
-  function goToFreeMode(){
+  function goToFreeMode(opts = {}){
+    const completed = !!(opts && opts.completed);
+    if(completed){
+      try{ logger?.tutorialComplete(); }catch(_){}
+    } else {
+      try{ logger?.logEvent("tutorial_abort", { step: state.i + 1 }); }catch(_){}
+    }
     const n = (state.name || "").toString().trim();
     try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
@@ -2186,7 +2193,7 @@ function renderInfo(p){
 
   el("fsBtn").addEventListener("click", toggleFullscreen);
   el("homeBtn")?.addEventListener("click", goHomeConfirm);
-  el("exitBtn")?.addEventListener("click", goToFreeMode);
+  el("exitBtn")?.addEventListener("click", ()=>goToFreeMode({ completed: false }));
   document.addEventListener("fullscreenchange", ()=>{
     el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
   });
@@ -2197,6 +2204,7 @@ function renderInfo(p){
     try{ for(const k in __codeAttempts) delete __codeAttempts[k]; }catch{}
   })();
 
+  try{ logger?.tutorialStart(pages.length); }catch(_){}
   updateNamePill();
   render();
 </script>
