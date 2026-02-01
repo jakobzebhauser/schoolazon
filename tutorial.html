@@ -940,6 +940,27 @@ pre.sql.sqlFill .blank input{
     `;
   }
 
+  function renderSqlBlocks(blocks, toneClass="tone-blue", marks=null){
+    if(!Array.isArray(blocks) || !blocks.length) return "";
+    return blocks.map((block)=>{
+      const lines = Array.isArray(block?.lines) ? block.lines : (Array.isArray(block?.sql) ? block.sql : []);
+      const tone = block?.tone || toneClass;
+      const label = block?.label || "SQL";
+      const blockMarks = block?.marks || marks;
+      const after = block?.after || "";
+      if(!lines.length) return "";
+      return `
+        <div class="sqlBlock">
+          <div class="schemaWrap">
+            <div class="schemaLabel ${tone}">${escapeHtml(label)}</div>
+            <div class="codeBox"><pre class="sql">${lines.map(l=>highlightSqlLine(l, blockMarks)).join("\n")}</pre></div>
+          </div>
+          ${after}
+        </div>
+      `;
+    }).join("");
+  }
+
   /* ---------- Theory highlighting (ONLY key terms) ---------- */
   const THEORY_CODE = new Set([
     "SELECT","FROM","WHERE","ORDER BY","GROUP BY","HAVING","DISTINCT","LIMIT","AND","OR","NOT",
@@ -1058,7 +1079,7 @@ pre.sql.sqlFill .blank input{
     {
       id:"task_match_blocks",
       type:"match",
-      title:"Aufgabe 1/6: Zuordnen",
+      title:"Aufgabe 1/5: Zuordnen",
       context: "Warm-up: ordne Baustein und Zweck zu.",
       nameInPrompt: true,
       theory: "Klicke zuerst links (Baustein), dann rechts (Zweck). Wenn alles stimmt, kannst du weiter.",
@@ -1076,100 +1097,112 @@ pre.sql.sqlFill .blank input{
       title:"SELECT & FROM",
       context: "Damit legst du fest, welche Spalten aus welcher Tabelle im Ergebnis stehen.",
       theory: [
-        "SELECT bestimmt die Spalten im Ergebnis. Das Sternchen (*) bedeutet „alle Spalten“.",
+        "SELECT bestimmt die Spalten im Ergebnis. Das Sternchen (*) bedeutet \"alle Spalten\".",
         "DISTINCT entfernt Duplikate in der Ausgabespalte (gibt jeden Wert nur einmal aus). LIMIT begrenzt die Anzahl der Zeilen."
       ],
       sqlTone: "tone-blue",
-      sql: [
-        "-- alle Spalten, alle Datensätze",
-        "SELECT *",
-        "FROM produkte;",
-        "",
-        "-- nur eine Spalte",
-        "SELECT liefertage",
-        "FROM produkte;",
-        "",
-        "-- ohne Duplikate",
-        "SELECT DISTINCT liefertage",
-        "FROM produkte;",
-        "",
-        "-- nur die ersten 2 Zeilen",
-        "SELECT *",
-        "FROM produkte",
-        "LIMIT 2;"
-      ],
-      afterSql: `
-        <div class="schemaWrap">
-          <div class="schemaLabel tone-blue">Beispiel-Ergebnisse (anklicken)</div>
-
-          <details class="reveal">
-            <summary><code>SELECT *</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: SELECT *">
-                <thead>
-                  <tr><th colspan="3"><code>SELECT *</code></th></tr>
-                  <tr><th>id</th><th>name</th><th>liefertage</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
-                  <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
-                  <tr><td>3</td><td>Notebook-Ständer</td><td>3</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-
-          <details class="reveal">
-            <summary><code>SELECT liefertage</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: SELECT liefertage">
-                <thead><tr><th><code>SELECT liefertage</code></th></tr></thead>
-                <tbody>
-                  <tr><td>2</td></tr>
-                  <tr><td>3</td></tr>
-                  <tr><td>3</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-
-          <details class="reveal">
-            <summary><code>SELECT DISTINCT liefertage</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: SELECT DISTINCT liefertage">
-                <thead><tr><th><code>SELECT DISTINCT liefertage</code></th></tr></thead>
-                <tbody>
-                  <tr><td>2</td></tr>
-                  <tr><td>3</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-
-          <details class="reveal">
-            <summary><code>SELECT * … LIMIT 2</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: LIMIT 2">
-                <thead>
-                  <tr><th colspan="3"><code>SELECT * … LIMIT 2</code></th></tr>
-                  <tr><th>id</th><th>name</th><th>liefertage</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
-                  <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-      `
+      sqlBlocks: [
+        {
+          lines: [
+            "-- alle Spalten, alle Datensaetze",
+            "SELECT *",
+            "FROM produkte;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>SELECT *</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: SELECT *">
+                  <thead>
+                    <tr><th colspan="3"><code>SELECT *</code></th></tr>
+                    <tr><th>id</th><th>name</th><th>liefertage</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
+                    <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
+                    <tr><td>3</td><td>Notebook-Staender</td><td>3</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        },
+        {
+          lines: [
+            "-- nur eine Spalte",
+            "SELECT liefertage",
+            "FROM produkte;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>SELECT liefertage</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: SELECT liefertage">
+                  <thead><tr><th><code>SELECT liefertage</code></th></tr></thead>
+                  <tbody>
+                    <tr><td>2</td></tr>
+                    <tr><td>3</td></tr>
+                    <tr><td>3</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        },
+        {
+          lines: [
+            "-- ohne Duplikate",
+            "SELECT DISTINCT liefertage",
+            "FROM produkte;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>SELECT DISTINCT liefertage</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: SELECT DISTINCT liefertage">
+                  <thead><tr><th><code>SELECT DISTINCT liefertage</code></th></tr></thead>
+                  <tbody>
+                    <tr><td>2</td></tr>
+                    <tr><td>3</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        },
+        {
+          lines: [
+            "-- nur die ersten 2 Zeilen",
+            "SELECT *",
+            "FROM produkte",
+            "LIMIT 2;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>SELECT * ... LIMIT 2</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: LIMIT 2">
+                  <thead>
+                    <tr><th colspan="3"><code>SELECT * ... LIMIT 2</code></th></tr>
+                    <tr><th>id</th><th>name</th><th>liefertage</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>1</td><td>USB-Kabel</td><td>2</td></tr>
+                    <tr><td>2</td><td>Mauspad</td><td>3</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        }
+      ]
     },
 
     /* Programmieraufgabe: direkt nach SELECT/FROM */
     {
       id:"code_all_products",
       type:"code",
-      title:"Aufgabe 2/6: Alle Produkte",
+      title:"Aufgabe 2/5: Alle Produkte",
       context: "Im Shop gibt es den Button „Alle Produkte“. Implementiere ihn: Gib alle Produkte aus der Tabelle produkte aus. Fülle die fehlende SQL-Komponente ein.",
       template:[
         "SELECT *",
@@ -1231,7 +1264,7 @@ pre.sql.sqlFill .blank input{
         {
       id:"code_price_25_50",
       type:"code",
-      title:"Aufgabe 3/6: Preis zwischen 25 und 50",
+      title:"Aufgabe 3/5: Preis zwischen 25 und 50",
       context: "Im Shop gibt es den Filter „25–50 €“. Implementiere ihn: Es sollen alle Produkte angezeigt werden, deren preis zwischen 25 und 50 liegt (inklusive). Fülle nur die fehlenden Teile der WHERE-Bedingung aus.",
       template:[
         "SELECT *",
@@ -1255,71 +1288,75 @@ pre.sql.sqlFill .blank input{
     /* Freischalt-Aufgabe bleibt eigene Seite */
 
     {
-  id:"order",
-  title:"ORDER BY (Sortieren)",
-  context: "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
-  theory: [
-    "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
-    "ASC sortiert aufsteigend (z. B. billig → teuer), DESC absteigend (teuer → billig)."
-  ],
-  sqlTone: "tone-blue",
-  sql: [
-    "-- billigste Produkte zuerst",
-    "SELECT *",
-    "FROM produkte",
-    "ORDER BY preis ASC;",
-    "",
-    "-- teuerste Produkte zuerst",
-    "SELECT *",
-    "FROM produkte",
-    "ORDER BY preis DESC;"
-  ],
-  afterSql: `
-    <div class="schemaWrap">
-      <div class="schemaLabel tone-blue">Beispiel-Ergebnisse (anklicken)</div>
-
-      <details class="reveal">
-        <summary><code>ORDER BY preis ASC</code></summary>
-        <div class="narrowWrap" style="margin-top:10px;">
-          <table class="miniTable" aria-label="Ergebnis: ORDER BY preis ASC">
-            <thead>
-              <tr><th colspan="3"><code>... ORDER BY preis ASC</code></th></tr>
-              <tr><th>id</th><th>name</th><th>preis</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>12</td><td>Batterien AA</td><td>3</td></tr>
-              <tr><td>7</td><td>Trinkflasche</td><td>12</td></tr>
-              <tr><td>3</td><td>Yoga-Matte</td><td>29</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-
-      <details class="reveal">
-        <summary><code>ORDER BY preis DESC</code></summary>
-        <div class="narrowWrap" style="margin-top:10px;">
-          <table class="miniTable" aria-label="Ergebnis: ORDER BY preis DESC">
-            <thead>
-              <tr><th colspan="3"><code>... ORDER BY preis DESC</code></th></tr>
-              <tr><th>id</th><th>name</th><th>preis</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>18</td><td>Monitor</td><td>199</td></tr>
-              <tr><td>9</td><td>Kopfhörer</td><td>89</td></tr>
-              <tr><td>3</td><td>Yoga-Matte</td><td>29</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </div>
-  `
-},
+      id:"order",
+      title:"ORDER BY (Sortieren)",
+      context: "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
+      theory: [
+        "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
+        "ASC sortiert aufsteigend (z. B. billig -> teuer), DESC absteigend (teuer -> billig)."
+      ],
+      sqlTone: "tone-blue",
+      sqlBlocks: [
+        {
+          lines: [
+            "-- billigste Produkte zuerst",
+            "SELECT *",
+            "FROM produkte",
+            "ORDER BY preis ASC;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>ORDER BY preis ASC</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: ORDER BY preis ASC">
+                  <thead>
+                    <tr><th colspan="3"><code>... ORDER BY preis ASC</code></th></tr>
+                    <tr><th>id</th><th>name</th><th>preis</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>12</td><td>Batterien AA</td><td>3</td></tr>
+                    <tr><td>7</td><td>Trinkflasche</td><td>12</td></tr>
+                    <tr><td>3</td><td>Yoga-Matte</td><td>29</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        },
+        {
+          lines: [
+            "-- teuerste Produkte zuerst",
+            "SELECT *",
+            "FROM produkte",
+            "ORDER BY preis DESC;"
+          ],
+          after: `
+            <details class="reveal">
+              <summary><code>ORDER BY preis DESC</code></summary>
+              <div class="narrowWrap" style="margin-top:10px;">
+                <table class="miniTable" aria-label="Ergebnis: ORDER BY preis DESC">
+                  <thead>
+                    <tr><th colspan="3"><code>... ORDER BY preis DESC</code></th></tr>
+                    <tr><th>id</th><th>name</th><th>preis</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>18</td><td>Monitor</td><td>199</td></tr>
+                    <tr><td>9</td><td>Kopfhoerer</td><td>89</td></tr>
+                    <tr><td>3</td><td>Yoga-Matte</td><td>29</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          `
+        }
+      ]
+    },
 
     /* Programmieraufgabe: direkt nach ORDER BY */
     {
       id:"code_price_asc",
       type:"code",
-      title:"Aufgabe 4/6: Sortieren nach Preis (aufsteigend)",
+      title:"Aufgabe 4/5: Sortieren nach Preis (aufsteigend)",
       context: "Im Shop gibt es die Sortierung „Preis ↑“. Implementiere sie: Die Ergebnistabelle soll nach preis aufsteigend sortiert werden. Fülle die Lücke(n) korrekt aus.",
       template:[
         "SELECT *",
@@ -1379,7 +1416,7 @@ pre.sql.sqlFill .blank input{
             <button class="pillBtn" id="toggleFK" type="button">FK: an</button>
           </div>
           <div style="margin-top:8px; font-size: var(--small); color: rgba(11,15,24,.68); line-height: 1.55;">
-            Schalte die Markierung aus, wenn du nur die Logik sehen willst.
+            Du kannst die Schluesselanzeige (PK/FK) jederzeit ein- und ausblenden.
           </div>
         </div>
       `
@@ -1389,7 +1426,7 @@ pre.sql.sqlFill .blank input{
     {
       id:"code_category_sport",
       type:"code",
-      title:"Aufgabe 5/6: Kategorie Sport",
+      title:"Aufgabe 5/5: Kategorie Sport",
       context: "Im Shop gibt es den Filter „Sport“. Er soll alle Produkte anzeigen, deren Kategorie „sport“ ist. Nutze die Tabellen produkte + kategorien (ohne JOIN-Keyword, über FROM ... WHERE). Trage nur den Verbund über den Fremdschlüssel ein.",
       template:[
         "SELECT *",
@@ -1407,210 +1444,6 @@ pre.sql.sqlFill .blank input{
       feedbackOk: "Korrekt. Filter „Sport“ ist freigeschaltet.",
       feedbackNo: "Noch nicht korrekt.",
       check: (sql)=> testAll(sql, [/from\s+produkte\s*,\s*kategorien/i, /produkte\.kategorie_id\s*=\s*kategorien\.id/i, /kategorien\.name\s*=\s*['\"]sport['\"]/i])
-    },
-
-
-    /* Freischalt-Aufgabe bleibt eigene Seite */
-
-    {
-      id:"agg",
-      title:"Aggregat & AS (Zusammenfassen + Alias)",
-      context: "Aggregatfunktionen fassen viele Zeilen zusammen; AS benennt Ergebnis-Spalten um.",
-      theory: [
-        "Aggregatfunktionen reduzieren viele Zeilen auf Kennzahlen (z. B. COUNT, AVG). Das Ergebnis ist dann typischerweise eine einzelne Zeile (oder eine Zeile pro Gruppe, falls GROUP BY genutzt wird).",
-        "AS vergibt einen Alias: Das ist nur ein Name in der Ergebnis-Tabelle, keine Änderung an der Datenbank."
-      ],
-      table: `
-        <div class="schemaWrap">
-          <div class="schemaLabel tone-amber">Aggregatfunktionen</div>
-          <div class="tableGroup">
-            <table class="miniTable" aria-label="Aggregatfunktionen">
-              <thead><tr><th>Aggregatfunktion</th><th>Zweck</th></tr></thead>
-              <tbody>
-                <tr><td><code>COUNT(...)</code></td><td>zählt Werte/Zeilen</td></tr>
-                <tr><td><code>SUM(...)</code></td><td>Summe</td></tr>
-                <tr><td><code>AVG(...)</code></td><td>Durchschnitt</td></tr>
-                <tr><td><code>MIN(...)</code></td><td>kleinster Wert</td></tr>
-                <tr><td><code>MAX(...)</code></td><td>größter Wert</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `,
-      sqlTone: "tone-amber",
-      sql: [
-        "SELECT COUNT(*) AS anzahl_produkte",
-        "FROM produkte;",
-        "",
-        "SELECT AVG(preis) AS durchschnittspreis",
-        "FROM produkte;"
-      ]
-    },
-
-
-    {
-      id:"group",
-      title:"GROUP BY & HAVING (Gruppen bilden und filtern)",
-      context: "GROUP BY gruppiert Zeilen; HAVING filtert Gruppen.",
-      theory: [
-        "GROUP BY bildet Gruppen aus Zeilen mit gleichem Schlüssel (z. B. pro liefertage). Für jede Gruppe kannst du Aggregatwerte berechnen (AVG, COUNT, …).",
-        "Wichtig: WHERE filtert einzelne Zeilen VOR dem Gruppieren; HAVING filtert Gruppen NACH dem Gruppieren (weil dort erst Aggregatwerte existieren)."
-      ],
-      table: `
-        <details class="reveal">
-          <summary>Anschauliches Tabellenbeispiel (GROUP BY vs. HAVING)</summary>
-
-          <div class="schemaWrap" style="margin-top:10px;">
-            <div class="schemaLabel tone-purple">Ausgangsdaten (produkte)</div>
-            <div class="tableGroup">
-              <table class="miniTable" aria-label="Ausgangsdaten">
-                <thead>
-                  <tr><th>id</th><th>name</th><th>liefertage</th><th>preis</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>USB-Kabel</td><td>1</td><td>25</td></tr>
-                  <tr><td>2</td><td>Mauspad</td><td>1</td><td>15</td></tr>
-                  <tr><td>3</td><td>Ständer</td><td>2</td><td>30</td></tr>
-                  <tr><td>4</td><td>Hub</td><td>2</td><td>10</td></tr>
-                  <tr><td>5</td><td>Tastatur</td><td>3</td><td>40</td></tr>
-                </tbody>
-              </table>
-
-              <table class="miniTable" aria-label="GROUP BY Ergebnis">
-                <thead>
-                  <tr><th colspan="3"><code>GROUP BY liefertage</code></th></tr>
-                  <tr><th>liefertage</th><th>AVG(preis)</th><th>COUNT(*)</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>20.0</td><td>2</td></tr>
-                  <tr><td>2</td><td>20.0</td><td>2</td></tr>
-                  <tr><td>3</td><td>40.0</td><td>1</td></tr>
-                </tbody>
-              </table>
-
-              <table class="miniTable" aria-label="HAVING Ergebnis">
-                <thead>
-                  <tr><th colspan="2"><code>HAVING AVG(preis) &gt;= 20</code></th></tr>
-                  <tr><th>liefertage</th><th>durchschnittspreis</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>20.0</td></tr>
-                  <tr><td>2</td><td>20.0</td></tr>
-                  <tr><td>3</td><td>40.0</td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div style="margin-top:10px; font-size: var(--small); color: rgba(11,15,24,.74); line-height: 1.55;">
-              <b>Interpretation:</b> HAVING arbeitet auf Gruppen (z. B. „alle Produkte mit 2 Liefertagen“) – deshalb passt HAVING zu Bedingungen mit AVG/COUNT/SUM.
-            </div>
-          </div>
-        </details>
-      `,
-      sqlTone: "tone-purple",
-      sql: [
-        "-- Durchschnittspreis pro Lieferzeit, dann Gruppen filtern",
-        "SELECT liefertage, AVG(preis) AS durchschnittspreis",
-        "FROM produkte",
-        "GROUP BY liefertage",
-        "HAVING AVG(preis) >= 20;",
-        "",
-        "-- Alternative: Anzahl pro Kategorie (gleiches Prinzip)",
-        "SELECT kategorie_id, COUNT(*) AS anzahl",
-        "FROM produkte",
-        "GROUP BY kategorie_id",
-        "HAVING COUNT(*) >= 2;"
-      ],
-      afterSql: `
-        <div class="schemaWrap">
-          <div class="schemaLabel tone-purple">Beispiel-Ergebnisse (anklicken)</div>
-
-          <details class="reveal">
-            <summary><code>AVG(preis) pro liefertage</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: AVG(preis) pro liefertage">
-                <thead>
-                  <tr><th colspan="2"><code>liefertage, durchschnittspreis</code></th></tr>
-                  <tr><th>liefertage</th><th>durchschnittspreis</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>20.0</td></tr>
-                  <tr><td>2</td><td>20.0</td></tr>
-                  <tr><td>3</td><td>40.0</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-
-          <details class="reveal">
-            <summary><code>COUNT(*) pro kategorie_id</code></summary>
-            <div class="narrowWrap" style="margin-top:10px;">
-              <table class="miniTable" aria-label="Ergebnis: COUNT pro kategorie">
-                <thead>
-                  <tr><th colspan="2"><code>kategorie_id, anzahl</code></th></tr>
-                  <tr><th>kategorie_id</th><th>anzahl</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>5</td></tr>
-                  <tr><td>2</td><td>2</td></tr>
-                  <tr><td>3</td><td>1</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-      `
-    },
-
-
-    /* Programmieraufgabe: direkt nach GROUP BY/HAVING */
-        {
-      id:"code_bestseller2",
-      type:"code",
-      title:"Aufgabe 6/6: Meine Top-Produkte",
-      context: "Im Konto-Bereich gibt es den Button „Meine Top-Produkte anzeigen“. Gesucht sind die 2 Produkte mit der höchsten Summe der verkauften Stückzahlen. Ausgegeben werden soll der Produktename und die Gesamtanzahl der Verkäufe (mit dem Spaltenname: gesamt_verkaeufe). Nutze hierfür v.anzahl. Außerdem soll über die Produkte.ID gruppiert werden. Fülle die Lücken aus.",
-      template:[
-        "SELECT p.name, ", {blank:"SUM(v.anzahl)"}, " AS gesamt_verkaeufe",
-        "\nFROM produkte p, verkäufe v",
-        "\nWHERE p.id = v.produkt_id",
-        "\n", {blank:"GROUP BY"}, " p.id",
-        "\nORDER BY gesamt_verkaeufe DESC",
-        "\nLIMIT 2;"
-      ],
-      unlockTaskId: "topProducts",
-      showShop: true,
-      hints: [
-        "Lücke 1: SUM(v.anzahl)",
-        "Lücke 2: GROUP BY"
-      ],
-      solution: "SELECT p.name, SUM(v.anzahl) AS gesamt_verkaeufe\nFROM produkte p, verkäufe v\nWHERE p.id = v.produkt_id\nGROUP BY p.id\nORDER BY gesamt_verkaeufe DESC\nLIMIT 2;",
-      feedbackOk: "Korrekt. „Meine Top-Produkte“ ist freigeschaltet.",
-      feedbackNo: "Noch nicht korrekt.",
-      check: (sql)=> testAll(sql, [
-        /p\.name\b/i,
-        /sum\s*\(\s*v\.anzahl\s*\)/i,
-        /from\s+produkte\s+p,\s*verk/i,
-        /where\s+p\.id\s*=\s*v\.produkt_id/i,
-        /group\s+by\s+p\.id/i,
-        /order\s+by\s+gesamt_verkaeufe\s+desc/i,
-        /limit\s+2/i
-      ])
-    },
-
-
-
-    {
-      id:"pii",
-      type:"ack",
-      title:"Personenbezogene Daten",
-      context: withName("das ist nicht „nur Theorie“ – das ist echte Verantwortung."),
-      nameInTheory: true,
-      theory: [
-        "Personenbezogene Daten sind Informationen, die eine Person direkt oder indirekt identifizierbar machen (z. B. Name, E-Mail, Kunden-ID in Kombination mit Verhalten).",
-        "Solche Daten sind besonders geschützt (u. a. durch Gesetze und die Datenschutz-Grundverordnung). SQL-Abfragen sollten daher immer zweckgebunden und datensparsam sein."
-      ],
-      ackLabel: "Verstanden",
-      nextLabel: "Weiter"
     },
 
     {
@@ -2240,6 +2073,7 @@ function renderInfo(p){
     const story = p.story ? renderStory(p.story) : "";
     const recap = p.recapHtml ? renderRecap(p.recapHtml) : "";
     const theoryText = p.theory ? (p.nameInTheory ? addNamePrefixText(p.theory) : p.theory) : null;
+    const sqlBlockHtml = p.sqlBlocks ? renderSqlBlocks(p.sqlBlocks, p.sqlTone || "tone-blue", p.sqlMarks || null) : "";
 
     el("screen").innerHTML = `
       <h2 class="qTitle">${escapeHtml(p.title)}</h2>
@@ -2247,7 +2081,7 @@ function renderInfo(p){
       ${recap}
       ${theoryText ? renderTheory(theoryText) : ``}
       ${p.table ? p.table : ``}
-      ${p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue", p.sqlMarks || null) : ``}
+      ${sqlBlockHtml || (p.sql ? renderSql(p.sql, p.sqlTone || "tone-blue", p.sqlMarks || null) : ``)}
       ${p.afterSql ? p.afterSql : ``}
       <div class="btnRow">
         <button class="btn ghost ${state.i===0 ? "disabled":""}" id="backBtn">Zurück</button>
