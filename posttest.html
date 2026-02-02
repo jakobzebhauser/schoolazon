@@ -1273,6 +1273,9 @@
 
     const hasName = !!(state.name && state.name.trim());
     const thanks = hasName ? `Danke, ${escapeHtml(state.name)}.` : "Danke.";
+    let freeScore = null;
+    try{ freeScore = logger?.data?.free_mode?.last_score; }catch(_){}
+    const freeScoreText = Number.isFinite(freeScore) ? String(freeScore) : "—";
 
     el("screen").innerHTML = `
       <div class="hero">
@@ -1287,9 +1290,21 @@
             </div>
           </div>
 
+          <p style="margin-top:12px;">Trage außerdem deinen <b>Score</b> auf deinem Blatt bei <b>„Score“</b> ein:</p>
+          <div class="schemaWrap" style="margin-top:10px;">
+            <div class="schemaLabel">Score</div>
+            <div class="schemaBox" style="font-size: clamp(17px, 1.25vw + 14px, 20px);">
+              ${escapeHtml(freeScoreText)}
+            </div>
+          </div>
+
           <div class="checkRow" style="margin-top:14px;">
             <input id="paperAck" type="checkbox" />
             <div class="txt">Ich habe den Posttest‑Code auf meinem Blatt eingetragen.</div>
+          </div>
+          <div class="checkRow" style="margin-top:10px;">
+            <input id="scoreAck" type="checkbox" />
+            <div class="txt">Ich habe den Score auf meinem Blatt eingetragen.</div>
           </div>
 
           <div class="btnRow">
@@ -1302,11 +1317,14 @@
 
     const finishBtn = el("finishBtn");
     const paperAck = el("paperAck");
+    const scoreAck = el("scoreAck");
 
     const sync = ()=>{
-      finishBtn.classList.toggle("disabled", !paperAck.checked);
+      const ok = !!(paperAck && paperAck.checked && scoreAck && scoreAck.checked);
+      finishBtn.classList.toggle("disabled", !ok);
     };
     paperAck.addEventListener("change", sync);
+    scoreAck.addEventListener("change", sync);
     sync();
 
     finishBtn.addEventListener("click", ()=>{
@@ -1327,6 +1345,9 @@
         <div style="flex:1">
           <h2>Fertig.</h2>
           <p>Danke für deine Teilnahme.</p>
+          <p style="margin-top:12px; font-size:20px; color:#d00000; font-weight:700;">
+            Bitte diese Seite nicht schließen. Lass sie geöffnet und fülle jetzt den Motivationsbogen auf Papier aus.
+          </p>
 
           <div class="btnRow" style="margin-top:14px;">
             <div></div>
