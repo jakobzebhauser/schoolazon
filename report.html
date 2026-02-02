@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulazon JSON → Excel</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    p { margin: 8px 0 14px; color: #333; line-height: 1.35; max-width: 1100px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; max-width: 1100px; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button { cursor: pointer; border: 1px solid #ccc; background: #f7f7f7; padding: 8px 10px; border-radius: 8px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="file"] { border: 1px dashed #bbb; padding: 10px; border-radius: 10px; background: #fafafa; }
+    .small { font-size: 12px; color: #555; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { background: #fafafa; }
+    .ok { color: #0a7; }
+    .warn { color: #b50; }
+    code { background: #f2f2f2; padding: 1px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Schulazon: JSON → Excel (Schülerübersicht + Tasks)</h1>
+  <p>
+    Upload von 1–40 JSON-Dateien. Exportiert eine Excel-Datei mit zwei Tabellenblättern:
+    <b>„Schülerübersicht“</b> (1 Zeile pro Schüler) und <b>„Tasks“</b> (einzigartige Tasks + Aggregationen).
+    Zeiten werden als <b>Sekunden</b> ausgegeben (ms → s).
+  </p>
+
+  <div class="card">
+    <div class="controls">
+      <input id="fileInput" type="file" accept=".json,application/json" multiple />
+      <button id="btnParse">JSONs laden</button>
+      <button id="btnExport" disabled>Excel erzeugen (.xlsx)</button>
+    </div>
+    <div id="status" class="small" style="margin-top:10px;"></div>
+
+    <div id="previewWrap" style="margin-top:12px; display:none;">
+      <div class="small"><b>Vorschau (max. 10 Dateien):</b></div>
+      <table id="previewTable"></table>
+    </div>
+
+    <div class="small" style="margin-top:10px;">
+      Output-Spalten basieren auf dem Schema: <code>pretest</code>/<code>tutorial</code>/<code>free_mode</code>/<code>posttest</code> inkl. <code>tasks</code>-Summen (Versuche/Fehlversuche/Tipps/Codegerüst).<br>
+      Für „Inaktivität“ nutze ich <code>free_mode.inactivity.total_ms</code> (Sekunden).
+    </div>
+  </div>
+
+  <!-- SheetJS (mit Style-Support) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+  <script>
+    /******************************************************************
+     * Hilfsfunktionen
+     ******************************************************************/
+    const clamp = (n) => (Number.isFinite(n) ? n : null);
+    const msToSec = (ms) => (Number.isFinite(ms) ? Math.round((ms / 1000) * 1000) / 1000 : null); // 3 Dez.
+    const bool01 = (b) => (b === true ? 1 : (b === false ? 0 : null));
+    const yesNo = (b) => (b === true ? "Ja" : (b === false ? "Nein" : null));
+    const num0 = (n) => (Number.isFinite(n) ? n : 0);
+
+    function safe(obj, path, fallback = null) {
+      // path: "a.b.c"
+      try {
+        const parts = path.split(".");
+        let cur = obj;
+        for (const p of parts) {
+          if (cur == null) return fallback;
+          cur = cur[p];
+        }
+        return (cur === undefined ? fallback : cur);
+      } catch { return fallback; }
+    }
+
+    function avg2(a, b) {
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+      return Math.round(((a + b) / 2) * 1000) / 1000;
+    }
+
+    function taskDurationSec(taskObj) {
+      // Dauer pro Task: solved_time_ms - started_at_ms (fallback: first_submit_time_ms - started_at_ms)
+      const start = safe(taskObj, "started_at_ms", null);
+      const endSolved = safe(taskObj, "solved_time_ms", null);
+      const endFirst = safe(taskObj, "first_submit_time_ms", null);
+      const end = Number.isFinite(endSolved) ? endSolved : (Number.isFinite(endFirst) ? endFirst : null);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
+      return msToSec(end - start);
+    }
+
+    /******************************************************************
+     * Spaltenlayout (Schülerübersicht)
+     * Fett: Version, Datum, Studenten-ID, Pretest-Zeit, #richtig Pretest,
+     *       Posttest-Zeit, #richtig Posttest, Unterschied-Block
+     ******************************************************************/
+    const COLS = [
+      // Meta (fett)
+      { key: "version", name: "Version", boldCol: true, type: "num" },
+      { key: "date", name: "Datum", boldCol: true, type: "text" },
+      { key: "student_id", name: "Studenten-ID", boldCol: true, type: "text" },
+
+      // Pretest (teils fett)
+      { key: "pre_time_s", name: "Pretest-Zeit (s)", boldCol: true, type: "num" },
+      { key: "pre_r1", name: "Pretest Likert r1", type: "num" },
+      { key: "pre_r2", name: "Pretest Likert r2", type: "num" },
+      { key: "pre_q1", name: "Pretest q1", type: "num" },
+      { key: "pre_q2", name: "Pretest q2", type: "num" },
+      { key: "pre_q3", name: "Pretest q3", type: "num" },
+      { key: "pre_q4", name: "Pretest q4", type: "num" },
+      { key: "pre_q5", name: "Pretest q5", type: "num" },
+      { key: "pre_q6", name: "Pretest q6", type: "num" },
+      { key: "pre_q7", name: "Pretest q7", type: "num" },
+      { key: "pre_q8", name: "Pretest q8", type: "num" },
+      { key: "pre_correct", name: "Richtig (Pretest)", boldCol: true, type: "num" },
+      { key: "pre_likert_avg", name: "Ø Likert (Pretest r1,r2)", type: "num" },
+
+      // Tutorial
+      { key: "tut_used", name: "Tutorial genutzt", type: "text" },
+      { key: "tut_time_s", name: "Tutorial-Zeit (s)", type: "num" },
+      { key: "tut_completed", name: "Tutorial abgeschlossen", type: "text" },
+      { key: "tut_aborted", name: "Tutorial abgebrochen", type: "text" },
+      { key: "tut_abort_page", name: "Abbruchseite (Titel/ID)", type: "text" },
+
+      // Free Mode
+      { key: "free_time_s", name: "Free-Mode Zeit (s)", type: "num" },
+      { key: "free_score", name: "Free-Score", type: "num" },
+      { key: "free_tasks_solved", name: "Korrekt gelöste Tasks", type: "num" },
+
+      { key: "help_opens", name: "Help: Öffnungen", type: "num" },
+      { key: "help_time_s", name: "Help: Zeit (s)", type: "num" },
+      { key: "spicker_opens", name: "Spicker: Öffnungen", type: "num" },
+      { key: "spicker_time_s", name: "Spicker: Zeit (s)", type: "num" },
+      { key: "schema_opens", name: "DB-Schema: Öffnungen", type: "num" },
+      { key: "schema_time_s", name: "DB-Schema: Zeit (s)", type: "num" },
+
+      { key: "inactive_s", name: "Inaktivität (s)", type: "num" },
+
+      // Posttest
+      { key: "post_time_s", name: "Posttest-Zeit (s)", boldCol: true, type: "num" },
+      { key: "post_r1", name: "Posttest Likert r1", type: "num" },
+      { key: "post_r2", name: "Posttest Likert r2", type: "num" },
+      { key: "post_q1", name: "Posttest q1", type: "num" },
+      { key: "post_q2", name: "Posttest q2", type: "num" },
+      { key: "post_q3", name: "Posttest q3", type: "num" },
+      { key: "post_q4", name: "Posttest q4", type: "num" },
+      { key: "post_q5", name: "Posttest q5", type: "num" },
+      { key: "post_q6", name: "Posttest q6", type: "num" },
+      { key: "post_q7", name: "Posttest q7", type: "num" },
+      { key: "post_q8", name: "Posttest q8", type: "num" },
+      { key: "post_correct", name: "Richtig (Posttest)", boldCol: true, type: "num" },
+      { key: "post_likert_avg", name: "Ø Likert (Posttest r1,r2)", type: "num" },
+
+      // Unterschied (fett)
+      { key: "delta_correct", name: "Δ Richtig (Post-Pre)", boldCol: true, type: "num" },
+      { key: "delta_likert", name: "Δ Ø Likert (Post-Pre)", boldCol: true, type: "num" },
+      { key: "delta_time_s", name: "Δ Test-Zeit (Post-Pre) (s)", boldCol: true, type: "num" },
+
+      // Task-Summen über alle Buttons
+      { key: "sum_attempts", name: "Versuche gesamt (alle Tasks)", type: "num" },
+      { key: "sum_wrong", name: "Fehlversuche gesamt (alle Tasks)", type: "num" },
+      { key: "sum_hints", name: "Tipps gesamt (alle Tasks)", type: "num" },
+      { key: "sum_scaffold", name: "Codegerüst gesamt (alle Tasks)", type: "num" },
+      { key: "sum_solution_viewed", name: "Lösung angesehen (Anzahl Tasks)", type: "num" },
+    ];
+
+    // Numerische Spalten für Durchschnittszeile
+    const NUM_COL_IDXS = COLS
+      .map((c, i) => ({ i, t: c.type }))
+      .filter(x => x.t === "num")
+      .map(x => x.i);
+
+    /******************************************************************
+     * Parsing eines einzelnen Logs (Schema v1)
+     ******************************************************************/
+    function parseLog(log) {
+      const version = safe(log, "version", null);
+      const date = safe(log, "date", null);
+      const student_id = safe(log, "student_id", null);
+
+      // Pretest
+      const pre = safe(log, "pretest", {}) || {};
+      const pre_time_s = msToSec(safe(pre, "duration_ms", null));
+      const pre_r1 = clamp(safe(pre, "likert.r1", null));
+      const pre_r2 = clamp(safe(pre, "likert.r2", null));
+      const pre_likert_avg = avg2(pre_r1, pre_r2);
+      const pre_correct = clamp(safe(pre, "knowledge.correct_count", null));
+
+      const preBy = safe(pre, "knowledge.by_item", {}) || {};
+      const pre_q = {};
+      for (let i = 1; i <= 8; i++) pre_q[i] = bool01(preBy["q" + i]);
+
+      // Tutorial
+      const tut = safe(log, "tutorial", {}) || {};
+      const tut_used = yesNo(safe(tut, "used", null));
+      const tut_time_s = msToSec(safe(tut, "duration_ms", null));
+      const tut_completed = yesNo(safe(tut, "completed", null));
+      const tut_aborted = yesNo(safe(tut, "aborted", null));
+      const abortTitle = safe(tut, "aborted_page_title", null);
+      const abortId = safe(tut, "aborted_page_id", null);
+      const tut_abort_page = abortTitle ?? abortId ?? null;
+
+      // Free mode
+      const fm = safe(log, "free_mode", {}) || {};
+      const free_time_s = msToSec(safe(fm, "duration_ms", null));
+      const free_score = clamp(safe(fm, "free_score", null));
+      const free_tasks_solved = clamp(safe(fm, "tasks_solved", null));
+
+      const help_opens = clamp(safe(fm, "tools.help.opens", null));
+      const help_time_s = msToSec(safe(fm, "tools.help.duration_ms", null));
+      const spicker_opens = clamp(safe(fm, "tools.spicker.opens", null));
+      const spicker_time_s = msToSec(safe(fm, "tools.spicker.duration_ms", null));
+      const schema_opens = clamp(safe(fm, "tools.db_schema.opens", null));
+      const schema_time_s = msToSec(safe(fm, "tools.db_schema.duration_ms", null));
+
+      const inactive_s = msToSec(safe(fm, "inactivity.total_ms", null));
+
+      // Task-Summen
+      const tasks = safe(fm, "tasks", {}) || {};
+      let sum_attempts = 0, sum_wrong = 0, sum_hints = 0, sum_scaffold = 0, sum_solution_viewed = 0;
+      for (const [taskId, t] of Object.entries(tasks)) {
+        sum_attempts += num0(safe(t, "attempts_total", 0));
+        sum_wrong += num0(safe(t, "attempts_wrong", 0));
+        sum_hints += num0(safe(t, "used_hint_count", 0));
+        sum_scaffold += num0(safe(t, "used_scaffold_count", 0));
+        sum_solution_viewed += (safe(t, "solution_viewed", false) === true) ? 1 : 0;
+      }
+
+      // Posttest
+      const post = safe(log, "posttest", {}) || {};
+      const post_time_s = msToSec(safe(post, "duration_ms", null));
+      const post_r1 = clamp(safe(post, "likert.r1", null));
+      const ℎpost_r2 = clamp(safe(post, "likert.r2", null));
+      const post_r2 = ℎpost_r2; // (nur um versehentliche Unicode-Probleme zu vermeiden)
+      const post_likert_avg = avg2(post_r1, post_r2);
+      const post_correct = clamp(safe(post, "knowledge.correct_count", null));
+
+      const postBy = safe(post, "knowledge.by_item", {}) || {};
+      const post_q = {};
+      for (let i = 1; i <= 8; i++) post_q[i] = bool01(postBy["q" + i]);
+
+      // Unterschiede
+      const delta_correct = (Number.isFinite(post_correct) && Number.isFinite(pre_correct)) ? (post_correct - pre_correct) : null;
+      const delta_likert = (Number.isFinite(post_likert_avg) && Number.isFinite(pre_likert_avg)) ? Math.round((post_likert_avg - pre_likert_avg) * 1000) / 1000 : null;
+      const delta_time_s = (Number.isFinite(post_time_s) && Number.isFinite(pre_time_s)) ? Math.round((post_time_s - pre_time_s) * 1000) / 1000 : null;
+
+      const row = {
+        version, date, student_id,
+
+        pre_time_s, pre_r1, pre_r2,
+        pre_q1: pre_q[1], pre_q2: pre_q[2], pre_q3: pre_q[3], pre_q4: pre_q[4],
+        pre_q5: pre_q[5], pre_q6: pre_q[6], pre_q7: pre_q[7], pre_q8: pre_q[8],
+        pre_correct, pre_likert_avg,
+
+        tut_used, tut_time_s, tut_completed, tut_aborted, tut_abort_page,
+
+        free_time_s, free_score, free_tasks_solved,
+        help_opens, help_time_s, spicker_opens, spicker_time_s, schema_opens, schema_time_s,
+        inactive_s,
+
+        post_time_s, post_r1, post_r2,
+        post_q1: post_q[1], post_q2: post_q[2], post_q3: post_q[3], post_q4: post_q[4],
+        post_q5: post_q[5], post_q6: post_q[6], post_q7: post_q[7], post_q8: post_q[8],
+        post_correct, post_likert_avg,
+
+        delta_correct, delta_likert, delta_time_s,
+
+        sum_attempts, sum_wrong, sum_hints, sum_scaffold, sum_solution_viewed
+      };
+
+      return { row, tasks };
+    }
+
+    /******************************************************************
+     * Build Tasks-Sheet (einzigartige Tasks + Aggregation)
+     ******************************************************************/
+    function buildTasksAggregation(allTaskMaps) {
+      // allTaskMaps: Array<{ [taskId]: taskObj }>
+      const agg = new Map(); // taskId -> accumulator
+
+      function ensure(taskId) {
+        if (!agg.has(taskId)) {
+          agg.set(taskId, {
+            taskId,
+            students_touched: 0,
+            time_vals: [],
+            attempts_vals: [],
+            wrong_vals: [],
+            hint_vals: [],
+            scaffold_vals: [],
+            solutionViewed_vals: []
+          });
+        }
+        return agg.get(taskId);
+      }
+
+      for (const taskMap of allTaskMaps) {
+        for (const [taskId, t] of Object.entries(taskMap || {})) {
+          const start = safe(t, "started_at_ms", null);
+          const touched = Number.isFinite(start) && start > 0;
+          if (!touched) continue;
+
+          const a = ensure(taskId);
+          a.students_touched += 1;
+
+          const dur = taskDurationSec(t);
+          if (Number.isFinite(dur)) a.time_vals.push(dur);
+
+          a.attempts_vals.push(num0(safe(t, "attempts_total", 0)));
+          a.wrong_vals.push(num0(safe(t, "attempts_wrong", 0)));
+          a.hint_vals.push(num0(safe(t, "used_hint_count", 0)));
+          a.scaffold_vals.push(num0(safe(t, "used_scaffold_count", 0)));
+          a.solutionViewed_vals.push(safe(t, "solution_viewed", false) === true ? 1 : 0);
+        }
+      }
+
+      function mean(arr) {
+        if (!arr || arr.length === 0) return null;
+        const s = arr.reduce((acc, v) => acc + v, 0);
+        return Math.round((s / arr.length) * 1000) / 1000;
+      }
+
+      const rows = [];
+      for (const a of agg.values()) {
+        rows.push({
+          taskId: a.taskId,
+          students_touched: a.students_touched,
+          avg_time_s: mean(a.time_vals),
+          avg_attempts: mean(a.attempts_vals),
+          avg_wrong: mean(a.wrong_vals),
+          avg_hints: mean(a.hint_vals),
+          avg_scaffold: mean(a.scaffold_vals),
+          solution_viewed_share: (a.solutionViewed_vals.length ? Math.round((mean(a.solutionViewed_vals)) * 1000) / 1000 : null)
+        });
+      }
+
+      // Sort: erst nach #Schüler desc, dann taskId
+      rows.sort((x, y) => (y.students_touched - x.students_touched) || x.taskId.localeCompare(y.taskId));
+      return rows;
+    }
+
+    /******************************************************************
+     * Excel Export (xlsx-js-style)
+     ******************************************************************/
+    function exportXlsx(studentRows, tasksAggRows) {
+      const wb = XLSX.utils.book_new();
+
+      // ---- Sheet 1: Schülerübersicht ----
+      const header = COLS.map(c => c.name);
+      const aoa = [header];
+
+      for (const r of studentRows) {
+        aoa.push(COLS.map(c => (r[c.key] ?? null)));
+      }
+
+      // Durchschnittszeile (unten) via Excel-Formeln
+      const n = studentRows.length;
+      const avgRow = Array(COLS.length).fill(null);
+
+      // Label in Studenten-ID-Spalte
+      const studentIdIdx = COLS.findIndex(c => c.key === "student_id");
+      if (studentIdIdx >= 0) avgRow[studentIdIdx] = `Durchschnitt (n=${n})`;
+
+      // Formeln für numerische Spalten: AVERAGE(Col2:Col{n+1})
+      // Excel: Zeile 1 Header, Daten ab Zeile 2 bis Zeile (n+1), Durchschnitt Zeile (n+2)
+      const avgExcelRowNumber = n + 2;
+      for (const colIdx of NUM_COL_IDXS) {
+        const colLetter = XLSX.utils.encode_col(colIdx);
+        const from = `${colLetter}2`;
+        const to = `${colLetter}${n + 1}`;
+        avgRow[colIdx] = { f: `AVERAGE(${from}:${to})` };
+      }
+
+      aoa.push(avgRow);
+
+      const ws1 = XLSX.utils.aoa_to_sheet(aoa);
+
+      // Freeze header row + Autofilter
+      ws1["!freeze"] = { xSplit: 0, ySplit: 1, topLeftCell: "A2", activePane: "bottomLeft", state: "frozen" };
+      ws1["!autofilter"] = { ref: XLSX.utils.encode_range({ r:0, c:0 }, { r:0, c:COLS.length-1 }) };
+
+      // Column widths
+      ws1["!cols"] = COLS.map(c => {
+        if (c.key === "student_id") return { wch: 18 };
+        if (c.key.endsWith("_time_s") || c.key === "inactive_s") return { wch: 16 };
+        if (c.key.includes("abort")) return { wch: 22 };
+        return { wch: Math.max(12, Math.min(26, c.name.length + 2)) };
+      });
+
+      // Styles
+      const headerStyle = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "F2F2F2" } },
+        border: {
+          top: { style: "thin", color: { rgb: "DDDDDD" } },
+          bottom: { style: "thin", color: { rgb: "DDDDDD" } },
+          left: { style: "thin", color: { rgb: "DDDDDD" } },
+          right: { style: "thin", color: { rgb: "DDDDDD" } }
+        }
+      };
+
+      const avgStyle = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "FFF7E6" } },
+        border: {
+          top: { style: "thin", color: { rgb: "DDDDDD" } },
+          bottom: { style: "thin", color: { rgb: "DDDDDD" } }
+        }
+      };
+
+      function setCellStyle(ws, addr, style, numFmt) {
+        const cell = ws[addr];
+        if (!cell) return;
+        cell.s = cell.s ? Object.assign({}, cell.s, style) : style;
+        if (numFmt) cell.z = numFmt;
+      }
+
+      // Header style
+      for (let c = 0; c < COLS.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r:0, c });
+        setCellStyle(ws1, addr, headerStyle);
+      }
+
+      // Bold columns (entire column: header + data + avg row)
+      const boldColIdxs = COLS.map((c, i) => c.boldCol ? i : -1).filter(i => i >= 0);
+      for (const c of boldColIdxs) {
+        for (let r = 0; r < aoa.length; r++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          const cell = ws1[addr];
+          if (!cell) continue;
+          const cur = cell.s || {};
+          cell.s = Object.assign({}, cur, { font: Object.assign({}, (cur.font || {}), { bold: true }) });
+        }
+      }
+
+      // Number format for seconds/numbers
+      for (let r = 1; r < aoa.length; r++) {
+        for (let c = 0; c < COLS.length; c++) {
+          const col = COLS[c];
+          if (col.type !== "num") continue;
+          const addr = XLSX.utils.encode_cell({ r, c });
+          // Sekunden: 0.000, sonst: 0.000 (einheitlich)
+          setCellStyle(ws1, addr, {}, "0.000");
+        }
+      }
+
+      // Avg row style
+      const avgRowIdx = aoa.length - 1;
+      for (let c = 0; c < COLS.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r: avgRowIdx, c });
+        setCellStyle(ws1, addr, avgStyle);
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws1, "Schülerübersicht");
+
+      // ---- Sheet 2: Tasks ----
+      const taskCols = [
+        { key: "taskId", name: "Task-ID", type: "text" },
+        { key: "students_touched", name: "Bearbeitet von (#Schüler)", type: "num" },
+        { key: "avg_time_s", name: "Ø Zeit (s)", type: "num" },
+        { key: "avg_attempts", name: "Ø Versuche", type: "num" },
+        { key: "avg_wrong", name: "Ø Fehlversuche", type: "num" },
+        { key: "avg_hints", name: "Ø Tipps", type: "num" },
+        { key: "avg_scaffold", name: "Ø Codegerüst", type: "num" },
+        { key: "solution_viewed_share", name: "Ø Lösung angesehen (0–1)", type: "num" },
+      ];
+
+      const aoa2 = [ taskCols.map(c => c.name) ];
+      for (const r of tasksAggRows) {
+        aoa2.push(taskCols.map(c => (r[c.key] ?? null)));
+      }
+      const ws2 = XLSX.utils.aoa_to_sheet(aoa2);
+
+      ws2["!freeze"] = { xSplit: 0, ySplit: 1, topLeftCell: "A2", activePane: "bottomLeft", state: "frozen" };
+      ws2["!autofilter"] = { ref: XLSX.utils.encode_range({ r:0, c:0 }, { r:0, c:taskCols.length-1 }) };
+      ws2["!cols"] = taskCols.map(c => ({ wch: Math.max(14, Math.min(28, c.name.length + 2)) }));
+
+      for (let c = 0; c < taskCols.length; c++) {
+        setCellStyle(ws2, XLSX.utils.encode_cell({ r:0, c }), headerStyle);
+      }
+      for (let r = 1; r < aoa2.length; r++) {
+        for (let c = 0; c < taskCols.length; c++) {
+          if (taskCols[c].type === "num") {
+            setCellStyle(ws2, XLSX.utils.encode_cell({ r, c }), {}, "0.000");
+          }
+        }
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws2, "Tasks");
+
+      // Export
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+      XLSX.writeFile(wb, `schulazon_auswertung_${stamp}.xlsx`);
+    }
+
+    /******************************************************************
+     * UI Logic
+     ******************************************************************/
+    const fileInput = document.getElementById("fileInput");
+    const btnParse = document.getElementById("btnParse");
+    const btnExport = document.getElementById("btnExport");
+    const statusEl = document.getElementById("status");
+    const previewWrap = document.getElementById("previewWrap");
+    const previewTable = document.getElementById("previewTable");
+
+    let parsed = [];        // [{fileName, row, tasks}]
+    let studentRows = [];   // row objects
+    let taskMaps = [];      // tasks objects
+
+    function setStatus(html) { statusEl.innerHTML = html; }
+
+    function renderPreview() {
+      const items = parsed.slice(0, 10);
+      if (items.length === 0) {
+        previewWrap.style.display = "none";
+        return;
+      }
+      previewWrap.style.display = "block";
+      previewTable.innerHTML = "";
+
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      ["Datei", "Studenten-ID", "Datum", "Pre korrekt", "Post korrekt", "Free-Zeit (s)", "Tasks gelöst"].forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      previewTable.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      for (const it of items) {
+        const tr = document.createElement("tr");
+        const r = it.row;
+        const cells = [
+          it.fileName,
+          r.student_id ?? "",
+          r.date ?? "",
+          r.pre_correct ?? "",
+          r.post_correct ?? "",
+          r.free_time_s ?? "",
+          r.free_tasks_solved ?? ""
+        ];
+        for (const v of cells) {
+          const td = document.createElement("td");
+          td.textContent = String(v);
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      previewTable.appendChild(tbody);
+    }
+
+    async function readFileAsJson(file) {
+      const text = await file.text();
+      return JSON.parse(text);
+    }
+
+    btnParse.addEventListener("click", async () => {
+      const files = Array.from(fileInput.files || []);
+      if (files.length === 0) {
+        setStatus('<span class="warn">Keine Dateien ausgewählt.</span>');
+        return;
+      }
+      if (files.length > 40) {
+        setStatus('<span class="warn">Mehr als 40 Dateien ausgewählt. Bitte max. 40.</span>');
+        return;
+      }
+
+      setStatus("Lese Dateien …");
+      parsed = [];
+      studentRows = [];
+      taskMaps = [];
+
+      let ok = 0, bad = 0;
+      for (const f of files) {
+        try {
+          const log = await readFileAsJson(f);
+
+          // Minimal-Validierung am Schema
+          const hasCore = (log && typeof log === "object" && ("student_id" in log) && ("pretest" in log) && ("free_mode" in log) && ("posttest" in log));
+          if (!hasCore) throw new Error("Schema passt nicht (student_id/pretest/free_mode/posttest fehlt)");
+
+          const out = parseLog(log);
+          parsed.push({ fileName: f.name, row: out.row, tasks: out.tasks });
+
+          studentRows.push(out.row);
+          taskMaps.push(out.tasks);
+
+          ok++;
+        } catch (e) {
+          console.error("Parse error:", f.name, e);
+          bad++;
+        }
+      }
+
+      renderPreview();
+      btnExport.disabled = (ok === 0);
+
+      const cls = ok > 0 ? "ok" : "warn";
+      setStatus(`<span class="${cls}">Geladen: ${ok} ok</span>${bad ? `, <span class="warn">${bad} fehlerhaft</span>` : ""}.`);
+    });
+
+    btnExport.addEventListener("click", () => {
+      if (!studentRows.length) {
+        setStatus('<span class="warn">Nichts geladen.</span>');
+        return;
+      }
+      const tasksAgg = buildTasksAggregation(taskMaps);
+      exportXlsx(studentRows, tasksAgg);
+      setStatus(`<span class="ok">Excel erstellt.</span>`);
+    });
+  </script>
+</body>
+</html>
