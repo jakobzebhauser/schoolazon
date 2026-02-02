@@ -391,10 +391,69 @@
     persist();
   }
 
+  function clearSchulazonStorage(opts = {}) {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    const keepStudent = !!o.keepStudent;
+    const keepSession = !!o.keepSession;
+    const keepKeys = new Set();
+    if (keepStudent) keepKeys.add(STUDENT_KEY);
+    if (keepSession) keepKeys.add(SESSION_KEY);
+
+    try {
+      if (storage) {
+        for (let i = storage.length - 1; i >= 0; i--) {
+          const k = storage.key(i);
+          if (!k || !k.startsWith("schulazon_")) continue;
+          if (keepKeys.has(k)) continue;
+          storage.removeItem(k);
+        }
+      }
+    } catch {}
+
+    try {
+      const ss = window.sessionStorage;
+      if (ss) {
+        for (let i = ss.length - 1; i >= 0; i--) {
+          const k = ss.key(i);
+          if (!k || !k.startsWith("schulazon_")) continue;
+          ss.removeItem(k);
+        }
+      }
+    } catch {}
+  }
+
+  function hardResetAll(opts = {}) {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    const keepStudent = !!o.keepStudent;
+    const keepSession = !!o.keepSession;
+
+    const prevStudent = getSchuelerId();
+    const prevSession = data?.meta?.session_id || safeGet(SESSION_KEY) || "";
+
+    clearSchulazonStorage({ keepStudent, keepSession });
+    data = ensureData(baseData());
+
+    if (keepSession && prevSession) {
+      data.meta.session_id = prevSession;
+      safeSet(SESSION_KEY, prevSession);
+    } else {
+      data.meta.session_id = "";
+    }
+
+    if (keepStudent && prevStudent) {
+      data.meta.student_id = prevStudent;
+      safeSet(STUDENT_KEY, prevStudent);
+    } else {
+      data.meta.student_id = "";
+    }
+
+    persist();
+  }
+
   function startNewStudentFromName(name) {
     const n = (name || "").toString().trim();
     if (!n) return;
-    resetEvaluationLog({ keepStudent: false, keepSession: false, clearStorage: true });
+    hardResetAll({ keepStudent: false, keepSession: false });
     ensureSchuelerIdFromName(n);
   }
 
@@ -1145,7 +1204,9 @@ function buildFlowBlock() {
     };
   }
 
-  function exportJson() {
+  function exportJson(opts = {}) {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    const resetAfter = !!o.resetAfter;
     updateSummary();
     data.meta.last_seen_page = pageName();
     data.meta.last_event_time = nowMs();
@@ -1187,6 +1248,9 @@ function buildFlowBlock() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (resetAfter) {
+        setTimeout(() => hardResetAll({ keepStudent: false, keepSession: false }), 200);
+      }
     } catch {}
   }
 
@@ -1333,6 +1397,8 @@ function buildFlowBlock() {
 
     // Session hygiene
     resetEvaluationLog,
+    clearSchulazonStorage,
+    hardResetAll,
     startNewStudentFromName,
 
     // Tests

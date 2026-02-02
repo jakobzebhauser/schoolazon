@@ -603,7 +603,6 @@
     if(!name) return false;
 
     state.name = name;
-    try{ window.studyLogger?.startNewStudentFromName(name); }catch(_){}
     updateNamePill();
     passNameToLinks();
     hideNameGate();
@@ -742,11 +741,30 @@
     });
   }
 
+  function bindPretestStartReset(){
+    const pretestLink = document.querySelector('.modeCard[href="pretest.html"]');
+    if(!pretestLink) return;
+    pretestLink.addEventListener("click", (e)=>{
+      if(pretestLink.classList.contains("disabled")){
+        e.preventDefault();
+        return;
+      }
+      const name = (state.name || "").toString().trim();
+      if(!name){
+        e.preventDefault();
+        showNameGate();
+        return;
+      }
+      try{ window.studyLogger?.startNewStudentFromName(name); }catch(_){}
+    });
+  }
+
 
 
   lockToPretestOnly();
   bindNameGate();
   bindFullscreen();
+  bindPretestStartReset();
   const importBtn = el("importFreeBtn");
   if(importBtn && !importBtn.disabled) importBtn.addEventListener("click", showImportGate);
   const teachingBtn = el("teachingModeBtn");

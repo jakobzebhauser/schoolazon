@@ -1345,10 +1345,10 @@
     const downloadBtn = document.getElementById("downloadJsonBtn");
     if(downloadBtn){
       downloadBtn.addEventListener("click", ()=>{
-        try{ logger?.exportJson(); }catch(_){}
+        try{ logger?.exportJson({ resetAfter: true }); }catch(_){}
       });
     }
-    setTimeout(()=>{ try{ logger?.exportJson(); }catch(_){ } }, 1000);
+    setTimeout(()=>{ try{ logger?.exportJson({ resetAfter: true }); }catch(_){ } }, 1000);
   }
 
   function submit(mode){
