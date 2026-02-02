@@ -603,7 +603,7 @@
     if(!name) return false;
 
     state.name = name;
-    try{ window.studyLogger?.ensureStudentIdFromName(name); }catch(_){}
+    try{ window.studyLogger?.startNewStudentFromName(name); }catch(_){}
     updateNamePill();
     passNameToLinks();
     hideNameGate();
