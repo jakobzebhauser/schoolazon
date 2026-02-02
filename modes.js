@@ -212,7 +212,7 @@ const FREE_TIMER_KEY = "schulazon_free_startedAt_v1";
 const FREE_HEADER_COLLAPSE_KEY = "schulazon_free_header_collapsed_v1";
 
 
-const BONUS_MIN_PCT = 10;
+const BONUS_MIN_PCT = 70;
 function safeGet(storage, key) {
   try { return (storage && storage.getItem(key)) || ""; } catch { return ""; }
 }
@@ -2101,7 +2101,7 @@ setEmptyState(isEmpty) {
       this.pulseLocked(this.btnBonus);
       this.showLockedModal(
         'Noch nicht verfuegbar',
-        'Diese Zusatzaufgabe wird ab 10% Fortschritt freigeschaltet.'
+        'Diese Zusatzaufgabe wird ab 70% Fortschritt freigeschaltet.'
       );
       return;
     }
