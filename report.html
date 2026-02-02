@@ -578,7 +578,7 @@
         try {
           const log = await readFileAsJson(f);
 
-          // Minimal-Validierung am Schema
+          // Minimal-Validierung am Schema v1
           const hasCore = (log && typeof log === "object" && ("student_id" in log) && ("pretest" in log) && ("free_mode" in log) && ("posttest" in log));
           if (!hasCore) throw new Error("Schema passt nicht (student_id/pretest/free_mode/posttest fehlt)");
 
@@ -613,4 +613,6 @@
     });
   </script>
 </body>
+
+
 </html>
