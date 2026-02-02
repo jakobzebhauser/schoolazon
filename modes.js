@@ -2257,7 +2257,7 @@ async applyUnlockedToShop() {
     this.runBtn.style.cursor = isUnlocked ? 'not-allowed' : 'pointer';
     this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
-    this.sqlEl.value = t.starter || '';
+    this.sqlEl.value = 'SELECT ';
     this.updateSqlGutter();
     this.syncGutterScroll();
         this.setOutput(isUnlocked ? 'Bereits freigeschaltet.' : '');
