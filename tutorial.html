@@ -859,6 +859,18 @@ pre.sql.sqlFill .blank input{
     applyUnlocksToShop();
   }
 
+  function unlockAllTutorialTasks(){
+    try{
+      const ids = [];
+      (pages || []).forEach((p)=>{
+        const id = p && p.unlockTaskId ? String(p.unlockTaskId) : "";
+        if(id) ids.push(id);
+      });
+      const unique = Array.from(new Set(ids));
+      unique.forEach((id)=>unlockTask(id));
+    }catch(_){}
+  }
+
   function sendShopLock(taskId, locked){
     if(!shopFrame || !shopFrame.contentWindow) return;
     shopFrame.contentWindow.postMessage(
@@ -2168,6 +2180,7 @@ function renderInfo(p){
   function goToFreeMode(opts = {}){
     const completed = !!(opts && opts.completed);
     if(completed){
+      unlockAllTutorialTasks();
       try{ logger?.tutorialComplete(); }catch(_){}
     } else {
       const page = pages[state.i] || {};

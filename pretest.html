@@ -857,25 +857,25 @@
   const baseQuestions = [
     { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib die passende Abfrage an, sodass alle Spalten und alle Datensätze der Tabelle „produkte“ ausgegeben werden.",
+      prompt:"Wähle die passende Abfrage aus, sodass alle Spalten und alle Datensätze der Tabelle „produkte“ ausgegeben werden.",
       options:["SELECT name FROM produkte;","SELECT * FROM produkte;","SELECT produkte FROM *;","GET * FROM produkte;"],
       correctIndex: 1
     },
     { id:"q2", type:"mc", title:"Produkte unter 20 €",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib die passende Abfrage an, sodass alle Produkte mit einem Preis kleiner als 20 € angezeigt werden.",
+      prompt:"Wähle die passende Abfrage aus, sodass alle Produkte mit einem Preis kleiner als 20 € angezeigt werden.",
       options:["SELECT * FROM produkte WHERE preis < 20;","SELECT preis < 20 FROM produkte;","SELECT * produkte preis < 20;","FILTER preis < 20 FROM produkte;"],
       correctIndex: 0
     },
     { id:"q3", type:"mc", title:"Durchschnittspreis berechnen",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib die passende Abfrage an, sodass der durchschnittliche Preis aller Produkte berechnet wird.",
+      prompt:"Wähle die passende Abfrage aus, sodass der durchschnittliche Preis aller Produkte berechnet wird.",
       options:["SELECT AVG(preis) FROM produkte;","SELECT MEAN(preis) FROM produkte;","SELECT COUNT(preis)/SUM(preis) FROM produkte;","SELECT MID(preis) FROM produkte;"],
       correctIndex: 0
     },
     { id:"q4", type:"mc", title:"Nur unterschiedliche Lieferzeiten",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
-      prompt:"Gib die passende Abfrage an, sodass jede Lieferzeit nur einmal (ohne Duplikate) ausgegeben wird.",
+      prompt:"Wähle die passende Abfrage aus, sodass jede Lieferzeit nur einmal (ohne Duplikate) ausgegeben wird.",
       options:["SELECT DISTINCT liefertage FROM produkte;","SELECT UNIQUE liefertage FROM produkte;","SELECT GROUP liefertage FROM produkte;","SELECT ALL liefertage FROM produkte;"],
       correctIndex: 0
     },
@@ -1411,8 +1411,6 @@ function promptWithName(q){
       logger?.set("pretest.next_mode", expectedMode);
     }catch(_){}
 
-    const modeLabel = (expectedMode === "free") ? "Freier Modus" : "Tutorial";
-
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
@@ -1426,22 +1424,9 @@ function promptWithName(q){
             </div>
           </div>
 
-          <div class="schemaWrap" style="margin-top:16px;">
-            <div class="schemaLabel">Auf deinem Blatt</div>
-
-            <div class="promptCard" style="margin: 0 0 12px;">
-              <p class="qPrompt" style="font-weight: 820; margin:0;">
-                Auf deinem Auswertungsblatt bei <b>„Modus“</b> ankreuzen: <b>${modeLabel}</b>.
-              </p>
-              <p style="margin:8px 0 0; color: var(--muted); font-size: var(--small); line-height: 1.5;">
-                Danach unten kurz bestätigen – dann bist du fertig.
-              </p>
-            </div>
-
-            <div class="checkRow" style="margin-top:14px;">
-              <input id="paperAck" type="checkbox" />
-              <div class="txt">Ich habe Code und Modus auf meinem Blatt eingetragen.</div>
-            </div>
+          <div class="checkRow" style="margin-top:14px;">
+            <input id="paperAck" type="checkbox" />
+            <div class="txt">Ich habe den Pretest‑Code auf meinem Blatt eingetragen.</div>
           </div>
 
           <div class="btnRow">
