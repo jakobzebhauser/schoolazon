@@ -25,7 +25,6 @@
         <button class="pillBtn icon-btn" data-icon="expand" id="fsBtn" type="button">Vollbild</button>
         <button class="pillBtn icon-btn" data-icon="home" id="homeBtn" type="button">Startseite</button>
         <button class="pillBtn icon-btn" data-icon="help" id="helpBtn" type="button">Hilfe</button>
-        <button class="pillBtn icon-btn" id="posttestBtn" type="button">Posttest</button>
 
         <div class="topbar-progress" aria-label="Fortschritt">
           <div class="topbar-progress-meta">
@@ -116,26 +115,10 @@
       </div>
     </div>
 
-    <div class="gate" id="posttestGate" role="dialog" aria-modal="true" aria-labelledby="posttestTitle" aria-describedby="posttestSub" aria-hidden="true">
-      <div class="gateBackdrop" data-close="1"></div>
-      <div class="gateCard">
-        <div class="gateInner">
-          <div class="gateIcon" aria-hidden="true"></div>
-          <h2 id="posttestTitle">Posttest starten?</h2>
-          <p class="gateSub" id="posttestSub">Bitte starte den Posttest erst, wenn du dazu aufgefordert wirst.</p>
-          <div class="gateActions">
-            <button class="btn" id="posttestCancel" type="button">Abbrechen</button>
-            <button class="btn btn-primary" id="posttestConfirm" type="button">Posttest starten</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- sql.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-  <!-- Evaluation Logger -->
-  <script src="logger.js"></script>
   <!-- Mode Logic -->
   <script src="modes.js"></script>
 </body>

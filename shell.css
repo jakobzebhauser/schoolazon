@@ -1276,12 +1276,6 @@ body.help-open{
   justify-content: flex-end;
 }
 
-body.timeup #pillTimer{
-  border-color: rgba(255,45,85,.26);
-}
-
-
-
 /* Confirm overlay panel (FreeMode) */
 .overlay-panel{
   width: min(560px, 92vw);

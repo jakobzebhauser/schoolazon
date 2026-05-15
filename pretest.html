@@ -747,27 +747,6 @@
     .likertBtn:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08);}
     .likertBtn.selected{border-color: rgba(0,122,255,.38); background: rgba(0,122,255,.08);}
 
-    /* Timeout-Overlay */
-    .overlay{
-      position: fixed; inset:0;
-      background: rgba(11,15,24,.35);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      z-index: 50;
-    }
-    .overlay.show{display:flex;}
-    .modal{
-      width: min(680px, 96vw);
-      background: rgba(255,255,255,.92);
-      border: 1px solid var(--hair2);
-      border-radius: var(--radiusLg);
-      box-shadow: var(--shadow);
-      padding: 18px;
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-    }
     .modal h3{margin: 4px 0 6px; font-size: var(--h1); font-weight: 950;}
     .modal p{margin:0; color: var(--muted); line-height:1.55; font-size: var(--base);}
 
@@ -812,7 +791,7 @@
         <div class="appIcon" aria-hidden="true"></div>
         <div>
           <div class="logo">schul<span>azon</span></div>
-          <div class="sub" id="subline">Bewerbungsgespräch (8 Minuten)</div>
+          <div class="sub" id="subline">Bewerbungsgespräch</div>
         </div>
       </div>
 
@@ -826,9 +805,7 @@
         <div class="pill" id="pillStep" style="display:none;">
           <span>Frage</span> <b id="stepTag">1/10</b>
         </div>
-        <div class="pill" id="pillTimer" style="display:none;">
-          <span>Zeit</span> <b id="timerTag">06:00</b>
-        </div>
+        
       </div>
     </div>
 
@@ -842,18 +819,7 @@
     </div>
   </div>
 
-  <div class="overlay" id="overlay">
-    <div class="modal">
-      <h3>Zeit ist um.</h3>
-      <p>Wir geben das Bewerbungsgespräch jetzt automatisch ab.</p>
-    </div>
-  </div>
-
-  <!-- Evaluation Logger -->
-  <script src="logger.js"></script>
 <script>
-  const TOTAL_SEC = 8 * 60;
-
   const baseQuestions = [
     { id:"q1", type:"mc", title:"Alle Produkte anzeigen",
       schema:["produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)"],
@@ -923,8 +889,6 @@
     step: 0,
     startedAt: null,
     endedAt: null,
-    timer: null,
-    remainingSec: TOTAL_SEC,
     answers: {},
     likert: { r1:null, r2:null },
     lastResult: null,
@@ -934,50 +898,11 @@
     itemTimes: {}
   };
 
-  const logger = window.studyLogger;
-  try{ logger?.ensureStudentIdFromName(state.name); }catch(_){}
-
   const el = (id) => document.getElementById(id);
-
-  // Back-Button im Browser deaktivieren (Evaluation)
-  (function disableBackNavigation(){
-    const warn = () => {
-      try{ window.alert("Zurück ist im Evaluationsmodus nicht erlaubt."); }catch(_){}
-      try{ window.studyLogger?.logEvent("nav_blocked", { reason: "back" }); }catch(_){}
-    };
-    try{
-      history.pushState({__noBack:true}, "", location.href);
-      window.addEventListener("popstate", ()=>{
-        warn();
-        try{ history.pushState({__noBack:true}, "", location.href); }catch(_){}
-      });
-    }catch(_){}
-  })();
 
   function getNameFromQuery(){
     const qp = new URLSearchParams(location.search);
     return (qp.get("name") || "").trim();
-  }
-
-  function getStudentId(){
-    let id = "";
-    try{
-      if(state.name) logger?.ensureStudentIdFromName(state.name);
-    }catch(_){}
-    try{ id = logger?.data?.meta?.student_id || ""; }catch(_){}
-    if(!id){
-      try{ id = localStorage.getItem("schulazon_schueler_id_v2") || ""; }catch(_){}
-    }
-    if(!id){
-      try{ id = logger?.ensureStudentId?.() || ""; }catch(_){}
-    }
-    return id;
-  }
-
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function fmtMMSS(sec){
-    const m = Math.floor(sec/60), s = sec%60;
-    return `${pad2(m)}:${pad2(s)}`;
   }
 
   function normalize(str){
@@ -1020,13 +945,11 @@
   function goToGuidedTutorial(){
     const n = (state.name || "").toString().trim();
     const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    try{ logger?.logEvent("route_to_tutorial", { from: "pretest" }); }catch(_){}
     window.location.href = url;
   }
 
   function goHomeConfirm(){
-    try{ window.alert("Im Evaluationsmodus nicht möglich."); }catch(_){}
-    try{ logger?.logEvent("nav_blocked", { reason: "home" }); }catch(_){}
+    window.location.href = "index.html";
   }
 
   function goToFreeMode(){
@@ -1038,7 +961,6 @@
       }catch(_){}
     }
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    try{ logger?.logEvent("route_to_free", { from: "pretest" }); }catch(_){}
     window.location.href = url;
   }
 
@@ -1098,9 +1020,13 @@ function pickVariant(key, variants){
 }
 
 
-function promptWithName(q){
+  function promptWithName(q){
   return q.prompt;
 }
+
+  function displayName(){
+    return (state.name || "").toString().trim() || "du";
+  }
 
 
 
@@ -1110,8 +1036,7 @@ function promptWithName(q){
     el("pillName").style.display = state.name ? "flex" : "none";
     el("nameTag").textContent = state.name || "";
     el("pillStep").style.display = "none";
-    el("pillTimer").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch (8 Minuten)";
+    el("subline").textContent = "Bewerbungsgespräch";
 
     el("screen").innerHTML = `
       <div class="hero">
@@ -1120,8 +1045,7 @@ function promptWithName(q){
           <p style="font-size: var(--base);">Wir haben ein paar kurze Fragen vorbereitet, um deine SQL-Kenntnisse besser einschätzen zu können.</p>
 
           <div class="hint hintBig">
-            Du hast <b>8 Minuten</b>; danach geben wir automatisch ab.
-            Am Ende bekommst du deinen Code für <b>„Pretest-Code“</b>.
+            Beantworte die Fragen im Gespräch. Danach starten wir je nach Ergebnis mit dem Tutorial oder direkt im freien Modus.
           </div>
 
           <div class="btnRow navRow" id="introCtaRow">
@@ -1135,79 +1059,24 @@ function promptWithName(q){
       </div>
     `;
 
-    if(state.name){
-      const introName = document.getElementById("introName");
-      if(introName) introName.textContent = state.name;
-    }
+    const introName = document.getElementById("introName");
+    if(introName) introName.textContent = displayName();
 
     const introContinue = el("introContinue");
     introContinue.addEventListener("click", ()=>{
-      if(!state.name){ window.location.href = "index.html"; return; }
-      renderStudentIdNote();
-    });
-  }
-
-  function renderStudentIdNote(){
-    el("progressWrap").style.display = "none";
-    el("pillName").style.display = state.name ? "flex" : "none";
-    el("nameTag").textContent = state.name || "";
-    el("pillStep").style.display = "none";
-    el("pillTimer").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch – Schüler-ID";
-
-    const sid = getStudentId();
-
-    el("screen").innerHTML = `
-      <div class="hero">
-        <div style="flex:1">
-          <h2>Bevor wir starten …</h2>
-          <p>Bitte notiere deine persönliche Schüler‑ID. Du brauchst sie später für die Auswertung.</p>
-
-          <div class="schemaWrap" style="margin-top:14px;">
-            <div class="schemaLabel">Schüler‑ID</div>
-            <div class="schemaBox" style="font-size: clamp(17px, 1.25vw + 14px, 22px); letter-spacing: .4px;">
-              ${escapeHtml(sid || "S-????")}
-            </div>
-          </div>
-
-          <div class="checkRow" style="margin-top:14px;">
-            <input id="idAck" type="checkbox" />
-            <div class="txt">Ich habe die Schüler‑ID notiert.</div>
-          </div>
-
-          <div class="btnRow">
-            <div></div>
-            <button class="btn primary disabled" id="idContinue">Weiter zum Test</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const idAck = el("idAck");
-    const idContinue = el("idContinue");
-
-    const sync = ()=> idContinue.classList.toggle("disabled", !idAck.checked);
-    idAck.addEventListener("change", sync);
-    sync();
-
-    idContinue.addEventListener("click", ()=>{
-      if(idContinue.classList.contains("disabled")) return;
       startTest();
     });
   }
-
   function renderQuestion(){
     const idx = state.step;
     const total = questions.length;
     const q = questions[idx];
     markItemStart(q.id);
 
-    el("pillName").style.display = "flex";
+    el("pillName").style.display = state.name ? "flex" : "none";
     el("pillStep").style.display = "flex";
-    el("pillTimer").style.display = "flex";
-    el("nameTag").textContent = state.name;
+    el("nameTag").textContent = state.name || "";
     el("stepTag").textContent = `${idx+1}/${total}`;
-    el("timerTag").textContent = fmtMMSS(state.remainingSec);
 
     el("progressWrap").style.display = "flex";
     el("stepSmall").textContent = String(idx+1);
@@ -1404,55 +1273,8 @@ function promptWithName(q){
   }
 
   function renderResult(result){
-    el("progressWrap").style.display = "none";
-    el("pillStep").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch – Code";
-
-    const expectedMode = (result.score <= 3) ? "tutorial" : "free";
-    state.nextMode = expectedMode;
-    try{
-      logger?.set("pretest.next_mode", expectedMode);
-    }catch(_){}
-
-    el("screen").innerHTML = `
-      <div class="hero">
-        <div style="flex:1">
-          <h2>Danke, ${escapeHtml(state.name)}.</h2>
-          <p>Das Bewerbungsgespräch ist abgeschlossen. Trage diesen Code auf deinem Blatt bei <b>„Pretest‑Code“</b> ein:</p>
-
-          <div class="schemaWrap" style="margin-top:14px;">
-            <div class="schemaLabel">Pretest‑Code</div>
-            <div class="schemaBox" style="font-size: clamp(17px, 1.25vw + 14px, 20px);">
-              ${escapeHtml(result.code)}
-            </div>
-          </div>
-
-          <div class="checkRow" style="margin-top:14px;">
-            <input id="paperAck" type="checkbox" />
-            <div class="txt">Ich habe den Pretest‑Code auf meinem Blatt eingetragen.</div>
-          </div>
-
-          <div class="btnRow">
-            <div></div>
-            <button class="btn primary disabled" id="ackBtn">Bestätigen & weiter</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const nextBtn = el("ackBtn");
-    const paperAck = el("paperAck");
-
-    const sync = ()=>{
-      nextBtn.classList.toggle("disabled", !paperAck.checked);
-    };
-    paperAck.addEventListener("change", sync);
-    sync();
-
-    nextBtn.addEventListener("click", ()=>{
-      if(nextBtn.classList.contains("disabled")) return;
-      renderFeedback();
-    });
+    state.nextMode = (result.score <= 3) ? "tutorial" : "free";
+    renderFeedback();
   }
 
   function renderFeedback(){
@@ -1461,7 +1283,6 @@ function promptWithName(q){
 
     el("progressWrap").style.display = "none";
     el("pillStep").style.display = "none";
-    el("pillTimer").style.display = "none";
     el("subline").textContent = "Bewerbungsgespräch – Feedback";
 
     const score = res.score;
@@ -1471,7 +1292,7 @@ function promptWithName(q){
       el("screen").innerHTML = `
         <div class="hero">
           <div style="flex:1">
-            <h2>Danke, ${escapeHtml(state.name)}.</h2>
+            <h2>Danke, ${escapeHtml(displayName())}.</h2>
             <p>Wir wiederholen kurz die Grundlagen im Tutorial. Danach gehst du direkt in den freien Modus.</p>
             <div class="hint">Nächster Schritt: Tutorial.</div>
             <div class="btnRow">
@@ -1488,7 +1309,7 @@ function promptWithName(q){
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Super, ${escapeHtml(state.name)}.</h2>
+          <h2>Super, ${escapeHtml(displayName())}.</h2>
           <p>Du kannst direkt im freien Modus starten.</p>
           <div class="hint">Nächster Schritt: Freier Modus.</div>
           <div class="btnRow">
@@ -1502,13 +1323,12 @@ function promptWithName(q){
   }
 
   function renderContract(){
-    el("pillTimer").style.display = "none";
     el("subline").textContent = "Bewerbungsgespräch – Vertrag";
 
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Glückwunsch, ${escapeHtml(state.name)}.</h2>
+          <h2>Glückwunsch, ${escapeHtml(displayName())}.</h2>
           <p>Wir stellen dich ein. Vertrag kurz abhaken – dann geht’s los.</p>
 
           <div class="schemaWrap" style="margin-top:14px;">
@@ -1517,13 +1337,13 @@ function promptWithName(q){
               <b>Schulazon – Entwicklervertrag</b><br>
               Rolle: Normaler Entwickler · Start: sofort · Team: Shop-Engineering<br>
               Aufgabe: Du hilfst uns dabei, fehlende Buttons im Shop zu implementieren.<br><br>
-              Unterschrift: <b>${escapeHtml(state.name)}</b>
+              Unterschrift: <b>${escapeHtml(displayName())}</b>
             </div>
           </div>
 
           <div class="checkRow">
             <input id="sigCheck" type="checkbox" />
-            <div class="txt"><b>X</b> Ich unterschreibe den Vertrag als <b>${escapeHtml(state.name)}</b>.</div>
+            <div class="txt"><b>X</b> Ich unterschreibe den Vertrag als <b>${escapeHtml(displayName())}</b>.</div>
           </div>
 
           <div class="btnRow">
@@ -1580,9 +1400,8 @@ function promptWithName(q){
     const current = questions[state.step];
     if(current && current.id) recordItemTime(current.id);
     state.endedAt = Date.now();
-    if(state.timer) clearInterval(state.timer);
 
-    const elapsedSec = Math.min(TOTAL_SEC, Math.max(0, Math.round((state.endedAt - state.startedAt)/1000)));
+    const elapsedSec = Math.max(0, Math.round((state.endedAt - state.startedAt)/1000));
 
     const { score, correctMap, wrongIds, onlySpecialWrong } = scoreAndAnalyze();
 
@@ -1592,61 +1411,8 @@ function promptWithName(q){
     const code = makeCode(score, r1, r2, elapsedSec);
 
     state.lastResult = { score, r1, r2, elapsedSec, code, correctMap, wrongIds, onlySpecialWrong, mode };
-
-    try{
-      const maxScore = 8;
-      const items = questions.map((q)=>{
-        const base = { item_id: q.id, correct: false, time_ms: state.itemTimes[q.id] ?? 0 };
-        if(q.type === "mc"){
-          const response = state.answers[q.id];
-          base.correct = !!correctMap[q.id];
-          if(response != null) base.response = response;
-          return base;
-        }
-        if(q.type === "fill"){
-          const response = (state.answers[q.id] ?? "").toString();
-          base.correct = !!correctMap[q.id];
-          if(response.trim().length) base.response = response;
-          return base;
-        }
-        // likert
-        const response = state.likert[q.id];
-        base.correct = response != null;
-        if(response != null) base.response = response;
-        return base;
-      });
-
-      logger?.recordTestResult("pretest", {
-        started_at_ms: state.startedAt,
-        ended_at_ms: state.endedAt,
-        duration_ms: state.endedAt - state.startedAt,
-        score_raw: score,
-        score_pct: score / maxScore,
-        max_score: maxScore,
-        total_test_time_ms: state.endedAt - state.startedAt,
-        items
-      });
-      logger?.logEvent("pretest_submit", { mode });
-    }catch(_){}
-
-    el("overlay").classList.remove("show");
     renderResult(state.lastResult);
   }
-
-  function startTimer(){
-    state.timer = setInterval(()=>{
-      state.remainingSec -= 1;
-      if(state.remainingSec < 0) state.remainingSec = 0;
-      if(el("timerTag")) el("timerTag").textContent = fmtMMSS(state.remainingSec);
-
-      if(state.remainingSec === 0){
-        clearInterval(state.timer);
-        el("overlay").classList.add("show");
-        setTimeout(()=>submit("timeout"), 650);
-      }
-    }, 1000);
-  }
-
   function startTest(){
     const likertQs = baseQuestions.filter((q)=> q.type === "likert");
     const contentQs = baseQuestions.filter((q)=> q.type !== "likert");
@@ -1655,26 +1421,15 @@ function promptWithName(q){
     state.startedAt = Date.now();
     state.endedAt = null;
     state.step = 0;
-    state.remainingSec = TOTAL_SEC;
     state.answers = {};
     state.likert = { r1:null, r2:null };
     state.lastResult = null;
     state.contractSigned = false;
     state.itemStartAt = {};
     state.itemTimes = {};
-
-    try{
-      logger?.ensureStudentIdFromName(state.name);
-      logger?.set("pretest.started_at_ms", state.startedAt);
-      logger?.logEvent("pretest_start", { total_items: questions.length });
-    }catch(_){}
-
-    el("pillName").style.display = "flex";
-    el("pillTimer").style.display = "flex";
+    el("pillName").style.display = state.name ? "flex" : "none";
     el("pillStep").style.display = "flex";
-    el("nameTag").textContent = state.name;
-
-    startTimer();
+    el("nameTag").textContent = state.name || "";
     renderQuestion();
   }
 
@@ -1719,17 +1474,7 @@ function promptWithName(q){
       e.preventDefault();
       nextBtn.click();
       return;
-    }
-
-    // Code-Screen: Enter bestätigt, wenn möglich
-    const ackBtn = document.getElementById("ackBtn");
-    if(ackBtn && !ackBtn.classList.contains("disabled")){
-      e.preventDefault();
-      ackBtn.click();
-      return;
-    }
-
-    // Onboarding: Enter startet, wenn moeglich
+    }// Onboarding: Enter startet, wenn moeglich
     const startBtn = document.getElementById("startBtn");
     if(startBtn && !startBtn.classList.contains("disabled")){
       e.preventDefault();

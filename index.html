@@ -425,7 +425,7 @@
 <section aria-label="Modus-Auswahl" class="modes" id="modesSection">
 <a class="modeCard tone-amber" data-pass-name="1" href="pretest.html">
 <h2 class="modeTitle">Bewerbungsgespräch</h2>
-<p class="modeDesc">Kurzer Einstiegstest. Danach weißt du, welche Aufgaben zu dir passen.</p>
+<p class="modeDesc">Kurzer Einstieg ins Shop-Team. Danach startest du im freien Modus.</p>
 <div class="btnRow">
 
 <span aria-hidden="true" class="btn primary">Starten</span>
@@ -461,14 +461,6 @@
 <span aria-hidden="true" class="btn primary">Starten</span>
 </div>
 </a>
-<a class="modeCard tone-pink" data-pass-name="1" href="posttest.html">
-  <h2 class="modeTitle">Nachbesprechung</h2>
-  <p class="modeDesc">Auswertung und kurze Reflexion nach dem Test.</p>
-  <div class="btnRow">
-    <span aria-hidden="true" class="btn primary">Starten</span>
-  </div>
-</a>
-
 </section>
 
 </div>
@@ -519,8 +511,6 @@
 </div>
 </div>
 </div>
-  <!-- Evaluation Logger -->
-  <script src="logger.js"></script>
 <script>
   const el = (id) => document.getElementById(id);
 
@@ -558,22 +548,6 @@
           a.setAttribute("href", url.pathname + "?" + url.searchParams.toString());
         }
       }catch(_){}
-    });
-  }
-
-  function lockToPretestOnly(){
-    const allow = document.querySelector('.modeCard[href="pretest.html"]');
-    document.querySelectorAll(".modeCard").forEach((card)=>{
-      if(card === allow) return;
-      card.classList.add("disabled");
-      card.setAttribute("aria-disabled", "true");
-      card.setAttribute("tabindex", "-1");
-      if(card.tagName === "A"){
-        card.dataset.href = card.getAttribute("href") || "";
-        card.removeAttribute("href");
-      } else if(card.tagName === "BUTTON"){
-        card.disabled = true;
-      }
     });
   }
 
@@ -742,30 +716,8 @@
     });
   }
 
-  function bindPretestStartReset(){
-    const pretestLink = document.querySelector('.modeCard[href="pretest.html"]');
-    if(!pretestLink) return;
-    pretestLink.addEventListener("click", (e)=>{
-      if(pretestLink.classList.contains("disabled")){
-        e.preventDefault();
-        return;
-      }
-      const name = (state.name || "").toString().trim();
-      if(!name){
-        e.preventDefault();
-        showNameGate();
-        return;
-      }
-      try{ window.studyLogger?.startNewStudentFromName(name); }catch(_){}
-    });
-  }
-
-
-
-  lockToPretestOnly();
   bindNameGate();
   bindFullscreen();
-  bindPretestStartReset();
   const importBtn = el("importFreeBtn");
   if(importBtn && !importBtn.disabled) importBtn.addEventListener("click", showImportGate);
   const teachingBtn = el("teachingModeBtn");
@@ -805,8 +757,6 @@
   if(state.name){
     updateNamePill();
     passNameToLinks();
-  } else {
-    showNameGate();
   }
 </script>
 </body>

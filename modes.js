@@ -55,37 +55,13 @@ const ALL_TASK_IDS = [
 ];
 
 /* ===========================
-   Reset: Free-Mode soll bei jedem Neuaufruf frisch starten
-   (Name, Timer, Freischaltungen, Hint-Status)
+   Free-Mode-Start: vorhandenen Spielstand nicht automatisch löschen.
    =========================== */
-(function resetFreeModeStateOnLoad(){
+(function initFreeModeStateOnLoad(){
   try {
     const isFree = (document.body && document.body.dataset && document.body.dataset.mode) === "free";
     if (!isFree) return;
-    const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
-    const skipReset = safeGet(sessionStorage, "schulazon_skip_reset_v1") === "true";
-    if (skipReset) {
-      // In der Einführung nicht konsumieren, damit der Rücksprung in den Free‑Modus
-      // keinen Reset auslöst.
-      if (!isTutorial) {
-        try { sessionStorage.removeItem("schulazon_skip_reset_v1"); } catch (_) {}
-      }
-      return;
-    }
-    const keys = [
-      "schulazon_name",
-      "schulazon_unlocked_v1",
-      "schulazon_unlocked_source_v1",
-      "schulazon_hint_used_v1",
-      "schulazon_scaffold_used_v1",
-      "schulazon_sqli_done_v1",
-      "schulazon_free_startedAt_v1"
-    ];
-    keys.forEach((k) => {
-      try { localStorage.removeItem(k); } catch (_) {}
-      try { sessionStorage.removeItem(k); } catch (_) {}
-    });
-    try { window.SCHULAZON_NAME = ""; } catch (_) {}
+    try { sessionStorage.removeItem("schulazon_skip_reset_v1"); } catch (_) {}
   } catch (_) {}
 })();
 
@@ -204,11 +180,9 @@ ORDER BY k.name, p.name;`
 ];
 
 /* ===========================
-   Shell chrome helpers (Name, Timer, Fullscreen)
+   Shell chrome helpers (Name, Fullscreen)
    =========================== */
 
-const FREE_TIMER_TOTAL_SEC = 60 * 60;
-const FREE_TIMER_KEY = "schulazon_free_startedAt_v1";
 const FREE_HEADER_COLLAPSE_KEY = "schulazon_free_header_collapsed_v1";
 
 
@@ -262,22 +236,6 @@ function getStudentName() {
 }
 
 function initTopbarChrome() {
-  const logger = window.studyLogger;
-
-  // Back-Button im Browser deaktivieren (Evaluation)
-  (function disableBackNavigation(){
-    const warn = () => {
-      try { window.alert("Zurück ist im Evaluationsmodus nicht erlaubt."); } catch (_) {}
-      try { logger?.logEvent("nav_blocked", { reason: "back" }); } catch (_) {}
-    };
-    try {
-      history.pushState({ __noBack: true }, "", location.href);
-      window.addEventListener("popstate", () => {
-        warn();
-        try { history.pushState({ __noBack: true }, "", location.href); } catch (_) {}
-      });
-    } catch (_) {}
-  })();
   // 1) Persist name if provided in query
   try {
     const qp = new URLSearchParams(window.location.search);
@@ -327,47 +285,12 @@ function initTopbarChrome() {
   }
   if (homeBtn) {
     homeBtn.addEventListener("click", () => {
-      try { window.alert("Im Evaluationsmodus nicht möglich."); } catch (_) {}
-      try { logger?.logEvent("nav_blocked", { reason: "home" }); } catch (_) {}
+      window.location.href = "index.html";
     });
   }
 
-  // 3b) Exit -> Posttest (name bleibt erhalten)
-  const exitBtn = document.getElementById("exitBtn");
-  const posttestBtn = document.getElementById("posttestBtn");
   const helpBtn = document.getElementById("helpBtn");
-  const posttestGate = document.getElementById("posttestGate");
-  const posttestConfirm = document.getElementById("posttestConfirm");
-  const posttestCancel = document.getElementById("posttestCancel");
   const isTutorial = (document.body && document.body.dataset && document.body.dataset.tutorial) === "1";
-  const goPosttest = () => {
-    const name = getStudentName();
-    if (name) persistStudentName(name);
-    const url = "posttest.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
-    try { logger?.logEvent("goto_posttest_clicked", { from: "free" }); } catch (_) {}
-    try { window.location.assign(url); } catch (_) { window.location.href = url; }
-  };
-  const openPosttestGate = () => {
-    if (!posttestGate) return goPosttest();
-    posttestGate.classList.add("show");
-    posttestGate.setAttribute("aria-hidden", "false");
-    try { posttestConfirm?.focus(); } catch (_) {}
-  };
-  const closePosttestGate = () => {
-    if (!posttestGate) return;
-    posttestGate.classList.remove("show");
-    posttestGate.setAttribute("aria-hidden", "true");
-    try { posttestBtn?.focus(); } catch (_) {}
-  };
-  if (exitBtn && !isTutorial) exitBtn.addEventListener("click", goPosttest);
-  if (posttestBtn && !isTutorial) posttestBtn.addEventListener("click", openPosttestGate);
-  if (posttestConfirm && !isTutorial) posttestConfirm.addEventListener("click", goPosttest);
-  if (posttestCancel && !isTutorial) posttestCancel.addEventListener("click", closePosttestGate);
-  if (posttestGate) {
-    posttestGate.addEventListener("click", (e) => {
-      if (e.target === posttestGate || e.target?.classList?.contains("gateBackdrop")) closePosttestGate();
-    });
-  }
 
   const helpOverlay = document.getElementById("helpOverlay");
   const helpCloseBtn = document.getElementById("helpClose");
@@ -377,7 +300,6 @@ function initTopbarChrome() {
     helpOverlay.classList.add("show", "open");
     helpOverlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("help-open");
-    try { logger?.trackToolOpen("help"); } catch (_) {}
     try { helpOkBtn?.focus(); } catch (_) {}
   };
   const closeHelp = () => {
@@ -385,7 +307,6 @@ function initTopbarChrome() {
     helpOverlay.classList.remove("show", "open");
     helpOverlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("help-open");
-    try { logger?.trackToolClose("help"); } catch (_) {}
     try { helpBtn?.focus(); } catch (_) {}
   };
   if (helpBtn && !isTutorial) helpBtn.addEventListener("click", openHelp);
@@ -399,7 +320,6 @@ function initTopbarChrome() {
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (helpOverlay?.classList?.contains("show")) closeHelp();
-    if (posttestGate?.classList?.contains("show")) closePosttestGate();
   });
   if (helpBtn && isTutorial) {
     helpBtn.setAttribute("aria-disabled", "true");
@@ -419,41 +339,6 @@ function initTopbarChrome() {
     });
   }
 
-  // 4) 60-min countdown (session-persisted)
-  const timerTag = document.getElementById("timerTag");
-  const pillTimer = document.getElementById("pillTimer");
-  if (!timerTag && !pillTimer) {
-    try { sessionStorage.removeItem(FREE_TIMER_KEY); } catch (_) {}
-    return;
-  }
-
-  let startedAt = Number(safeGet(sessionStorage, FREE_TIMER_KEY) || "");
-  if (!Number.isFinite(startedAt) || startedAt <= 0) {
-    startedAt = Date.now();
-    safeSet(sessionStorage, FREE_TIMER_KEY, String(startedAt));
-  }
-
-  const tick = () => {
-    const elapsedSec = (Date.now() - startedAt) / 1000;
-    const remaining = FREE_TIMER_TOTAL_SEC - elapsedSec;
-    if (timerTag) timerTag.textContent = formatMMSS(remaining);
-    if (remaining <= 0) {
-      if (timerTag) timerTag.textContent = "00:00";
-      document.body.classList.add("timeup");
-      if (!window.__SCHULAZON_TIMEUP__) {
-        window.__SCHULAZON_TIMEUP__ = true;
-        window.setTimeout(goPosttest, 300);
-      }
-      return false;
-    }
-    return true;
-  };
-
-  tick();
-  const iv = window.setInterval(() => {
-    const keep = tick();
-    if (!keep) window.clearInterval(iv);
-  }, 250);
 }
 
 
@@ -537,7 +422,6 @@ class FreeMode {
   constructor(root) {
     window.currentMode = this; // active mode for iframe messages
     this.root = root;
-    this.logger = window.studyLogger || null;
     this.shop = new ShopBridge("shopFrame");
     this.db = null;
 
@@ -636,7 +520,6 @@ class FreeMode {
   onSqliSuccess() {
     if (this.sqliDone) return;
     this.sqliDone = true;
-    try { this.logger?.trackBonusFinish(); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
     if (this.currentSideView === 'sqli') this.openBonus();
@@ -1049,11 +932,6 @@ LIMIT 2;`,
 
   async mount() {
   this.renderShell();
-  try {
-    const tutorialUnlocked = Object.keys(this.unlockedSource || {}).filter(id => this.unlockedSource[id] === "tutorial");
-    this.logger?.logEvent("free_mode_start", { tutorial_unlocked: tutorialUnlocked, tutorial_unlocked_count: tutorialUnlocked.length });
-  } catch (_) {}
-
   // 1) Shop initialisieren + Buttons sperren
   await this.shop.ready;
   await this.lockAllShopTasks(true);
@@ -1486,8 +1364,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   openSpicker() {
     this.showAuxShell();
-    try { this.logger?.trackToolClose("schema"); } catch (_) {}
-    try { this.logger?.trackToolOpen("spicker"); } catch (_) {}
     // Immer mit Übersicht starten
     this.openSpickerIndex();
     // Side-View: Task-Shell unverändert lassen
@@ -1505,7 +1381,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   closeSpicker() {
     this.showTaskShell();
-    try { this.logger?.trackToolClose("spicker"); } catch (_) {}
     if (this.spickerViewEl) this.spickerViewEl.style.display = 'none';
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
 
@@ -1565,8 +1440,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   async openSchema() {
     this.showAuxShell();
-    try { this.logger?.trackToolClose("spicker"); } catch (_) {}
-    try { this.logger?.trackToolOpen("schema"); } catch (_) {}
     // Reset: nichts „Placeholder-artiges“ stehen lassen
     if (this.schemaListEl) this.schemaListEl.innerHTML = '';
     if (this.schemaContentEl) this.schemaContentEl.innerHTML = '';
@@ -1598,7 +1471,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
   closeSchema() {
     this.showTaskShell();
-    try { this.logger?.trackToolClose("schema"); } catch (_) {}
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
 
     // zurück zur vorherigen Ansicht
@@ -1838,8 +1710,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     const tid = String(id || '');
     const t = this.TASKS?.[tid];
     if (!t) return;
-    try { this.logger?.trackSolutionViewed(tid); } catch (_) {}
-
     const title = t.title || tid;
     const cat = this.getCategoryLabel(tid);
     const sql = (this.solutionSql && this.solutionSql[tid]) ? String(this.solutionSql[tid]) : '';
@@ -1888,10 +1758,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     if (this.schemaViewEl) this.schemaViewEl.style.display = 'none';
     if (this.solutionsViewEl) this.solutionsViewEl.style.display = 'none';
     if (this.bonusViewEl) this.bonusViewEl.style.display = 'none';
-    try {
-      this.logger?.trackToolClose("spicker");
-      this.logger?.trackToolClose("schema");
-    } catch (_) {}
   }
 
 /* ===========================
@@ -2107,7 +1973,6 @@ setEmptyState(isEmpty) {
     }
 
     // Panels konsistent: keine Überschneidung mit anderen Views
-    try { this.logger?.trackBonusStart(); } catch (_) {}
     this.hideHint();
     this.closeAllSideViews();
 
@@ -2236,8 +2101,6 @@ async applyUnlockedToShop() {
     this.currentId = taskId;
     this.closeAllSideViews();
     const t = this.TASKS[taskId];
-    try { this.logger?.trackTaskOpen(taskId, t?.difficulty); } catch (_) {}
-
     const isUnlocked = !!this.unlocked[taskId];
 
     // UI
@@ -2312,17 +2175,12 @@ async applyUnlockedToShop() {
     const sql = this.sqlEl.value || "";
     const t = this.TASKS[taskId];
 
-    // Fehlerklassifikation fürs Logging:
-    // - SQL-Parser/Engine-Error (db.exec) => error_type = "syntax"
-    // - Query läuft, Ergebnis falsch / Struktur passt nicht => "logic"
-    // - DB nicht geladen / Referenz-Fehler => "runtime"
     let result = "error";
     let errorType = null;
 
     if (!this.db) {
       finish("DB ist nicht geladen.");
       errorType = "runtime";
-      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
@@ -2330,7 +2188,6 @@ async applyUnlockedToShop() {
       finish("Nur SELECT-Abfragen sind erlaubt.");
       result = "wrong";
       errorType = "logic";
-      try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
       return;
     }
 
@@ -2339,7 +2196,6 @@ async applyUnlockedToShop() {
       finish(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
       result = "wrong";
       errorType = "logic";
-      try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
       return;
     }
 
@@ -2349,7 +2205,6 @@ async applyUnlockedToShop() {
     } catch (e) {
       finish("SQL-Fehler: " + e.message);
       errorType = "syntax";
-      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
@@ -2358,7 +2213,6 @@ async applyUnlockedToShop() {
     } catch (e) {
       finish("Interner Referenz-Fehler: " + e.message);
       errorType = "runtime";
-      try { this.logger?.trackAttempt({ taskId, sql, result: "error", errorType }); } catch (_) {}
       return;
     }
 
@@ -2368,19 +2222,16 @@ async applyUnlockedToShop() {
       result = "correct";
       if (this.unlocked[taskId]) {
         finish("✅ Korrekt (bereits freigeschaltet).");
-        try { this.logger?.trackAttempt({ taskId, sql, result, errorType: null }); } catch (_) {}
         return;
       }
       finish("✅ Korrekt! Du kannst jetzt freischalten.");
       this.setUnlockState(true);
-      try { this.logger?.trackAttempt({ taskId, sql, result, errorType: null }); } catch (_) {}
       return;
     }
 
     finish("\u274c Noch nicht korrekt.");
     result = "wrong";
     errorType = "logic";
-    try { this.logger?.trackAttempt({ taskId, sql, result, errorType }); } catch (_) {}
   }
 
 
@@ -2474,7 +2325,6 @@ async unlockCurrent() {
     } catch (_) {}
 
     this.unlocked[id] = true;
-    try { this.logger?.trackSolved(id); } catch (_) {}
     this.persistProgressState();
     await this.shop.lock(id, false);
 
@@ -2652,7 +2502,6 @@ async unlockCurrent() {
 
     // Abzug nur 1x pro Aufgabe
     this.hintUsed[id] = true;
-    try { this.logger?.trackHint(id); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
 
@@ -2665,7 +2514,6 @@ async unlockCurrent() {
     if (!id) return;
 
     this.scaffoldUsed[id] = true;
-    try { this.logger?.trackScaffold(id); } catch (_) {}
     this.persistProgressState();
     this.updateProgressUI();
 
@@ -2959,9 +2807,6 @@ if (H[taskId]) return H[taskId];
 
     const score = this.computeScore();
     if (this.scoreEl) this.scoreEl.textContent = `Score ${score}`;
-    try { this.logger?.trackScoreChange(score); } catch (_) {}
-    try { this.logger?.updateSummary(); } catch (_) {}
-
     // Bonus availability
     const canBonus = pct >= BONUS_MIN_PCT;
     if (this.btnBonus) {
