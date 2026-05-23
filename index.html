@@ -1,404 +1,477 @@
 <!DOCTYPE html>
-
 <html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>Schulazon – Start</title>
-<!-- Shop-Font (wie im Shop) -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-<style>
-    :root{
-      /* Apple-ish system colors */
-      --blue:   #007AFF;
-      --purple: #AF52DE;
-      --teal:   #34C759;
-      --amber:  #FF9500;
-      --pink:   #FF2D55;
+  <meta charset="UTF-8" />
+  <title>Schulazon – Einstieg</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-      --bg0: #F5F5F7;
-      --bg1: #EEF1F7;
-      --text: #0B0F18;
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --text: #0b0f18;
       --muted: rgba(11,15,24,.62);
-
-      --hair: rgba(10, 15, 24, .08);
-      --hair2: rgba(10, 15, 24, .05);
-
-      --shadow: 0 24px 70px rgba(10,15,24,.10);
-      --shadow2: 0 12px 30px rgba(10,15,24,.08);
-
-      --glass: rgba(255,255,255,.72);
-      --glass2: rgba(255,255,255,.62);
-      --glass3: rgba(255,255,255,.46);
-
-      --focus: 0 0 0 6px rgba(0,122,255,.22);
-
-      --radiusLg: 26px;
-      --radiusMd: 18px;
-      --radiusSm: 14px;
-
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Helvetica, Arial;
-
-      --base: clamp(18px, 1.35vw + 12px, 21px);
-      --small: clamp(14px, 0.95vw + 10px, 16px);
-      --h1: clamp(22px, 1.9vw + 14px, 32px);
-      --h2: clamp(18px, 1.35vw + 12px, 22px);
+      --orange: #f08804;
+      --blue: #007aff;
+      --purple: #af52de;
+      --red: #ff2d55;
+      --card: rgba(255,255,255,.90);
+      --border: rgba(255,255,255,.50);
+      --shadow: 0 34px 110px rgba(0,0,0,.42);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+    * {
+      box-sizing: border-box;
+    }
 
-    body{
-      margin:0;
-      font-family: var(--sans);
-      font-size: var(--base);
-      color: var(--text);
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b0f18;
+    }
+
+    .game-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      transform: scale(1.015);
+      filter: blur(3px) brightness(.72) saturate(1.08);
+      pointer-events: none;
+      animation: bgIn .8s ease both;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 22px;
       background:
-        radial-gradient(900px 520px at 16% 10%, rgba(0,122,255,.14), transparent 62%),
-        radial-gradient(900px 520px at 86% 12%, rgba(175,82,222,.12), transparent 62%),
-        radial-gradient(980px 680px at 60% 92%, rgba(255,45,85,.08), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg0));
-    }
-
-    .shell{
-      width: min(1920px, 99vw);
-      margin: 0 auto;
-      padding: 6px 4px 8px;
-    }
-
-    .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 12px; margin-bottom: 12px;
-      padding: 10px 10px;
-      border-radius: var(--radiusLg);
-      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,248,255,.90));
-      border: 1px solid rgba(10,15,24,.08);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 18px 40px rgba(10,15,24,.10), inset 0 1px 0 rgba(255,255,255,.7);
-    }
-
-    .brand{display:flex; align-items:center; gap:12px;}
-    .appIcon{
-      width: 44px; height: 44px;
-      border-radius: 16px;
-      background:
-        radial-gradient(18px 18px at 30% 28%, rgba(255,255,255,.88), transparent 58%),
-        linear-gradient(180deg, rgba(0,122,255,.96), rgba(175,82,222,.70));
-      box-shadow: 0 16px 34px rgba(0,122,255,.18);
-      border: 1px solid rgba(255,255,255,.38);
-    }
-
-    .logo{
-      font-family: "Roboto", var(--sans);
-      font-size: 22px;
-      font-weight: 700;
-      line-height: 1.0;
-      letter-spacing: 0;
-      color: rgba(11,15,24,.92);
-    }
-    .logo span{color:#f08804}
-    .sub{font-size: var(--small); color: var(--muted); margin-top:2px; line-height: 1.15;}
-
-    .status{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
-
-    .pill, .pillBtn{
-      display:inline-flex; align-items:center; gap:8px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(10,15,24,.16);
-      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,245,250,.92));
+        radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+        radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+        radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+        rgba(6,9,15,.50);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 10px 24px rgba(10,15,24,.08);
-      font-size: var(--small);
-      color: var(--muted);
-      user-select:none;
-      white-space: nowrap;
-    }
-    .pill b{color: var(--text); font-weight: 900}
-
-    .pillBtn{
-      cursor:pointer;
-      color: rgba(11,15,24,.92);
-      font-weight: 900;
-      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-    }
-    .pillBtn:hover{
-      transform: translateY(-1px);
-      border-color: rgba(0,122,255,.35);
-      background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(236,241,250,.92));
-      box-shadow: 0 16px 36px rgba(10,15,24,.10);
-    }
-    .pillBtn:active{transform: translateY(0px)}
-    .pillBtn:focus{outline:none; box-shadow:none;}
-    .pillBtn:focus-visible{outline:none; box-shadow: var(--focus), 0 14px 30px rgba(10,15,24,.08)}
-
-    .card{
-      background: var(--glass2);
-      border: 1px solid var(--hair2);
-      border-radius: var(--radiusLg);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      overflow:hidden;
-    }
-    .cardInner{padding: 22px 22px 18px;}
-
-    .hero h1{
-      margin: 0 0 10px;
-      font-size: var(--h1);
-      font-weight: 950;
-      letter-spacing: .15px;
-      line-height: 1.12;
-    }
-    .hero p{
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: var(--small);
-      max-width: 72ch;
     }
 
-    .modes{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(260px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .modeCard{
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-      padding: 14px 14px;
-      border-radius: var(--radiusMd);
-      border: 1px solid var(--hair2);
-      background: rgba(255,255,255,.74);
-      box-shadow: var(--shadow2);
-      text-decoration:none;
-      color: inherit;
-      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-      outline:none;
+    .card {
       position: relative;
-      overflow:hidden;
+      width: min(500px, 100%);
+      padding: 28px;
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: cardIn .62s cubic-bezier(.2,.8,.2,1) both;
+      isolation: isolate;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background:
+        radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+        radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 29px;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, transparent 20%, rgba(255,255,255,.55), transparent 80%);
+      transform: translateX(-120%);
+      animation: cardShine 5.5s ease-in-out infinite;
+      opacity: .55;
+      z-index: 0;
+    }
+
+    body.is-leaving .card {
+      pointer-events: none;
+      animation: cardOut .28s ease both;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .app-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background:
+        radial-gradient(17px 17px at 30% 28%, rgba(255,255,255,.9), transparent 58%),
+        linear-gradient(180deg, rgba(0,122,255,.96), rgba(175,82,222,.76));
+      box-shadow: 0 18px 34px rgba(0,122,255,.18);
+      border: 1px solid rgba(255,255,255,.55);
+    }
+
+    .logo {
+      font-size: 23px;
+      font-weight: 900;
+      line-height: 1;
+      color: rgba(11,15,24,.94);
+    }
+
+    .logo span {
+      color: var(--orange);
+    }
+
+    .sub {
+      margin-top: 3px;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(11,15,24,.48);
+    }
+
+    .role-badge {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(0,122,255,.10);
+      color: rgba(0,72,160,.92);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      color: var(--text);
+      font-size: clamp(29px, 5vw, 42px);
+      line-height: 1.04;
+      letter-spacing: -.035em;
+    }
+
+    .lead {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 8px;
+      color: rgba(11,15,24,.88);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    input {
+      width: 100%;
+      height: 50px;
+      border: 1px solid rgba(10,15,24,.13);
+      border-radius: 17px;
+      padding: 0 15px;
+      outline: none;
+      background: rgba(255,255,255,.94);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    input:focus {
+      border-color: rgba(0,122,255,.55);
+      box-shadow: 0 0 0 5px rgba(0,122,255,.16);
+      transform: translateY(-1px);
+    }
+
+    input.is-invalid {
+      border-color: rgba(255,45,85,.75);
+      box-shadow:
+        0 0 0 5px rgba(255,45,85,.14),
+        0 12px 28px rgba(255,45,85,.10);
+      animation: shake .34s ease;
+    }
+
+    input:disabled {
+      cursor: not-allowed;
+      opacity: .78;
+    }
+
+    .name-error {
+      display: none;
+      margin: 8px 0 0;
+      color: #b42318;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .name-error.show {
+      display: block;
+      animation: errorIn .18s ease both;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    button,
+    .mode-link {
+      border: 0;
+      border-radius: 17px;
+      padding: 13px 16px;
+      font-size: 15px;
+      font-weight: 900;
       cursor: pointer;
-      text-align: left;
+      text-decoration: none;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
       font-family: inherit;
     }
 
-    .modeCard::before{
-      content:"";
-      position:absolute;
-      left:0; top:0; bottom:0;
-      width: 6px;
-      background: linear-gradient(180deg, rgba(0,122,255,.85), rgba(175,82,222,.70));
-      opacity: .9;
+    button:hover,
+    .mode-link:hover {
+      transform: translateY(-1px);
     }
-    .modeCard.tone-amber::before{ background: linear-gradient(180deg, rgba(255,149,0,.90), rgba(0,122,255,.55)); }
-    .modeCard.tone-teal::before{ background: linear-gradient(180deg, rgba(52,199,89,.92), rgba(0,122,255,.55)); }
-    .modeCard.tone-purple::before{ background: linear-gradient(180deg, rgba(175,82,222,.92), rgba(0,122,255,.55)); }
-    .modeCard.tone-pink::before{ background: linear-gradient(180deg, rgba(255,45,85,.92), rgba(0,122,255,.55)); }
 
-    .modeCard:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
-    .modeCard:focus{box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
-    .modeCard.disabled{
-      opacity: .45;
-      filter: grayscale(0.9);
+    button:active,
+    .mode-link:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
       cursor: not-allowed;
+      opacity: .78;
+    }
+
+    .primary {
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      min-width: 210px;
+      background: linear-gradient(180deg, #ffb14a, var(--orange));
+      color: #171103;
+      box-shadow: 0 16px 34px rgba(240,136,4,.26);
+    }
+
+    .primary::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -80%;
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+      transform: skewX(-18deg);
+      transition: left .55s ease;
+    }
+
+    .primary:hover::after {
+      left: 130%;
+    }
+
+    .primary.is-loading {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       pointer-events: none;
     }
-    .modeCard.disabled::before{opacity:.35}
 
-    .modeTitle{
-      margin: 0;
-      font-size: var(--h2);
-      font-weight: 950;
-      padding-left: 10px;
-      line-height: 1.15;
-    }
-    .modeDesc{
-      margin: 0;
-      color: var(--muted);
-      font-size: var(--small);
-      line-height: 1.55;
-      padding-left: 10px;
-    }
-
-    .btnRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding-left: 10px;
-      margin-top: auto;
-    }
-
-    .tag{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
+    .btn-loader {
+      width: 17px;
+      height: 17px;
       border-radius: 999px;
-      border: 1px solid var(--hair2);
-      background: rgba(10,15,24,.02);
-      color: rgba(11,15,24,.78);
-      font-size: var(--small);
-      font-weight: 900;
-      white-space: nowrap;
+      border: 3px solid rgba(23,17,3,.24);
+      border-top-color: rgba(23,17,3,.88);
+      animation: spin .75s linear infinite;
     }
 
-    .btn{
-      border: 1px solid var(--hair2);
-      background: rgba(255,255,255,.82);
-      color: rgba(11,15,24,.92);
-      padding: 10px 12px;
-      border-radius: var(--radiusMd);
-      font-weight: 950;
-      font-size: var(--small);
-      cursor:pointer;
-      transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
-      user-select:none;
-      white-space: nowrap;
-    }
-    .btn:hover{transform: translateY(-1px); box-shadow: 0 16px 28px rgba(10,15,24,.08)}
-    .btn:active{transform: translateY(0px)}
-    .btn:focus{outline:none; box-shadow: var(--focus), 0 16px 28px rgba(10,15,24,.08)}
-    .btn.primary{
-      border-color: rgba(0,122,255,.22);
-      background: linear-gradient(180deg, rgba(0,122,255,.14), rgba(175,82,222,.06));
+    .secondary {
+      background: rgba(10,15,24,.075);
+      color: rgba(11,15,24,.84);
+      border: 1px solid rgba(10,15,24,.08);
     }
 
-    .foot{
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: var(--radiusMd);
-      border: 1px solid var(--hair2);
-      background: rgba(255,255,255,.60);
-      color: rgba(11,15,24,.78);
-      font-size: var(--small);
-      line-height: 1.5;
-    }
-    .foot code{font-family: var(--mono); font-size: .95em}
-
-    @media (prefers-reduced-motion: reduce){
-      .pillBtn, .modeCard, .btn{transition:none !important}
-      .pillBtn:hover, .modeCard:hover, .btn:hover{transform:none !important}
-    }
-
-    @media (max-width: 1200px){
-      .modes{grid-template-columns: repeat(2, minmax(260px, 1fr)); }
-    }
-    @media (max-width: 980px){
-      .modes{grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 560px){
-      .shell{padding: 6px 4px 8px}
-      .cardInner{padding: 18px}
-      .topbar{padding: 10px}
-    }
-  
-
-    /* Name-Gate (Apple-ish modal) */
-    .srOnly{
-      position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
-      clip:rect(0,0,0,0); white-space:nowrap; border:0;
-    }
-    .gate{
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
+    .mode-panel {
       display: grid;
-      place-items: center;
-      padding: 18px;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows .28s ease;
     }
-    .gateBackdrop{
-      position:absolute;
-      inset:0;
-      background: rgba(7,10,16,.36);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+
+    .mode-panel.open {
+      grid-template-rows: 1fr;
     }
-    .gateCard{
-      position: relative;
-      width: min(520px, 100%);
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,.40);
-      background: rgba(255,255,255,.76);
-      box-shadow: 0 22px 50px rgba(10,15,24,.22);
+
+    .mode-inner {
       overflow: hidden;
     }
-    .gateInner{
-      padding: 18px 18px 16px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
+
+    .mode-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(10,15,24,.10);
     }
-    .gateIcon{
-      width: 46px; height: 46px;
-      border-radius: 14px;
-      background: radial-gradient(120% 120% at 30% 20%, rgba(0,122,255,.45), rgba(175,82,222,.25) 55%, rgba(52,199,89,.18) 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
-    }
-    .gateInner h2{
-      margin: 0;
-      font-size: 22px;
-      font-weight: 850;
-      letter-spacing: .1px;
-    }
-    .gateActions{
-      display:flex;
-      justify-content:flex-end;
-      gap: 10px;
-      margin-top: 4px;
-    }
-    .fileInput{
+
+    .mode-link {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3px;
       width: 100%;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--hair2);
-      background: rgba(255,255,255,.86);
+      text-align: left;
+      background: rgba(255,255,255,.76);
+      border: 1px solid rgba(10,15,24,.08);
+      color: rgba(11,15,24,.90);
       font-size: 14px;
     }
-    .gateError{
-      margin-top: 6px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,45,85,.24);
-      background: rgba(255,45,85,.08);
-      color: rgba(160,0,20,.9);
-      font-size: var(--small);
+
+    .mode-link::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(0,122,255,.08), rgba(240,136,4,.08));
+      opacity: 0;
+      transition: opacity .18s ease;
     }
-    .gateSub{
-      margin: 0;
+
+    .mode-link:hover::before {
+      opacity: 1;
+    }
+
+    .mode-link strong,
+    .mode-link small {
+      position: relative;
+      z-index: 1;
+    }
+
+    .mode-link small {
+      color: rgba(11,15,24,.50);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .import-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 22px;
+      background:
+        radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+        radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+        radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+        rgba(6,9,15,.58);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 20;
+    }
+
+    .import-overlay.open {
+      display: grid;
+    }
+
+    .import-dialog {
+      position: relative;
+      width: min(500px, 100%);
+      padding: 26px;
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+      animation: cardIn .42s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .import-dialog::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background:
+        radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+        radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .import-dialog > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .import-dialog h2 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 26px;
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+
+    .import-dialog p {
+      margin: 0 0 16px;
       color: var(--muted);
-      font-size: var(--small);
+      font-size: 15px;
       line-height: 1.45;
     }
-    #nameForm{
-      display:flex;
-      gap: 10px;
-      align-items: stretch;
-      margin-top: 2px;
-    }
-    #nameInput{
-      flex: 1;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--hair2);
+
+    .file-input {
+      display: block;
+      width: 100%;
+      height: auto;
+      padding: 12px;
+      border: 1px dashed rgba(10,15,24,.18);
+      border-radius: 17px;
       background: rgba(255,255,255,.82);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
-      font-size: 15px;
-      outline: none;
-      transition: box-shadow .2s ease, border-color .2s ease, transform .08s ease;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
     }
-    #nameInput:focus{
-      border-color: rgba(0,122,255,.55);
-      box-shadow: 0 0 0 4px rgba(0,122,255,.18);
+
+    .import-error {
+      display: none;
+      margin: 10px 0 0;
+      color: #b42318;
+      font-size: 13px;
+      font-weight: 800;
     }
-    .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
+
+    .import-error.show {
+      display: block;
+    }
+
+    .import-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
 
     .site-footer {
       position: fixed;
@@ -412,7 +485,7 @@
     }
 
     .site-footer a {
-      color: #64748b;
+      color: #cbd5e1;
       text-decoration: none;
     }
 
@@ -420,326 +493,416 @@
       opacity: 1;
       text-decoration: underline;
     }
-</style>
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(22px) scale(.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes bgIn {
+      from {
+        opacity: 0;
+        transform: scale(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1.015);
+      }
+    }
+
+    @keyframes cardShine {
+      0%, 42% {
+        transform: translateX(-120%);
+      }
+      58%, 100% {
+        transform: translateX(120%);
+      }
+    }
+
+    @keyframes cardOut {
+      to {
+        opacity: 0;
+        transform: translateY(14px) scale(.985);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      20% {
+        transform: translateX(-6px);
+      }
+      40% {
+        transform: translateX(5px);
+      }
+      60% {
+        transform: translateX(-3px);
+      }
+      80% {
+        transform: translateX(2px);
+      }
+    }
+
+    @keyframes errorIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .overlay {
+        padding: 14px;
+      }
+
+      .card {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .primary,
+      .secondary {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="shell">
-<div class="topbar">
-<div class="brand">
-<div aria-hidden="true" class="appIcon"></div>
-<div>
-<div class="logo">schul<span>azon</span></div>
-<div class="sub" id="subline">Start</div>
-</div>
-</div>
-<div class="status">
-<button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
-<div class="pill" id="pillName" style="display:none;"><span>Hi <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span></div>
-</div>
-</div>
-<div class="card">
-<div class="cardInner">
-<section aria-label="Start" class="hero">
-<h1>Willkommen bei Schulazon</h1>
-<p>Wähle deinen Einstieg.</p>
-</section>
-<section aria-label="Modus-Auswahl" class="modes" id="modesSection">
-<a class="modeCard tone-amber" data-pass-name="1" href="pretest.html">
-<h2 class="modeTitle">Skillcheck</h2>
-<p class="modeDesc">Kurzer Einstieg ins Shop-Team. Danach startest du im freien Modus.</p>
-<div class="btnRow">
+  <iframe class="game-bg" src="free.html" aria-hidden="true"></iframe>
 
-<span aria-hidden="true" class="btn primary">Starten</span>
-</div>
-</a>
-<a class="modeCard tone-teal" data-pass-name="1" href="free.html">
-<h2 class="modeTitle">Freier Modus</h2>
-<p class="modeDesc">Direkt loslegen und Shop Buttons implementieren.</p>
-<div class="btnRow">
+  <main class="overlay">
+    <section class="card" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <div class="content">
+        <div class="brand">
+          <div class="app-icon" aria-hidden="true"></div>
+          <div>
+            <div class="logo">schul<span>azon</span></div>
+            <div class="sub">Software-Entwicklung</div>
+          </div>
+        </div>
 
-<span aria-hidden="true" class="btn primary">Starten</span>
-</div>
-</a>
-<button class="modeCard tone-teal" id="importFreeBtn" type="button">
-<h2 class="modeTitle">Freier Modus mit Spielstand</h2>
-<p class="modeDesc">Spielstand aus JSON laden und direkt weitermachen.</p>
-<div class="btnRow">
-<span aria-hidden="true" class="btn primary">Starten</span>
-</div>
-</button>
-<a class="modeCard tone-purple" data-pass-name="1" href="tutorial.html">
-<h2 class="modeTitle">Geführte Einarbeitung</h2>
-<p class="modeDesc">Training mit Schritt-für-Schritt-Hilfe</p>
-<div class="btnRow">
+        <div class="role-badge">Junior SQL Developer</div>
 
-<span aria-hidden="true" class="btn primary">Starten</span>
-</div>
-</a>
-</section>
+        <h1 id="introTitle">Willkommen im Entwicklerteam.</h1>
 
-</div>
-</div>
-</div>
+        <p class="lead">
+          Schulazon ist ein Onlineshop. Im Moment funktioniert er noch nicht. Implementiere fehlende Shop-Buttons mit SQL.
+        </p>
 
-<div aria-labelledby="gateTitle" aria-modal="true" class="gate" id="nameGate" role="dialog" style="display:none;">
-<div aria-hidden="true" class="gateBackdrop"></div>
-<div class="gateCard">
-<div class="gateInner">
-<div aria-hidden="true" class="gateIcon"></div>
-<h2 id="gateTitle">Wie heißt du?</h2>
-<p class="gateSub">Bitte gib deinen Namen ein, damit Schulazon dich begrüßen kann.</p>
-<form autocomplete="off" id="nameForm">
-<label class="srOnly" for="nameInput">Name</label>
-<input id="nameInput" inputmode="text" maxlength="40" name="name" placeholder="Dein Name" type="text"/>
-<button class="btn primary" type="submit">Weiter</button>
-</form>
-</div>
-</div>
-</div>
-<div aria-labelledby="importTitle" aria-modal="true" class="gate" id="importGate" role="dialog" style="display:none;">
-<div aria-hidden="true" class="gateBackdrop"></div>
-<div class="gateCard">
-<div class="gateInner">
-<div aria-hidden="true" class="gateIcon"></div>
-<h2 id="importTitle">Spielstand laden</h2>
-<p class="gateSub">W&auml;hle eine JSON-Datei aus dem Export.</p>
-<input accept="application/json" class="fileInput" id="importFile" type="file"/>
-<div class="gateActions">
-<button class="btn" id="importCancel" type="button">Abbrechen</button>
-<button class="btn primary" id="importConfirm" type="button" disabled>Importieren</button>
-</div>
-<div class="gateError" id="importError" style="display:none;"></div>
-</div>
-</div>
-</div>
-<footer class="site-footer">
-<a href="impressum.html">Impressum</a>
-</footer>
-<script>
-  const el = (id) => document.getElementById(id);
+        <label for="devName">Entwicklername für den freien Modus</label>
+        <input
+          id="devName"
+          type="text"
+          maxlength="40"
+          placeholder=""
+          autocomplete="off"
+          required
+        />
+        <p class="name-error" id="nameError">Bitte gib deinen Entwicklernamen ein.</p>
 
-  // Immer neu starten: Name wird pro Seitenaufruf neu abgefragt.
-  try{ localStorage.removeItem("schulazon_name"); }catch(_){}
-  try{ sessionStorage.removeItem("schulazon_name"); }catch(_){}
-  try{ delete window.SCHULAZON_NAME; }catch(_){}
+        <div class="actions">
+          <button class="primary" id="startWorkBtn" type="button">Arbeitstag beginnen</button>
+          <button class="secondary" id="otherModesBtn" type="button">Weitere Einstiege</button>
+        </div>
 
-  function getName(){
-    return "";
-  }
+        <div class="mode-panel" id="modePanel">
+          <div class="mode-inner">
+            <div class="mode-list">
+              <button class="mode-link" id="skillcheckBtn" type="button">
+                <strong>Skillcheck</strong>
+                <small>Empfohlen, wenn du unsicher bist. Danach starten wir passend weiter.</small>
+              </button>
 
-  const state = { name: getName() };
-  const importState = { data: null };
+              <button class="mode-link" id="onboardingBtn" type="button">
+                <strong>Geführte Einarbeitung</strong>
+                <small>Schritt-für-Schritt-Training. Danach geht es in den freien Modus.</small>
+              </button>
 
-  function updateNamePill(){
-    const pill = el("pillName");
-    if(!pill) return;
-    if(state.name){
-      pill.style.display = "flex";
-      el("nameTag").textContent = state.name;
-    } else {
-      pill.style.display = "none";
-      el("nameTag").textContent = "";
+              <button class="mode-link" id="importProgressBtn" type="button">
+                <strong>Spielstand laden</strong>
+                <small>Mit vorhandenem Fortschritt weiterarbeiten.</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="import-overlay" id="importOverlay" aria-hidden="true">
+    <section class="import-dialog" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+      <h2 id="importTitle">Spielstand laden</h2>
+      <p>Wähle eine JSON-Datei aus dem Spielstand-Export. Danach öffnet Schulazon den freien Modus mit deinem Fortschritt.</p>
+      <input class="file-input" id="importFile" type="file" accept="application/json,.json" />
+      <div class="import-error" id="importError">Datei konnte nicht gelesen werden.</div>
+      <div class="import-actions">
+        <button class="secondary" id="importCancel" type="button">Abbrechen</button>
+        <button class="primary" id="importConfirm" type="button" disabled>Importieren</button>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <a href="impressum.html">Impressum</a>
+  </footer>
+
+  <script>
+    const nameInput = document.getElementById("devName");
+    const nameError = document.getElementById("nameError");
+    const startWorkBtn = document.getElementById("startWorkBtn");
+    const otherModesBtn = document.getElementById("otherModesBtn");
+    const modePanel = document.getElementById("modePanel");
+    const skillcheckBtn = document.getElementById("skillcheckBtn");
+    const onboardingBtn = document.getElementById("onboardingBtn");
+    const importProgressBtn = document.getElementById("importProgressBtn");
+    const importOverlay = document.getElementById("importOverlay");
+    const importFile = document.getElementById("importFile");
+    const importCancel = document.getElementById("importCancel");
+    const importConfirm = document.getElementById("importConfirm");
+    const importError = document.getElementById("importError");
+
+    let isStarting = false;
+    let importData = null;
+
+    function cleanName(value) {
+      return String(value || "").trim().replace(/\s+/g, " ");
     }
-  }
 
-  function passNameToLinks(){
-    if(!state.name) return;
-    document.querySelectorAll("a[data-pass-name]").forEach(a=>{
-      try{
-        const url = new URL(a.getAttribute("href"), location.href);
-        if(!url.searchParams.get("name")){
-          url.searchParams.set("name", state.name);
-          a.setAttribute("href", url.pathname + "?" + url.searchParams.toString());
-        }
-      }catch(_){}
-    });
-  }
+    function setNameError(active) {
+      nameInput.classList.toggle("is-invalid", active);
+      nameError.classList.toggle("show", active);
+    }
 
-  function showNameGate(){
-    const gate = el("nameGate");
-    const modes = el("modesSection");
-    if(modes) modes.style.display = "none";
-    if(gate){
-      gate.style.display = "grid";
-      const input = el("nameInput");
-      if(input){
-        input.value = "";
-        setTimeout(()=>input.focus(), 0);
+    function saveName(name) {
+      localStorage.setItem("schulazon_name", name);
+      sessionStorage.setItem("schulazon_name", name);
+      window.SCHULAZON_NAME = name;
+    }
+
+    function resetFreeModeProgress() {
+      const preservedKeys = new Set([
+        "schulazon_name"
+      ]);
+
+      const storages = [localStorage, sessionStorage];
+
+      for (const storage of storages) {
+        Object.keys(storage).forEach((key) => {
+          const isSchulazonKey = key.startsWith("schulazon_");
+          const shouldPreserve = preservedKeys.has(key);
+
+          if (isSchulazonKey && !shouldPreserve) {
+            storage.removeItem(key);
+          }
+        });
       }
     }
-  }
 
-  function hideNameGate(){
-    const gate = el("nameGate");
-    const modes = el("modesSection");
-    if(gate) gate.style.display = "none";
-    if(modes) modes.style.display = "";
-  }
+    function normalizeImport(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const asObj = (value) => (value && typeof value === "object") ? value : {};
+      return {
+        name: String(raw.name || "").trim(),
+        unlocked: asObj(raw.unlocked),
+        hintUsed: asObj(raw.hintUsed),
+        scaffoldUsed: asObj(raw.scaffoldUsed),
+        solutionSql: asObj(raw.solutionSql),
+        sqliDone: !!raw.sqliDone,
+        spickerUsed: !!raw.spickerUsed
+      };
+    }
 
-  function setName(raw){
-    const name = (raw || "").toString().trim();
-    if(!name) return false;
+    function setImportError(message) {
+      importError.textContent = message || "Datei konnte nicht gelesen werden.";
+      importError.classList.add("show");
+    }
 
-    state.name = name;
-    updateNamePill();
-    passNameToLinks();
-    hideNameGate();
-    return true;
-  }
-  
+    function clearImportError() {
+      importError.textContent = "";
+      importError.classList.remove("show");
+    }
 
-  function showImportGate(){
-    const gate = el("importGate");
-    if(gate) gate.style.display = "grid";
-    const file = el("importFile");
-    if(file) file.value = "";
-    const err = el("importError");
-    if(err){ err.style.display = "none"; err.textContent = ""; }
-    const btn = el("importConfirm");
-    if(btn) btn.disabled = true;
-    importState.data = null;
-    setTimeout(()=>file && file.focus(), 0);
-  }
+    function openImportDialog() {
+      importData = null;
+      importFile.value = "";
+      importConfirm.disabled = true;
+      clearImportError();
+      importOverlay.classList.add("open");
+      importOverlay.setAttribute("aria-hidden", "false");
+      window.setTimeout(() => importFile.focus(), 0);
+    }
 
-  function hideImportGate(){
-    const gate = el("importGate");
-    if(gate) gate.style.display = "none";
-    importState.data = null;
-  }
+    function closeImportDialog() {
+      importOverlay.classList.remove("open");
+      importOverlay.setAttribute("aria-hidden", "true");
+      importData = null;
+    }
 
-  function setImportError(msg){
-    const err = el("importError");
-    if(!err) return;
-    err.textContent = msg || "Ungueltige Datei.";
-    err.style.display = "block";
-  }
-
-  function normalizeImport(raw){
-    if(!raw || typeof raw !== "object") return null;
-    const asObj = (v) => (v && typeof v === "object") ? v : {};
-    return {
-      unlocked: asObj(raw.unlocked),
-      hintUsed: asObj(raw.hintUsed),
-      scaffoldUsed: asObj(raw.scaffoldUsed),
-      solutionSql: asObj(raw.solutionSql),
-      sqliDone: !!raw.sqliDone,
-      spickerUsed: !!raw.spickerUsed
-    };
-  }
-
-  function readImportFile(file){
-    const reader = new FileReader();
-    reader.onload = () => {
-      try{
-        const parsed = JSON.parse(String(reader.result || ""));
-        const data = normalizeImport(parsed);
-        if(!data) throw new Error("invalid");
-        importState.data = data;
-        const err = el("importError");
-        if(err){ err.style.display = "none"; err.textContent = ""; }
-        const btn = el("importConfirm");
-        if(btn) btn.disabled = false;
-      }catch(_){
-        importState.data = null;
-        const btn = el("importConfirm");
-        if(btn) btn.disabled = true;
+    function readImportFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || ""));
+          const normalized = normalizeImport(parsed);
+          if (!normalized) throw new Error("invalid");
+          importData = normalized;
+          importConfirm.disabled = false;
+          clearImportError();
+        } catch (_) {
+          importData = null;
+          importConfirm.disabled = true;
+          setImportError("Datei konnte nicht gelesen werden.");
+        }
+      };
+      reader.onerror = () => {
+        importData = null;
+        importConfirm.disabled = true;
         setImportError("Datei konnte nicht gelesen werden.");
+      };
+      reader.readAsText(file);
+    }
+
+    function applyImport() {
+      if (!importData) return;
+
+      try {
+        localStorage.setItem("schulazon_unlocked_v1", JSON.stringify(importData.unlocked || {}));
+        localStorage.setItem("schulazon_hint_used_v1", JSON.stringify(importData.hintUsed || {}));
+        localStorage.setItem("schulazon_scaffold_used_v1", JSON.stringify(importData.scaffoldUsed || {}));
+        localStorage.setItem("schulazon_solution_sql_v1", JSON.stringify(importData.solutionSql || {}));
+        localStorage.setItem("schulazon_sqli_done_v1", importData.sqliDone ? "true" : "false");
+        localStorage.setItem("schulazon_spicker_used_v1", importData.spickerUsed ? "true" : "false");
+        sessionStorage.setItem("schulazon_skip_reset_v1", "true");
+      } catch (_) {}
+
+      const name = cleanName(importData.name || nameInput.value);
+      if (name) saveName(name);
+
+      window.location.href = "free.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
+    }
+
+    function setStartLoading(active) {
+      startWorkBtn.disabled = active;
+      otherModesBtn.disabled = active;
+      nameInput.disabled = active;
+
+      startWorkBtn.classList.toggle("is-loading", active);
+
+      if (active) {
+        startWorkBtn.innerHTML = `
+          <span class="btn-loader" aria-hidden="true"></span>
+          <span>Zugang wird erstellt …</span>
+        `;
+      } else {
+        startWorkBtn.textContent = "Arbeitstag beginnen";
       }
-    };
-    reader.onerror = () => {
-      importState.data = null;
-      const btn = el("importConfirm");
-      if(btn) btn.disabled = true;
-      setImportError("Datei konnte nicht gelesen werden.");
-    };
-    reader.readAsText(file);
-  }
-
-  function applyImport(){
-    const data = importState.data;
-    if(!data) return;
-    try{
-      localStorage.setItem("schulazon_unlocked_v1", JSON.stringify(data.unlocked || {}));
-      localStorage.setItem("schulazon_hint_used_v1", JSON.stringify(data.hintUsed || {}));
-      localStorage.setItem("schulazon_scaffold_used_v1", JSON.stringify(data.scaffoldUsed || {}));
-      localStorage.setItem("schulazon_solution_sql_v1", JSON.stringify(data.solutionSql || {}));
-      localStorage.setItem("schulazon_sqli_done_v1", data.sqliDone ? "true" : "false");
-      localStorage.setItem("schulazon_spicker_used_v1", data.spickerUsed ? "true" : "false");
-      sessionStorage.setItem("schulazon_skip_reset_v1", "true");
-    }catch(_){}
-
-    const url = new URL("free.html", location.href);
-    if(state.name) url.searchParams.set("name", state.name);
-    const qs = url.searchParams.toString();
-    const target = url.pathname + (qs ? "?" + qs : "");
-    try{ window.location.assign(target); }
-    catch(_){ window.location.href = target; }
-  }
-
-  function bindNameGate(){
-    const form = el("nameForm");
-    const input = el("nameInput");
-    if(!form || !input) return;
-
-    form.addEventListener("submit", (e)=>{
-      e.preventDefault();
-      setName(input.value);
-    });
-  }
-
-  function bindFullscreen(){
-    const btn = el("fsBtn");
-    if(!btn) return;
-
-    async function toggle(){
-      try{
-        if(!document.fullscreenElement){
-          await document.documentElement.requestFullscreen();
-          btn.textContent = "Exit";
-        } else {
-          await document.exitFullscreen();
-          btn.textContent = "Vollbild";
-        }
-      }catch(_){}
     }
 
-    btn.addEventListener("click", toggle);
+    function openWorkspace() {
+      if (isStarting) return;
 
-    document.addEventListener("fullscreenchange", ()=>{
-      btn.textContent = document.fullscreenElement ? "Exit" : "Vollbild";
-    });
-  }
+      const name = cleanName(nameInput.value);
 
-  bindNameGate();
-  bindFullscreen();
-  const importBtn = el("importFreeBtn");
-  if(importBtn && !importBtn.disabled) importBtn.addEventListener("click", showImportGate);
-  const importCancel = el("importCancel");
-  if(importCancel) importCancel.addEventListener("click", hideImportGate);
-  const importFile = el("importFile");
-  if(importFile) importFile.addEventListener("change", (e)=>{
-    const f = e.target && e.target.files && e.target.files[0];
-    if(f) readImportFile(f);
-  });
-  const importConfirm = el("importConfirm");
-  if(importConfirm) importConfirm.addEventListener("click", applyImport);
-  const importGate = el("importGate");
-  if(importGate){
-    importGate.addEventListener("click", (e)=>{
-      if(e.target === importGate) hideImportGate();
-    });
-  }
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape"){
-      const gate = el("importGate");
-      if(gate && gate.style.display !== "none") hideImportGate();
+      if (!name) {
+        setNameError(true);
+        nameInput.focus();
+        return;
+      }
+
+      isStarting = true;
+
+      setNameError(false);
+      resetFreeModeProgress();
+      saveName(name);
+      setStartLoading(true);
+
+      window.setTimeout(() => {
+        window.location.href = `free.html?name=${encodeURIComponent(name)}&reset=1`;
+      }, 900);
     }
-  });
 
-  if(state.name){
-    updateNamePill();
-    passNameToLinks();
-  }
-</script>
+    function openNamedMode(target) {
+      const name = cleanName(nameInput.value);
+      if (name) saveName(name);
+      setNameError(false);
+      const url = target + (name ? `?name=${encodeURIComponent(name)}` : "");
+      document.body.classList.add("is-leaving");
+      window.setTimeout(() => {
+        window.location.href = url;
+      }, 180);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      nameInput.value = "";
+      sessionStorage.removeItem("schulazon_name");
+    });
+
+    startWorkBtn.addEventListener("click", openWorkspace);
+
+    nameInput.addEventListener("input", () => {
+      if (cleanName(nameInput.value)) {
+        setNameError(false);
+      }
+    });
+
+    nameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        openWorkspace();
+      }
+    });
+
+    otherModesBtn.addEventListener("click", () => {
+      modePanel.classList.toggle("open");
+    });
+
+    skillcheckBtn.addEventListener("click", () => openNamedMode("pretest.html"));
+    onboardingBtn.addEventListener("click", () => openNamedMode("tutorial.html"));
+    importProgressBtn.addEventListener("click", openImportDialog);
+
+    importFile.addEventListener("change", (event) => {
+      const file = event.target && event.target.files && event.target.files[0];
+      if (file) readImportFile(file);
+    });
+
+    importCancel.addEventListener("click", closeImportDialog);
+    importConfirm.addEventListener("click", applyImport);
+
+    importOverlay.addEventListener("click", (event) => {
+      if (event.target === importOverlay) closeImportDialog();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && importOverlay.classList.contains("open")) {
+        closeImportDialog();
+      }
+    });
+  </script>
 </body>
 </html>

@@ -473,6 +473,27 @@
       flex-wrap: wrap;
     }
 
+    .site-footer {
+      position: fixed;
+      left: 16px;
+      bottom: 10px;
+      display: flex;
+      gap: 12px;
+      font-size: 0.75rem;
+      z-index: 50;
+      opacity: 0.65;
+    }
+
+    .site-footer a {
+      color: #cbd5e1;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
     @keyframes cardIn {
       from {
         opacity: 0;
@@ -595,7 +616,7 @@
           Schulazon ist ein Onlineshop. Im Moment funktioniert er noch nicht. Implementiere fehlende Shop-Buttons mit SQL.
         </p>
 
-        <label for="devName">Entwicklername</label>
+        <label for="devName">Entwicklername für den freien Modus</label>
         <input
           id="devName"
           type="text"
@@ -608,7 +629,7 @@
 
         <div class="actions">
           <button class="primary" id="startWorkBtn" type="button">Arbeitstag beginnen</button>
-          <button class="secondary" id="otherModesBtn" type="button">Modus wählen</button>
+          <button class="secondary" id="otherModesBtn" type="button">Weitere Einstiege</button>
         </div>
 
         <div class="mode-panel" id="modePanel">
@@ -616,12 +637,12 @@
             <div class="mode-list">
               <button class="mode-link" id="skillcheckBtn" type="button">
                 <strong>Skillcheck</strong>
-                <small>Kurzer Skill-Check vor dem Einsatz.</small>
+                <small>Empfohlen, wenn du unsicher bist. Danach starten wir passend weiter.</small>
               </button>
 
               <button class="mode-link" id="onboardingBtn" type="button">
                 <strong>Geführte Einarbeitung</strong>
-                <small>Training mit Schritt-für-Schritt-Hilfe.</small>
+                <small>Schritt-für-Schritt-Training. Danach geht es in den freien Modus.</small>
               </button>
 
               <button class="mode-link" id="importProgressBtn" type="button">
@@ -647,6 +668,10 @@
       </div>
     </section>
   </div>
+
+  <footer class="site-footer">
+    <a href="impressum.html">Impressum</a>
+  </footer>
 
   <script>
     const nameInput = document.getElementById("devName");
