@@ -399,6 +399,27 @@
       box-shadow: 0 0 0 4px rgba(0,122,255,.18);
     }
     .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
+
+    .site-footer {
+      position: fixed;
+      left: 16px;
+      bottom: 10px;
+      display: flex;
+      gap: 12px;
+      font-size: 0.75rem;
+      z-index: 50;
+      opacity: 0.65;
+    }
+
+    .site-footer a {
+      color: #64748b;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
 </style>
 </head>
 <body>
@@ -442,13 +463,6 @@
 <button class="modeCard tone-teal" id="importFreeBtn" type="button">
 <h2 class="modeTitle">Freier Modus mit Spielstand</h2>
 <p class="modeDesc">Spielstand aus JSON laden und direkt weitermachen.</p>
-<div class="btnRow">
-<span aria-hidden="true" class="btn primary">Starten</span>
-</div>
-</button>
-<button class="modeCard tone-amber" id="teachingModeBtn" type="button">
-<h2 class="modeTitle">Unterrichtsmodus</h2>
-<p class="modeDesc">Kapitelweise erarbeiten (in K&uuml;rze verf&uuml;gbar).</p>
 <div class="btnRow">
 <span aria-hidden="true" class="btn primary">Starten</span>
 </div>
@@ -498,19 +512,9 @@
 </div>
 </div>
 </div>
-<div aria-labelledby="comingSoonTitle" aria-modal="true" class="gate" id="comingSoonGate" role="dialog" style="display:none;">
-<div aria-hidden="true" class="gateBackdrop"></div>
-<div class="gateCard">
-<div class="gateInner">
-<div aria-hidden="true" class="gateIcon"></div>
-<h2 id="comingSoonTitle">Noch nicht implementiert</h2>
-<p class="gateSub">Der Unterrichtsmodus ist in Vorbereitung.</p>
-<div class="gateActions">
-<button class="btn primary" id="comingSoonOk" type="button">OK</button>
-</div>
-</div>
-</div>
-</div>
+<footer class="site-footer">
+<a href="impressum.html">Impressum</a>
+</footer>
 <script>
   const el = (id) => document.getElementById(id);
 
@@ -601,16 +605,6 @@
     const gate = el("importGate");
     if(gate) gate.style.display = "none";
     importState.data = null;
-  }
-
-  function showComingSoon(){
-    const gate = el("comingSoonGate");
-    if(gate) gate.style.display = "grid";
-  }
-
-  function hideComingSoon(){
-    const gate = el("comingSoonGate");
-    if(gate) gate.style.display = "none";
   }
 
   function setImportError(msg){
@@ -720,8 +714,6 @@
   bindFullscreen();
   const importBtn = el("importFreeBtn");
   if(importBtn && !importBtn.disabled) importBtn.addEventListener("click", showImportGate);
-  const teachingBtn = el("teachingModeBtn");
-  if(teachingBtn && !teachingBtn.disabled) teachingBtn.addEventListener("click", showComingSoon);
   const importCancel = el("importCancel");
   if(importCancel) importCancel.addEventListener("click", hideImportGate);
   const importFile = el("importFile");
@@ -737,20 +729,10 @@
       if(e.target === importGate) hideImportGate();
     });
   }
-  const comingSoonOk = el("comingSoonOk");
-  if(comingSoonOk) comingSoonOk.addEventListener("click", hideComingSoon);
-  const comingSoonGate = el("comingSoonGate");
-  if(comingSoonGate){
-    comingSoonGate.addEventListener("click", (e)=>{
-      if(e.target === comingSoonGate) hideComingSoon();
-    });
-  }
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape"){
       const gate = el("importGate");
       if(gate && gate.style.display !== "none") hideImportGate();
-      const soon = el("comingSoonGate");
-      if(soon && soon.style.display !== "none") hideComingSoon();
     }
   });
 

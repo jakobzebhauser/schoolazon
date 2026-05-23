@@ -1,3 +1,28 @@
+.site-footer {
+  position: fixed;
+  left: 16px;
+  bottom: 10px;
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  z-index: 50;
+  opacity: 0.65;
+}
+
+.site-footer a {
+  color: #64748b;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.embed .site-footer {
+  display: none;
+}
+
 /* =========================================================
    0. LOCK-LOGIK KOMPLETT DEAKTIVIERT (Phase 1)
    ========================================================= */

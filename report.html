@@ -20,6 +20,24 @@
     .ok { color: #0a7; }
     .warn { color: #b50; }
     code { background: #f2f2f2; padding: 1px 4px; border-radius: 4px; }
+    .site-footer {
+      position: fixed;
+      left: 16px;
+      bottom: 10px;
+      display: flex;
+      gap: 12px;
+      font-size: 0.75rem;
+      z-index: 50;
+      opacity: 0.65;
+    }
+    .site-footer a {
+      color: #64748b;
+      text-decoration: none;
+    }
+    .site-footer a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -48,6 +66,10 @@
       Für „Inaktivität“ nutze ich <code>free_mode.inactivity.total_ms</code> (Sekunden).
     </div>
   </div>
+
+  <footer class="site-footer">
+    <a href="impressum.html">Impressum</a>
+  </footer>
 
   <!-- SheetJS (mit Style-Support) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>

@@ -1,3 +1,24 @@
+.site-footer {
+  position: fixed;
+  left: 16px;
+  bottom: 10px;
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  z-index: 50;
+  opacity: 0.65;
+}
+
+.site-footer a {
+  color: #64748b;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 :root{
   /* Match pretest/tutorial visual language */
   --blue:   #007AFF;
@@ -1127,14 +1148,53 @@ body.help-open{
 
 .help-overlay{
   z-index: 3200;
+  background:
+    radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+    radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+    radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+    rgba(6,9,15,.50);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .help-panel{
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: min(900px, 94vw);
-  border-radius: 22px;
-  border: 1px solid rgba(10,15,24,.12);
-  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,248,255,.95));
-  box-shadow: 0 26px 60px rgba(10,15,24,.18);
-  padding: 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,.50);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+  box-shadow: 0 34px 110px rgba(0,0,0,.34);
+  padding: 24px;
+  animation: helpCardIn .42s cubic-bezier(.2,.8,.2,1) both;
+}
+.help-panel::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  z-index: 0;
+  background:
+    radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+    radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+  pointer-events:none;
+}
+.help-panel::after{
+  content:"";
+  position:absolute;
+  inset:1px;
+  z-index: 0;
+  border-radius: 29px;
+  pointer-events:none;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.55), transparent 80%);
+  transform: translateX(-120%);
+  animation: helpCardShine 5.5s ease-in-out infinite;
+  opacity:.55;
+}
+.help-head,
+.help-grid,
+.help-footer{
+  position: relative;
+  z-index: 1;
 }
 .help-head{
   display:flex;
@@ -1152,9 +1212,9 @@ body.help-open{
 }
 .help-title{
   margin: 0;
-  font-size: 22px;
+  font-size: clamp(24px, 2.4vw, 32px);
   font-weight: 950;
-  letter-spacing: .01em;
+  letter-spacing: -0.025em;
 }
 .help-sub{
   font-size: 15px;
@@ -1173,11 +1233,11 @@ body.help-open{
   gap: 14px;
 }
 .help-card{
-  border-radius: 16px;
-  border: 1px solid rgba(10,15,24,.12);
-  background: rgba(255,255,255,.92);
+  border-radius: 17px;
+  border: 1px solid rgba(10,15,24,.08);
+  background: rgba(255,255,255,.76);
   padding: 14px 14px 13px;
-  box-shadow: 0 10px 22px rgba(10,15,24,.06);
+  box-shadow: 0 12px 28px rgba(10,15,24,.08);
   transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
 }
 .help-card:hover{
@@ -1231,6 +1291,26 @@ body.help-open{
   display:flex;
   justify-content:flex-end;
   margin-top: 14px;
+}
+
+@keyframes helpCardIn{
+  from{
+    opacity: 0;
+    transform: translateY(22px) scale(.97);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes helpCardShine{
+  0%, 42%{
+    transform: translateX(-120%);
+  }
+  58%, 100%{
+    transform: translateX(120%);
+  }
 }
 
 @media (max-width: 720px){
