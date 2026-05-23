@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Schulazon – Grundlagen-Refresh</title>
+  <title>Schulazon – Geführte Einarbeitung</title>
 
   <!-- Shop-Font (wie im Shop) -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -744,34 +744,235 @@ pre.sql.sqlFill .blank input{
       opacity: 1;
       text-decoration: underline;
     }
+
+    .game-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      transform: scale(1.015);
+      filter: blur(3px) brightness(.72) saturate(1.08);
+      pointer-events: none;
+      animation: onboardingBgIn .8s ease both;
+      z-index: 0;
+    }
+
+    body {
+      overflow: hidden;
+      background: #0b0f18;
+    }
+
+    .shell {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 22px;
+      background:
+        radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+        radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+        radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+        rgba(6,9,15,.50);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .card {
+      position: relative;
+      width: min(1080px, calc(100vw - 44px));
+      height: min(780px, calc(100vh - 44px));
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+      border: 1px solid rgba(255,255,255,.50);
+      box-shadow: 0 34px 110px rgba(0,0,0,.34);
+      overflow: hidden;
+      animation: onboardingCardIn .42s cubic-bezier(.2,.8,.2,1) both;
+      isolation: isolate;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background:
+        radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+        radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .cardInner,
+    .progressWrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cardInner {
+      min-height: 0;
+      overflow: auto;
+      padding: 24px 24px 18px;
+    }
+
+    .progressWrap {
+      padding: 14px 24px 18px;
+      background: transparent;
+    }
+
+    .pill,
+    .pillBtn,
+    .btn {
+      border-radius: 17px;
+    }
+
+    .btn {
+      border: 0;
+      background: rgba(10,15,24,.075);
+      color: rgba(11,15,24,.84);
+      box-shadow: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #ffb14a, #f08804);
+      color: #171103;
+      box-shadow: 0 16px 34px rgba(240,136,4,.22);
+    }
+
+    .theory,
+    .taskCard,
+    .codeBox,
+    .shopPreview,
+    .miniTable,
+    details.reveal,
+    .matchCol,
+    .feedback,
+    .chip,
+    .codeTaskSplit {
+      border-color: rgba(10,15,24,.08);
+      background: rgba(255,255,255,.76);
+      box-shadow: 0 12px 28px rgba(10,15,24,.08);
+    }
+
+    .codeTaskSplit {
+      overflow: hidden;
+      border-width: 1px;
+    }
+
+    .taskCard {
+      overflow: auto;
+    }
+
+    .taskCard pre.sql {
+      min-width: max-content;
+      padding-bottom: 4px;
+    }
+
+    .codeTaskSplit .splitPaneShop {
+      background: rgba(255,255,255,.72);
+    }
+
+    .codeTaskSplit .splitPaneLab {
+      background: rgba(255,255,255,.76);
+      border-left-color: rgba(175,82,222,.20);
+      box-shadow: inset 2px 0 0 rgba(10,15,24,.06);
+    }
+
+    .taskCardTight {
+      overflow-x: auto;
+      overflow-y: visible;
+      padding-bottom: 18px;
+    }
+
+    pre.sql.sqlFill {
+      min-width: max-content;
+      padding-bottom: 4px;
+    }
+
+    pre.sql.sqlFill .blank input {
+      width: auto;
+      min-width: 190px;
+      max-width: none;
+    }
+
+    .onboarding-state {
+      display: none !important;
+    }
+
+    .close-link {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 3;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: rgba(255,255,255,.16);
+      color: rgba(255,255,255,.86);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform .16s ease, background .16s ease, color .16s ease;
+    }
+
+    .close-link:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.24);
+      color: #fff;
+    }
+
+    body.is-leaving .card {
+      pointer-events: none;
+      animation: onboardingLeave .28s ease both;
+    }
+
+    @media (max-width: 700px) {
+      .card {
+        width: calc(100vw - 28px);
+        height: calc(100vh - 28px);
+        border-radius: 24px;
+      }
+      .cardInner {
+        padding: 18px 18px 16px;
+      }
+      .progressWrap {
+        padding: 12px 18px 16px;
+      }
+    }
+
+    @keyframes onboardingCardIn {
+      from { opacity: 0; transform: translateY(22px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes onboardingBgIn {
+      from { opacity: 0; transform: scale(1.04); }
+      to { opacity: 1; transform: scale(1.015); }
+    }
+
+    @keyframes onboardingLeave {
+      to { opacity: 0; transform: translateY(14px) scale(.985); }
+    }
   </style>
 </head>
 
 <body>
+  <iframe class="game-bg" src="free.html" aria-hidden="true"></iframe>
+  <a class="close-link" href="index2.html">Schließen</a>
   <div class="shell">
-    <div class="topbar">
-      <div class="brand">
-        <div class="appIcon" aria-hidden="true"></div>
-        <div>
-          <div class="logo">schul<span>azon</span></div>
-          <div class="sub" id="subline">Grundlagen-Refresh</div>
-        </div>
-      </div>
-
-      <div class="status">
-        <button class="pillBtn" id="fsBtn" type="button">Vollbild</button>
-        <button class="pillBtn" id="homeBtn" type="button">Startseite</button>
-          <button class="pillBtn" id="exitBtn" type="button">Tutorial beenden</button>
-        <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
-        </div>
-        <div class="pill">
-          <span>Seite</span> <b id="stepTag">1/1</b>
-        </div>
-      </div>
-    </div>
-
     <div class="card">
+      <div class="onboarding-state" aria-hidden="true">
+        <span id="subline">Geführte Einarbeitung</span>
+        <div id="pillName" style="display:none;"><b id="nameTag"></b></div>
+        <b id="stepTag">1/1</b>
+      </div>
       <div class="cardInner" id="screen"></div>
 
       <div class="progressWrap">
@@ -925,10 +1126,10 @@ pre.sql.sqlFill .blank input{
 
   function updateNamePill(){
     if(state.name){
-      el("pillName").style.display = "flex";
-      el("nameTag").textContent = state.name;
+      if(el("pillName")) el("pillName").style.display = "flex";
+      if(el("nameTag")) el("nameTag").textContent = state.name;
     } else {
-      el("pillName").style.display = "none";
+      if(el("pillName")) el("pillName").style.display = "none";
     }
   }
 
@@ -1089,7 +1290,7 @@ pre.sql.sqlFill .blank input{
       context: withName("kurze Mission, klare Schritte."),
       story: [
         "Willkommen bei Schulazon! Bevor du in den Shop eintauchst, wollen wir mit dir noch einmal die Grundlagen von SQL auffrischen.",
-        "In diesem Tutorial lernst du die wichtigsten Bausteine von SQL-Abfragen kennen – und wie du sie anwendest, um Daten aus einer Datenbank abzurufen."
+        "In dieser geführten Einarbeitung lernst du die wichtigsten Bausteine von SQL-Abfragen kennen – und wie du sie anwendest, um Daten aus einer Datenbank abzurufen."
       ]
     },
 
@@ -1496,7 +1697,7 @@ pre.sql.sqlFill .blank input{
       id:"end",
       title:"Ende",
       finish: true,
-      context: withName("Tutorial abgeschlossen. Jetzt kannst du im freien Modus starten."),
+      context: withName("Geführte Einarbeitung abgeschlossen. Jetzt kannst du im freien Modus starten."),
       theory: ["Wechsle jetzt in den freien Modus und schalte so viele Buttons frei wie möglich."]
     }
   ];
@@ -2188,11 +2389,14 @@ function renderInfo(p){
     const n = (state.name || "").toString().trim();
     try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    window.location.href = url;
+    smoothGo(url);
   }
 
-  function goHomeConfirm(){
-    window.location.href = "index.html";
+  function smoothGo(url){
+    document.body.classList.add("is-leaving");
+    window.setTimeout(() => {
+      window.location.href = url;
+    }, 180);
   }
 
   async function toggleFullscreen(){
@@ -2202,11 +2406,14 @@ function renderInfo(p){
     }catch{}
   }
 
-  el("fsBtn").addEventListener("click", toggleFullscreen);
-  el("homeBtn")?.addEventListener("click", goHomeConfirm);
+  if(el("fsBtn")) el("fsBtn").addEventListener("click", toggleFullscreen);
   el("exitBtn")?.addEventListener("click", ()=>goToFreeMode({ completed: false }));
   document.addEventListener("fullscreenchange", ()=>{
-    el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+    if(el("fsBtn")) el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+  });
+  document.querySelector(".close-link")?.addEventListener("click", (event)=>{
+    event.preventDefault();
+    smoothGo("index2.html");
   });
 
   (function resetTutorialOnLoad(){

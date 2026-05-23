@@ -1680,7 +1680,7 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       const title = this.escapeHtml(t.title || id);
       const cat = this.escapeHtml(this.getCategoryLabel(id));
       const tags = [];
-      if (this.unlockedSource?.[id] === "tutorial") tags.push('<span class="spicker-tag tutorial">Tutorial</span>');
+      if (this.unlockedSource?.[id] === "tutorial") tags.push('<span class="spicker-tag tutorial">Einarbeitung</span>');
       if (this.hintUsed?.[id]) tags.push('<span class="spicker-tag hint">Tipp</span>');
       if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codeger\u00fcst</span>');
       const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.join('')}</div>` : '';

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Schulazon – Bewerbungsgespräch</title>
+  <title>Schulazon – Skillcheck</title>
 
   <!-- Shop-Font (wie im Shop) -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -532,7 +532,6 @@
       .cardInner{padding: 18px}
       .progressWrap{padding: 12px 18px}
       .matchGrid{grid-template-columns: 1fr;}
-      .topbar{padding: 10px}
     }
 
     /* ---------- Pretest: zusätzliche UI-Bausteine im Tutorial-Look ---------- */
@@ -782,6 +781,216 @@
   
     .hand{filter: drop-shadow(0 6px 10px rgba(10,15,24,.12));}
 
+    .game-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      transform: scale(1.015);
+      filter: blur(3px) brightness(.72) saturate(1.08);
+      pointer-events: none;
+      animation: skillBgIn .8s ease both;
+      z-index: 0;
+    }
+
+    body {
+      overflow: hidden;
+      background: #0b0f18;
+    }
+
+    .shell {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      padding: 22px;
+      overflow: auto;
+      background:
+        radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+        radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+        radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+        rgba(6,9,15,.50);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .card {
+      width: min(1080px, calc(100vw - 44px));
+      border: 1px solid rgba(255,255,255,.50);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+      box-shadow: 0 34px 110px rgba(0,0,0,.34);
+      animation: skillCardIn .42s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .card {
+      position: relative;
+      isolation: isolate;
+      border-radius: 30px;
+      height: min(780px, calc(100vh - 44px));
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      z-index: 0;
+      background:
+        radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+        radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+      pointer-events: none;
+    }
+
+    .cardInner,
+    .progressWrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .skillcheck-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .skillcheck-title .appIcon {
+      flex: 0 0 auto;
+    }
+
+    .skillcheck-kicker {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: rgba(0,72,160,.82);
+    }
+
+    .skillcheck-name {
+      margin-top: 3px;
+      color: rgba(11,15,24,.48);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .skillcheck-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    .skillcheck-state {
+      display: none !important;
+    }
+
+    .close-link {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 3;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: rgba(255,255,255,.16);
+      color: rgba(255,255,255,.86);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform .16s ease, background .16s ease, color .16s ease;
+    }
+
+    .close-link:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.24);
+      color: #fff;
+    }
+
+    body.is-leaving .card {
+      pointer-events: none;
+      animation: skillLeave .28s ease both;
+    }
+
+    .cardInner {
+      min-height: 0;
+      overflow: auto;
+      padding: 24px 24px 18px;
+    }
+
+    .progressWrap {
+      padding: 14px 24px 18px;
+      background: transparent;
+    }
+
+    .pill {
+      border-radius: 17px;
+      background: rgba(255,255,255,.76);
+      border-color: rgba(10,15,24,.08);
+      box-shadow: 0 12px 28px rgba(10,15,24,.08);
+    }
+
+    .pillBtn,
+    .btn {
+      border-radius: 17px;
+      border: 0;
+      background: rgba(10,15,24,.075);
+      color: rgba(11,15,24,.84);
+      box-shadow: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #ffb14a, #f08804);
+      color: #171103;
+      box-shadow: 0 16px 34px rgba(240,136,4,.22);
+    }
+
+    .promptCard,
+    .schemaBox,
+    .choice,
+    .fillWrap,
+    .checkRow,
+    .hint {
+      border-color: rgba(10,15,24,.08);
+      background: rgba(255,255,255,.76);
+      box-shadow: 0 12px 28px rgba(10,15,24,.08);
+    }
+
+    @media (max-width: 700px) {
+      .card {
+        width: calc(100vw - 28px);
+        height: calc(100vh - 28px);
+        border-radius: 24px;
+      }
+      .cardInner {
+        padding: 18px 18px 16px;
+      }
+      .progressWrap {
+        padding: 12px 18px 16px;
+      }
+    }
+
+    @keyframes skillCardIn {
+      from { opacity: 0; transform: translateY(22px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes skillBgIn {
+      from { opacity: 0; transform: scale(1.04); }
+      to { opacity: 1; transform: scale(1.015); }
+    }
+
+    @keyframes skillLeave {
+      to { opacity: 0; transform: translateY(14px) scale(.985); }
+    }
+
     .site-footer {
       position: fixed;
       left: 16px;
@@ -806,31 +1015,15 @@
 </head>
 
 <body>
+  <iframe class="game-bg" src="free.html" aria-hidden="true"></iframe>
+  <a class="close-link" href="index2.html">Schließen</a>
   <div class="shell">
-    <div class="topbar">
-      <div class="brand">
-        <div class="appIcon" aria-hidden="true"></div>
-        <div>
-          <div class="logo">schul<span>azon</span></div>
-          <div class="sub" id="subline">Bewerbungsgespräch</div>
-        </div>
-      </div>
-
-      <div class="status">
-        <button class="pillBtn" id="fsBtn" type="button" >Vollbild</button>
-        <button class="pillBtn" id="homeBtn" type="button">Startseite</button>
-
-        <div class="pill" id="pillName" style="display:none;">
-          <span>Hi, <b id="nameTag"></b> <span aria-hidden="true" class="hand">👋</span></span>
-        </div>
-        <div class="pill" id="pillStep" style="display:none;">
-          <span>Frage</span> <b id="stepTag">1/10</b>
-        </div>
-        
-      </div>
-    </div>
-
     <div class="card" id="appCard">
+      <div class="skillcheck-state" aria-hidden="true">
+        <span id="subline">Skillcheck</span>
+        <span id="nameTag"></span>
+        <span id="pillStep"><b id="stepTag">1/10</b></span>
+      </div>
       <div class="cardInner" id="screen"></div>
 
       <div class="progressWrap" id="progressWrap" style="display:none;">
@@ -966,11 +1159,7 @@
   function goToGuidedTutorial(){
     const n = (state.name || "").toString().trim();
     const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    window.location.href = url;
-  }
-
-  function goHomeConfirm(){
-    window.location.href = "index.html";
+    smoothGo(url);
   }
 
   function goToFreeMode(){
@@ -982,7 +1171,7 @@
       }catch(_){}
     }
     const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    window.location.href = url;
+    smoothGo(url);
   }
 
 function shuffle(arr){
@@ -1046,7 +1235,33 @@ function pickVariant(key, variants){
 }
 
   function displayName(){
-    return (state.name || "").toString().trim() || "du";
+    return (state.name || "").toString().trim();
+  }
+
+  function thanksTitle(){
+    const n = displayName();
+    return n ? `Danke, ${escapeHtml(n)}.` : "Danke.";
+  }
+
+  function positiveTitle(){
+    const n = displayName();
+    return n ? `Super, ${escapeHtml(n)}.` : "Super.";
+  }
+
+  function congratsTitle(){
+    const n = displayName();
+    return n ? `Glückwunsch, ${escapeHtml(n)}.` : "Glückwunsch.";
+  }
+
+  function signatureName(){
+    return displayName() || "du";
+  }
+
+  function smoothGo(url){
+    document.body.classList.add("is-leaving");
+    window.setTimeout(() => {
+      window.location.href = url;
+    }, 180);
   }
 
 
@@ -1054,19 +1269,21 @@ function pickVariant(key, variants){
 
   function renderStart(){
     el("progressWrap").style.display = "none";
-    el("pillName").style.display = state.name ? "flex" : "none";
-    el("nameTag").textContent = state.name || "";
+    el("nameTag").textContent = state.name ? `Hi, ${state.name}` : "";
     el("pillStep").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch";
+    el("subline").textContent = "Skillcheck";
+    const introHeadline = displayName()
+      ? `Hi ${displayName()}, schön, dass du dich bei Schulazon als Shop-Entwickler beworben hast!`
+      : "Schön, dass du dich bei Schulazon als Shop-Entwickler beworben hast!";
 
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Hi <span id="introName"></span>, schön, dass du dich bei Schulazon als Shop-Entwickler beworben hast!</h2>
+          <h2>${escapeHtml(introHeadline)}</h2>
           <p style="font-size: var(--base);">Wir haben ein paar kurze Fragen vorbereitet, um deine SQL-Kenntnisse besser einschätzen zu können.</p>
 
           <div class="hint hintBig">
-            Beantworte die Fragen im Gespräch. Danach starten wir je nach Ergebnis mit dem Tutorial oder direkt im freien Modus.
+            Beantworte die Fragen im Gespräch. Danach starten wir je nach Ergebnis mit der geführten Einarbeitung oder direkt im freien Modus.
           </div>
 
           <div class="btnRow navRow" id="introCtaRow">
@@ -1080,9 +1297,6 @@ function pickVariant(key, variants){
       </div>
     `;
 
-    const introName = document.getElementById("introName");
-    if(introName) introName.textContent = displayName();
-
     const introContinue = el("introContinue");
     introContinue.addEventListener("click", ()=>{
       startTest();
@@ -1094,9 +1308,8 @@ function pickVariant(key, variants){
     const q = questions[idx];
     markItemStart(q.id);
 
-    el("pillName").style.display = state.name ? "flex" : "none";
     el("pillStep").style.display = "flex";
-    el("nameTag").textContent = state.name || "";
+    el("nameTag").textContent = state.name ? `Hi, ${state.name}` : "";
     el("stepTag").textContent = `${idx+1}/${total}`;
 
     el("progressWrap").style.display = "flex";
@@ -1304,7 +1517,7 @@ function pickVariant(key, variants){
 
     el("progressWrap").style.display = "none";
     el("pillStep").style.display = "none";
-    el("subline").textContent = "Bewerbungsgespräch – Feedback";
+    el("subline").textContent = "Skillcheck – Feedback";
 
     const score = res.score;
     const shouldTutorial = score <= 3;
@@ -1313,12 +1526,12 @@ function pickVariant(key, variants){
       el("screen").innerHTML = `
         <div class="hero">
           <div style="flex:1">
-            <h2>Danke, ${escapeHtml(displayName())}.</h2>
-            <p>Wir wiederholen kurz die Grundlagen im Tutorial. Danach gehst du direkt in den freien Modus.</p>
-            <div class="hint">Nächster Schritt: Tutorial.</div>
+            <h2>${thanksTitle()}</h2>
+            <p>Wir wiederholen kurz die Grundlagen in der geführten Einarbeitung. Danach gehst du direkt in den freien Modus.</p>
+            <div class="hint">Nächster Schritt: Geführte Einarbeitung.</div>
             <div class="btnRow">
               <div></div>
-              <button class="btn primary" id="toTutorialBtn">Zum Tutorial</button>
+              <button class="btn primary" id="toTutorialBtn">Zur geführten Einarbeitung</button>
             </div>
           </div>
         </div>
@@ -1330,7 +1543,7 @@ function pickVariant(key, variants){
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Super, ${escapeHtml(displayName())}.</h2>
+          <h2>${positiveTitle()}</h2>
           <p>Du kannst direkt im freien Modus starten.</p>
           <div class="hint">Nächster Schritt: Freier Modus.</div>
           <div class="btnRow">
@@ -1344,12 +1557,12 @@ function pickVariant(key, variants){
   }
 
   function renderContract(){
-    el("subline").textContent = "Bewerbungsgespräch – Vertrag";
+    el("subline").textContent = "Skillcheck – Vertrag";
 
     el("screen").innerHTML = `
       <div class="hero">
         <div style="flex:1">
-          <h2>Glückwunsch, ${escapeHtml(displayName())}.</h2>
+          <h2>${congratsTitle()}</h2>
           <p>Wir stellen dich ein. Vertrag kurz abhaken – dann geht’s los.</p>
 
           <div class="schemaWrap" style="margin-top:14px;">
@@ -1358,13 +1571,13 @@ function pickVariant(key, variants){
               <b>Schulazon – Entwicklervertrag</b><br>
               Rolle: Normaler Entwickler · Start: sofort · Team: Shop-Engineering<br>
               Aufgabe: Du hilfst uns dabei, fehlende Buttons im Shop zu implementieren.<br><br>
-              Unterschrift: <b>${escapeHtml(displayName())}</b>
+              Unterschrift: <b>${escapeHtml(signatureName())}</b>
             </div>
           </div>
 
           <div class="checkRow">
             <input id="sigCheck" type="checkbox" />
-            <div class="txt"><b>X</b> Ich unterschreibe den Vertrag als <b>${escapeHtml(displayName())}</b>.</div>
+            <div class="txt"><b>X</b> Ich unterschreibe den Vertrag als <b>${escapeHtml(signatureName())}</b>.</div>
           </div>
 
           <div class="btnRow">
@@ -1448,9 +1661,8 @@ function pickVariant(key, variants){
     state.contractSigned = false;
     state.itemStartAt = {};
     state.itemTimes = {};
-    el("pillName").style.display = state.name ? "flex" : "none";
     el("pillStep").style.display = "flex";
-    el("nameTag").textContent = state.name || "";
+    el("nameTag").textContent = state.name ? `Hi, ${state.name}` : "";
     renderQuestion();
   }
 
@@ -1463,10 +1675,13 @@ function pickVariant(key, variants){
       }
     }catch{}
   }
-  el("fsBtn").addEventListener("click", toggleFullscreen);
-  el("homeBtn")?.addEventListener("click", goHomeConfirm);
+  if(el("fsBtn")) el("fsBtn").addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", ()=>{
-    el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+    if(el("fsBtn")) el("fsBtn").textContent = document.fullscreenElement ? "Vollbild aus" : "Vollbild";
+  });
+  document.querySelector(".close-link")?.addEventListener("click", (event)=>{
+    event.preventDefault();
+    smoothGo("index2.html");
   });
 
   // Global: Enter = Weiter/Abgeben, ohne die Struktur zu verändern

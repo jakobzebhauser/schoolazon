@@ -101,6 +101,11 @@
       z-index: 0;
     }
 
+    body.is-leaving .card {
+      pointer-events: none;
+      animation: cardOut .28s ease both;
+    }
+
     .content {
       position: relative;
       z-index: 1;
@@ -499,6 +504,13 @@
       }
     }
 
+    @keyframes cardOut {
+      to {
+        opacity: 0;
+        transform: translateY(14px) scale(.985);
+      }
+    }
+
     @keyframes shake {
       0%, 100% {
         transform: translateX(0);
@@ -580,7 +592,7 @@
         <h1 id="introTitle">Willkommen im Entwicklerteam.</h1>
 
         <p class="lead">
-          Implementiere Shop-Buttons mit SQL und bringe Schulazon online.
+          Schulazon ist ein Onlineshop. Im Moment funktioniert er noch nicht. Implementiere fehlende Shop-Buttons mit SQL.
         </p>
 
         <label for="devName">Entwicklername</label>
@@ -602,15 +614,15 @@
         <div class="mode-panel" id="modePanel">
           <div class="mode-inner">
             <div class="mode-list">
-              <a class="mode-link" href="pretest.html">
-                <strong>Eignungscheck</strong>
+              <button class="mode-link" id="skillcheckBtn" type="button">
+                <strong>Skillcheck</strong>
                 <small>Kurzer Skill-Check vor dem Einsatz.</small>
-              </a>
+              </button>
 
-              <a class="mode-link" href="tutorial.html">
+              <button class="mode-link" id="onboardingBtn" type="button">
                 <strong>Geführte Einarbeitung</strong>
                 <small>Training mit Schritt-für-Schritt-Hilfe.</small>
-              </a>
+              </button>
 
               <button class="mode-link" id="importProgressBtn" type="button">
                 <strong>Spielstand laden</strong>
@@ -642,6 +654,8 @@
     const startWorkBtn = document.getElementById("startWorkBtn");
     const otherModesBtn = document.getElementById("otherModesBtn");
     const modePanel = document.getElementById("modePanel");
+    const skillcheckBtn = document.getElementById("skillcheckBtn");
+    const onboardingBtn = document.getElementById("onboardingBtn");
     const importProgressBtn = document.getElementById("importProgressBtn");
     const importOverlay = document.getElementById("importOverlay");
     const importFile = document.getElementById("importFile");
@@ -690,6 +704,7 @@
       if (!raw || typeof raw !== "object") return null;
       const asObj = (value) => (value && typeof value === "object") ? value : {};
       return {
+        name: String(raw.name || "").trim(),
         unlocked: asObj(raw.unlocked),
         hintUsed: asObj(raw.hintUsed),
         scaffoldUsed: asObj(raw.scaffoldUsed),
@@ -762,7 +777,7 @@
         sessionStorage.setItem("schulazon_skip_reset_v1", "true");
       } catch (_) {}
 
-      const name = cleanName(nameInput.value);
+      const name = cleanName(importData.name || nameInput.value);
       if (name) saveName(name);
 
       window.location.href = "free.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
@@ -808,6 +823,17 @@
       }, 900);
     }
 
+    function openNamedMode(target) {
+      const name = cleanName(nameInput.value);
+      if (name) saveName(name);
+      setNameError(false);
+      const url = target + (name ? `?name=${encodeURIComponent(name)}` : "");
+      document.body.classList.add("is-leaving");
+      window.setTimeout(() => {
+        window.location.href = url;
+      }, 180);
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       nameInput.value = "";
       sessionStorage.removeItem("schulazon_name");
@@ -831,6 +857,8 @@
       modePanel.classList.toggle("open");
     });
 
+    skillcheckBtn.addEventListener("click", () => openNamedMode("pretest.html"));
+    onboardingBtn.addEventListener("click", () => openNamedMode("tutorial.html"));
     importProgressBtn.addEventListener("click", openImportDialog);
 
     importFile.addEventListener("change", (event) => {
