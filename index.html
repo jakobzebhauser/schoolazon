@@ -2,8 +2,37 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Schulazon – Einstieg</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Schulazon – Interaktives SQL-Lernspiel</title>
+
+  <meta
+    name="description"
+    content="Schulazon ist ein webbasiertes SQL-Lernspiel: Löse Aufgaben in einem Onlineshop, schreibe SQL-Abfragen und verbessere Schritt für Schritt deine Datenbankkenntnisse."
+  />
+
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="Jakob Zebhauser" />
+  <meta name="theme-color" content="#0b0f18" />
+
+  <link rel="canonical" href="https://jakobzebhauser.github.io/schoolazon/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:title" content="Schulazon – Interaktives SQL-Lernspiel" />
+  <meta
+    property="og:description"
+    content="Ein webbasiertes SQL-Lernspiel: Bearbeite Shop-Aufgaben, schreibe SQL-Abfragen und trainiere Datenbankkenntnisse praxisnah."
+  />
+  <meta property="og:url" content="https://jakobzebhauser.github.io/schoolazon/" />
+  <meta property="og:site_name" content="Schulazon" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Schulazon – Interaktives SQL-Lernspiel" />
+  <meta
+    name="twitter:description"
+    content="Bearbeite Shop-Aufgaben, schreibe SQL-Abfragen und trainiere Datenbankkenntnisse in einem interaktiven Lernspiel."
+  />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,9 +58,10 @@
     html,
     body {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       margin: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #0b0f18;
     }
@@ -49,8 +79,8 @@
     }
 
     .overlay {
-      position: fixed;
-      inset: 0;
+      position: relative;
+      min-height: 100dvh;
       display: grid;
       place-items: center;
       padding: 22px;
@@ -595,7 +625,7 @@
 </head>
 
 <body>
-  <iframe class="game-bg" src="free.html" aria-hidden="true"></iframe>
+  <iframe class="game-bg" src="free.html" title="Schulazon Vorschau" aria-hidden="true"></iframe>
 
   <main class="overlay">
     <section class="card" role="dialog" aria-modal="true" aria-labelledby="introTitle">
@@ -604,7 +634,7 @@
           <div class="app-icon" aria-hidden="true"></div>
           <div>
             <div class="logo">schul<span>azon</span></div>
-            <div class="sub">Software-Entwicklung</div>
+            <div class="sub">SQL-Lernspiel</div>
           </div>
         </div>
 
@@ -613,7 +643,7 @@
         <h1 id="introTitle">Willkommen im Entwicklerteam.</h1>
 
         <p class="lead">
-          Schulazon ist ein Onlineshop. Im Moment funktioniert er noch nicht. Implementiere fehlende Shop-Buttons mit SQL.
+          Schulazon ist ein interaktives SQL-Lernspiel für den Informatikunterricht. Löse Aufgaben in einem simulierten Onlineshop und trainiere Datenbankabfragen praxisnah.
         </p>
 
         <label for="devName">Entwicklername für den freien Modus</label>
