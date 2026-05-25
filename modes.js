@@ -751,7 +751,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "+",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 25 € und 50 € zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 25 € und 50 € zurückgibt (einschließlich 25 € und 50 €).`,
         starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         sqlRules: {
@@ -766,7 +766,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "+",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 50 € und 100 € zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 50 € und 100 € zurückgibt (einschließlich 50 € und 100 €).`,
         starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         sqlRules: {
@@ -781,7 +781,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "++",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die mindestens eine 5-Sterne-Bewertung haben. Jedes Produkt darf nur einmal erscheinen.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die mindestens eine Bewertung mit genau 5 Sternen haben. Jedes Produkt darf nur einmal erscheinen.`,
         starter:
 `SELECT DISTINCT p.*
 FROM produkte p, bewertungen b
@@ -792,16 +792,11 @@ AND b.sterne = 5;`,
 FROM produkte p, bewertungen b
 WHERE p.id = b.produkt_id
 AND b.sterne = 5;`,
-        sqlRules: {
-          require: ["tablecol:bewertungen:sterne", "eq:produkt_id:id", "dedup"],
-          any: [["cmp:sterne:=:5"], ["invals:sterne:5"], ["range:sterne:5:5"]],
-          message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne = 5 und entferne Duplikate (DISTINCT/GROUP BY)."
-        },
         mode: "rows_set"
       },
 
         "rating-4": {
-          title: "Bewertung 4 Sterne",
+          title: "Bewertung ab 4 Sterne",
           difficulty: "++",
           task:
   `Aufgabe:
@@ -816,11 +811,6 @@ AND b.sterne >= 4;`,
 FROM produkte p, bewertungen b
 WHERE p.id = b.produkt_id
 AND b.sterne >= 4;`,
-        sqlRules: {
-          require: ["tablecol:bewertungen:sterne", "eq:produkt_id:id", "dedup"],
-          any: [["cmp:sterne:>=:4"], ["invals:sterne:4,5"], ["orcmp:sterne:4:5"], ["range:sterne:4:5"]],
-          message: "Verknüpfe produkte.id mit bewertungen.produkt_id, filtere sterne >= 4 und entferne Duplikate (DISTINCT/GROUP BY)."
-        },
         mode: "rows_set"
       },
 
