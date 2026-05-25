@@ -3,11 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Impressum</title>
+  <meta name="robots" content="noindex, follow" />
+  <title>Impressum & Datenschutz</title>
 
   <style>
     * {
       box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
     }
 
     body {
@@ -15,36 +20,58 @@
       font-family: Arial, Helvetica, sans-serif;
       color: #111;
       background: #fff;
-      line-height: 1.6;
+      line-height: 1.55;
+      overflow-x: hidden;
     }
 
     main {
-      max-width: 760px;
-      padding: 32px 24px;
+      width: 100%;
+      max-width: none;
+      padding: 40px 56px 48px;
+      margin: 0;
     }
 
     h1 {
-      margin: 0 0 28px;
+      margin: 0 0 30px;
       font-size: 2rem;
       font-weight: 700;
+      line-height: 1.2;
     }
 
     h2 {
-      margin: 28px 0 8px;
-      font-size: 1.1rem;
+      margin: 30px 0 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    h3 {
+      margin: 22px 0 6px;
+      font-size: 1rem;
       font-weight: 700;
     }
 
     p {
-      margin: 0 0 16px;
+      margin: 0 0 14px;
+      max-width: 1200px;
     }
 
     a {
       color: #111;
     }
 
+    .section {
+      border-top: 1px solid #e5e5e5;
+      padding-top: 22px;
+      margin-top: 26px;
+    }
+
+    .text-block {
+      max-width: 1200px;
+    }
+
     .back-button {
-      margin-top: 32px;
+      margin-top: 36px;
       padding: 10px 16px;
       border: 1px solid #bbb;
       background: #f7f7f7;
@@ -56,28 +83,107 @@
     .back-button:hover {
       background: #eee;
     }
+
+    @media (max-width: 900px) {
+      main {
+        padding: 32px 28px 40px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      main {
+        padding: 28px 18px 36px;
+      }
+
+      h1 {
+        font-size: 1.55rem;
+      }
+
+      h2 {
+        font-size: 1.05rem;
+      }
+
+      p {
+        font-size: 0.98rem;
+      }
+    }
   </style>
 </head>
 
 <body>
   <main>
-    <h1>Impressum</h1>
+    <h1>Impressum & Datenschutz</h1>
 
-    <h2>Angaben gemäß § 5 DDG</h2>
-  
-    <h2>Kontakt</h2>
-    <p>
-      E-Mail:
-      <a href="mailto:j.zebhauser@campus.lmu.de">j.zebhauser@campus.lmu.de</a>
-    </p>
+    <section class="section">
+      <h2>Impressum</h2>
 
-    <h2>Verantwortlich für den Inhalt</h2>
-    <p>
-      Jakob Zebhauser<br />
-      Lerchenauerstraße 41<br />
-      80809 München
-      Deutschland
-    </p>
+      <div class="text-block">
+        <h3>Angaben gemäß § 5 DDG</h3>
+
+        <h3>Kontakt</h3>
+        <p>
+          E-Mail:
+          <a href="mailto:j.zebhauser@campus.lmu.de">j.zebhauser@campus.lmu.de</a>
+        </p>
+
+        <h3>Verantwortlich für den Inhalt</h3>
+        <p>
+          Jakob Zebhauser<br />
+          Lerchenauerstraße 41<br />
+          80809 München<br />
+          Deutschland
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Datenschutz</h2>
+
+      <div class="text-block">
+        <h3>Allgemeines</h3>
+        <p>
+          Diese Website stellt die webbasierte SQL-Lernumgebung „Schulazon“ bereit. Die Anwendung läuft clientseitig im Browser. Es werden durch mich keine personenbezogenen Daten auf einem eigenen Server gespeichert.
+        </p>
+
+        <h3>Hosting über GitHub Pages</h3>
+        <p>
+          Die Website wird über GitHub Pages bereitgestellt. Beim Aufruf der Website können durch GitHub technisch notwendige Zugriffsdaten verarbeitet werden, insbesondere IP-Adresse, Zeitpunkt des Abrufs, aufgerufene Dateien, Browserinformationen und Geräteinformationen. Diese Verarbeitung erfolgt durch GitHub zur Bereitstellung, Sicherheit und Stabilität des Hosting-Dienstes.
+        </p>
+
+        <h3>Lokale Speicherung im Browser</h3>
+        <p>
+          Die Anwendung kann Spielstände, Fortschritte, Aufgabenbearbeitungen, eingegebene SQL-Abfragen, Punktestand, Sitzungsinformationen und Einstellungen lokal im Browser speichern, insbesondere über localStorage und sessionStorage. Diese Daten bleiben grundsätzlich auf dem verwendeten Endgerät und werden nicht automatisch an mich übertragen.
+        </p>
+
+        <h3>Export von Daten</h3>
+        <p>
+          Soweit die Anwendung eine Exportfunktion bereitstellt, erfolgt ein Export nur durch eine bewusste Aktion der nutzenden Person. Erst dadurch können lokal gespeicherte Daten als Datei ausgegeben und außerhalb des Browsers weitergegeben werden.
+        </p>
+
+        <h3>Cookies, Tracking und Analyse</h3>
+        <p>
+          Diese Website verwendet keine eigenen Tracking-Cookies, keine Webanalyse-Dienste, keine Werbung und keine eigenen Nutzerkonten. Eine Profilbildung zu Werbezwecken findet nicht statt.
+        </p>
+
+        <h3>Externe Ressourcen</h3>
+        <p>
+          Die Website kann externe Ressourcen einbinden, insbesondere Schriftarten und JavaScript-Bibliotheken. Beim Abruf solcher Ressourcen können die jeweiligen Anbieter technisch notwendige Zugriffsdaten verarbeiten.
+        </p>
+
+        <h3>Kontakt und Löschung lokaler Daten</h3>
+        <p>
+          Datenschutzbezogene Anfragen können an die oben genannte E-Mail-Adresse gerichtet werden. Lokal gespeicherte Daten können durch Löschen der Website-Daten im Browser entfernt werden.
+        </p>
+
+        <p>
+          Stand: Mai 2026.
+        </p>
+      </div>
+    </section>
 
     <button class="back-button" type="button" onclick="history.back()">
       Zurück
