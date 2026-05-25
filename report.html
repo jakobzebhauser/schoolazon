@@ -62,7 +62,7 @@
     </div>
 
     <div class="small" style="margin-top:10px;">
-      Output-Spalten basieren auf dem Schema: <code>pretest</code>/<code>tutorial</code>/<code>free_mode</code>/<code>posttest</code> inkl. <code>tasks</code>-Summen (Versuche/Fehlversuche/Tipps/Codegerüst).<br>
+      Output-Spalten basieren auf dem Schema: <code>pretest</code>/<code>tutorial</code>/<code>free_mode</code>/<code>posttest</code> inkl. <code>tasks</code>-Summen (Versuche/Fehlversuche/Codegerüst).<br>
       Für „Inaktivität“ nutze ich <code>free_mode.inactivity.total_ms</code> (Sekunden).
     </div>
   </div>
@@ -182,7 +182,6 @@
       // Task-Summen über alle Buttons
       { key: "sum_attempts", name: "Versuche gesamt (alle Tasks)", type: "num" },
       { key: "sum_wrong", name: "Fehlversuche gesamt (alle Tasks)", type: "num" },
-      { key: "sum_hints", name: "Tipps gesamt (alle Tasks)", type: "num" },
       { key: "sum_scaffold", name: "Codegerüst gesamt (alle Tasks)", type: "num" },
       { key: "sum_solution_viewed", name: "Lösung angesehen (Anzahl Tasks)", type: "num" },
     ];
@@ -483,7 +482,6 @@
         { key: "avg_time_s", name: "Ø Zeit (s)", type: "num" },
         { key: "avg_attempts", name: "Ø Versuche", type: "num" },
         { key: "avg_wrong", name: "Ø Fehlversuche", type: "num" },
-        { key: "avg_hints", name: "Ø Tipps", type: "num" },
         { key: "avg_scaffold", name: "Ø Codegerüst", type: "num" },
         { key: "solution_viewed_share", name: "Ø Lösung angesehen (0–1)", type: "num" },
       ];

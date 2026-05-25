@@ -667,7 +667,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "++",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Elektronik“ zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die zur Kategorie „Elektronik“ gehören. Nutze dafür die Beziehung zwischen Produkten und Kategorien.`,
           starter:
   `SELECT p.*
   FROM produkte p, kategorien k
@@ -690,7 +690,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "++",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Haushalt“ zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die zur Kategorie „Haushalt“ gehören. Nutze dafür die Beziehung zwischen Produkten und Kategorien.`,
           starter:
   `SELECT p.*
   FROM produkte p, kategorien k
@@ -713,7 +713,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "++",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte der Kategorie „Sport“ zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, die zur Kategorie „Sport“ gehören. Nutze dafür die Beziehung zwischen Produkten und Kategorien.`,
           starter:
   `SELECT p.*
   FROM produkte p, kategorien k
@@ -736,7 +736,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "+",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis unter 25 € zurückgibt.`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Preis kleiner als 25 € ist.`,
         starter: "SELECT * FROM produkte WHERE preis < 25;",
         refSql: "SELECT * FROM produkte WHERE preis < 25;",
         sqlRules: {
@@ -751,7 +751,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "+",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 25 € und 50 € zurückgibt (einschließlich 25 € und 50 €).`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Preis mindestens 25 € und höchstens 50 € beträgt.`,
         starter: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         refSql: "SELECT * FROM produkte WHERE preis >= 25 AND preis <= 50;",
         sqlRules: {
@@ -766,7 +766,7 @@ ORDER BY verkäufe DESC;`,
           difficulty: "+",
           task:
   `Aufgabe:
-  Erstelle eine Abfrage, die alle Spalten aller Produkte mit einem Preis zwischen 50 € und 100 € zurückgibt (einschließlich 50 € und 100 €).`,
+  Erstelle eine Abfrage, die alle Spalten aller Produkte zurückgibt, deren Preis mindestens 50 € und höchstens 100 € beträgt.`,
         starter: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         refSql: "SELECT * FROM produkte WHERE preis >= 50 AND preis <= 100;",
         sqlRules: {
@@ -964,14 +964,6 @@ renderShell() {
                       </div>
                     </div>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="hintBtn" type="button" aria-label="Tipp" title="Tipp anzeigen">
-  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-    <path d="M9 18h6M10 22h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    <path d="M8.5 14.5c-.9-1-2.5-2.2-2.5-4.8a6 6 0 1 1 12 0c0 2.6-1.6 3.8-2.5 4.8-.6.7-.9 1.4-1 2.5h-3c-.1-1.1-.4-1.8-1-2.5Z"
-          fill="none" stroke="currentColor" stroke-width="2"/>
-</svg>
-</button>
-
                    <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-1)">
   <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
 </button>
@@ -987,17 +979,6 @@ renderShell() {
                   </div>
                   <div class="task3-body" id="taskBody"></div>
                 </div>
-
-                
-<div class="task3-card task3-hintCard" id="hintCard" aria-hidden="true">
-  <div class="task3-hintHead">
-    <div class="task3-cardTitle" id="hintTitle">Tipp</div>
-  </div>
-  <pre class="task3-hintBody" id="hintText" style="white-space:pre-wrap; margin:0;"></pre>
-  <div class="task3-hintActions">
-    <button class="btn btn-primary" id="hintConfirm" type="button" style="display:none;">Tipp anzeigen (-1)</button>
-  </div>
-</div>
 
 <div class="task3-card task3-hintCard" id="scaffoldCard" aria-hidden="true">
   <div class="task3-hintHead">
@@ -1144,13 +1125,13 @@ renderShell() {
           <div class="overlay-panel">
             <div class="overlay-panel-inner">
               <div class="overlay-top">
-                <h3 class="overlay-title" id="confirmTitle">Tipp anzeigen?</h3>
+                <h3 class="overlay-title" id="confirmTitle">Bestätigen</h3>
                 <button class="btn btn-ghost" id="confirmClose" type="button">✕</button>
               </div>
-              <div class="task-body" id="confirmText">Wenn du den Tipp öffnest, verlierst du 1 Score‑Punkt. Trotzdem anzeigen?</div>
+              <div class="task-body" id="confirmText">Aktion bestätigen.</div>
               <div style="display:flex; justify-content:flex-end; gap:10px;">
                 <button class="btn btn-ghost" id="confirmNo" type="button">Abbrechen</button>
-                <button class="btn btn-primary" id="confirmYes" type="button">Tipp anzeigen (-1)</button>
+                <button class="btn btn-primary" id="confirmYes" type="button">OK</button>
               </div>
             </div>
           </div>
@@ -1250,7 +1231,7 @@ renderShell() {
     this._confirmAction = null;
     this.spickerUsed = false;
 
-    // Hint / Codeger\u00fcst cards
+    // Codeger\u00fcst card
     this.hintCardEl = this.root.querySelector('#hintCard');
     this.hintTitleEl = this.root.querySelector('#hintTitle');
     this.hintTextEl = this.root.querySelector('#hintText');
@@ -1274,7 +1255,7 @@ renderShell() {
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
-    this.hintBtn.addEventListener('click', () => this.requestHint());
+    this.hintBtn?.addEventListener('click', () => this.requestHint());
     this.scaffoldBtn?.addEventListener('click', () => this.requestScaffold());
 
 
@@ -1671,7 +1652,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       const cat = this.escapeHtml(this.getCategoryLabel(id));
       const tags = [];
       if (this.unlockedSource?.[id] === "tutorial") tags.push('<span class="spicker-tag tutorial">Einarbeitung</span>');
-      if (this.hintUsed?.[id]) tags.push('<span class="spicker-tag hint">Tipp</span>');
       if (this.scaffoldUsed?.[id]) tags.push('<span class="spicker-tag scaffold">Codeger\u00fcst</span>');
       const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.join('')}</div>` : '';
       return `
@@ -2394,43 +2374,14 @@ async unlockCurrent() {
     this.hintEl.innerHTML = '';
   }
 
-  /* ---------- Tipp-System (mit Score-Abzug) ---------- */
+  /* ---------- Codegerüst-System ---------- */
 
   requestSpicker() {
     this.openSpicker();
   }
 
   requestHint() {
-    if (!this.currentId) return;
-    const id = this.currentId;
-
-    const alreadyUsed = !!this.hintUsed?.[id];
-    const isOpen = !!this.hintCardEl && (this.hintCardEl.classList.contains('show') || this.hintCardEl.classList.contains('open'));
-    const isPending = this._pendingHintTaskId === id;
-
-    // 1) Wenn Tipp schon genutzt: Tipp-Card togglen (ohne Pop-up).
-    if (alreadyUsed) {
-      this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
-      return;
-    }
-
-    // 2) Wenn Confirm-Card bereits offen: erneut klicken schließt sie.
-    if (isOpen && isPending) {
-      this.closeHintOverlay();
-      return;
-    }
-
-    // 3) Erstes Öffnen kostet 1 Score → inline bestätigen (kein Pop-up).
-    this._pendingHintTaskId = id;
-    const score = this.computeScore();
-    const msg =
-      `Dieser Tipp kostet 1 Score.
-` +
-      `Aktueller Score: ${score}.
-
-` +
-      `Wenn du fortf\u00e4hrst, wird dein Score um 1 reduziert und du siehst den Tipp f\u00fcr diese Aufgabe dauerhaft.`;
-    this.openHintOverlay(msg, { mode: 'confirm', title: 'Tipp anzeigen?', confirmLabel: 'Tipp anzeigen (-1)' });
+    this.closeHintOverlay();
   }
 
   requestScaffold() {
@@ -2515,16 +2466,8 @@ async unlockCurrent() {
 
 
   confirmHint() {
-    const id = this._pendingHintTaskId;
-    if (!id) return;
-
-    // Abzug nur 1x pro Aufgabe
-    this.hintUsed[id] = true;
-    this.persistProgressState();
-    this.updateProgressUI();
-
     this._pendingHintTaskId = null;
-    this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
+    this.closeHintOverlay();
   }
 
   confirmScaffold() {
@@ -2540,31 +2483,17 @@ async unlockCurrent() {
   }
 
   openHintOverlay(text, opts = {}) {
-    if (!this.hintCardEl || !this.hintTextEl) return;
-
-    const mode = (opts && opts.mode) ? String(opts.mode) : 'hint';
-    const isConfirm = mode === 'confirm';
-    const title = (opts && opts.title) ? String(opts.title) : (isConfirm ? 'Tipp anzeigen?' : 'Tipp');
-    const confirmLabel = (opts && opts.confirmLabel) ? String(opts.confirmLabel) : 'Tipp anzeigen (-1)';
-
-    if (this.hintTitleEl) this.hintTitleEl.textContent = title;
-    if (this.hintConfirmBtn) this.hintConfirmBtn.style.display = isConfirm ? '' : 'none';
-    if (this.hintConfirmBtn && isConfirm) this.hintConfirmBtn.textContent = confirmLabel;
-
-    this.hintTextEl.textContent = text || '';
-    this.hintCardEl.classList.add('show', 'open');
-    try { this.hintCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+    this.closeHintOverlay();
   }
 
   closeHintOverlay() {
+    this._pendingHintTaskId = null;
     if (!this.hintCardEl || !this.hintTextEl) return;
     this.hintCardEl.classList.remove('show', 'open');
     this.hintTextEl.textContent = '';
 
     if (this.hintConfirmBtn) this.hintConfirmBtn.style.display = 'none';
-    if (this.hintTitleEl) this.hintTitleEl.textContent = 'Tipp';
-
-    this._pendingHintTaskId = null;
+    if (this.hintTitleEl) this.hintTitleEl.textContent = 'Hinweis';
   }
 
   openScaffoldCard(text, opts = {}) {
@@ -2593,8 +2522,8 @@ async unlockCurrent() {
     this._pendingScaffoldTaskId = null;
   }
 
-  // Backwards‑compat hook (alte API), jetzt als Card
-  showTaskHint(text) { this.openHintOverlay(text, { mode: 'hint', title: 'Tipp' }); }
+  // Backwards-compat hook (alte API), im freien Modus ohne sichtbare Ausgabe.
+  showTaskHint(text) { this.closeHintOverlay(); }
   hideTaskHint() {
     this.closeHintOverlay();
     this.closeScaffoldCard();
@@ -2607,11 +2536,7 @@ async unlockCurrent() {
       return;
     }
 
-    if (this.hintUsed?.[id]) {
-      this.openHintOverlay(this.getHintText(id), { mode: 'hint', title: 'Tipp' });
-    } else {
-      this.closeHintOverlay();
-    }
+    this.closeHintOverlay();
 
     if (this.scaffoldUsed?.[id]) {
       this.openScaffoldCard(this.getScaffoldText(id), { mode: 'hint', title: 'Codeger\u00fcst' });
@@ -2772,11 +2697,10 @@ if (H[taskId]) return H[taskId];
   computeScore() {
     const ids = Object.keys(this.TASKS || {});
     const base = ids.reduce((acc, id) => acc + (this.unlocked?.[id] ? this.getTaskPoints(id) : 0), 0);
-    const hints = Object.keys(this.hintUsed || {}).filter(k => !!this.hintUsed[k]).length;
     const scaffolds = Object.keys(this.scaffoldUsed || {}).filter(k => !!this.scaffoldUsed[k]).length;
     const bonus = this.sqliDone ? 10 : 0;
     const scaffoldPenalty = scaffolds * 1;
-    return Math.max(0, base + bonus - hints - scaffoldPenalty);
+    return Math.max(0, base + bonus - scaffoldPenalty);
   }
 
   pulseLocked(el) {
