@@ -4304,3 +4304,89 @@ body[data-mode="free"] #auxShell .task3-closeBtn{
     padding: 14px !important;
   }
 }
+
+/* Free mode: clearer Codegerüst action + help dialog closer to index popup */
+body[data-mode="free"] .task-view.task-v3 .task3-codeScaffoldBtn{
+  width: auto !important;
+  min-width: 0;
+  height: 38px;
+  padding: 0 13px 0 11px;
+  gap: 7px;
+  border: 1px solid var(--work-line) !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.64) !important;
+  color: rgba(11,15,24,.82) !important;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] .task-view.task-v3 .task3-codeScaffoldBtn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(0,122,255,.22) !important;
+  background: rgba(255,255,255,.92) !important;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] .task3-codeScaffoldIcon{
+  font-family: var(--mono);
+  font-weight: 950;
+  font-size: 13px;
+  line-height: 1;
+}
+
+body[data-mode="free"] .task3-codeScaffoldText{
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body[data-mode="free"] .help-panel{
+  width: min(560px, calc(100vw - 32px)) !important;
+  padding: 28px !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(255,255,255,.58) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90)) !important;
+  box-shadow: 0 34px 110px rgba(0,0,0,.34) !important;
+}
+
+body[data-mode="free"] .help-head{
+  margin-bottom: 14px;
+}
+
+body[data-mode="free"] .help-title{
+  font-size: 28px;
+  letter-spacing: -0.025em;
+}
+
+body[data-mode="free"] .help-grid{
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+
+body[data-mode="free"] .help-card{
+  min-height: auto !important;
+  border: 1px solid rgba(10,15,24,.08) !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.76) !important;
+  box-shadow: 0 12px 28px rgba(10,15,24,.08) !important;
+  padding: 14px 15px 13px !important;
+}
+
+body[data-mode="free"] .help-footer{
+  margin-top: 16px;
+}
+
+@media (max-width: 620px){
+  body[data-mode="free"] .task-view.task-v3 .task3-codeScaffoldBtn{
+    height: 36px;
+    padding: 0 10px;
+  }
+
+  body[data-mode="free"] .task3-codeScaffoldText{
+    display: none;
+  }
+
+  body[data-mode="free"] .help-panel{
+    padding: 20px !important;
+  }
+}

@@ -964,8 +964,9 @@ renderShell() {
                       </div>
                     </div>
 
-                   <button class="btn btn-ghost task3-iconBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-1)">
-  <span style="font-family:var(--mono); font-weight:900;">&lt;/&gt;</span>
+                   <button class="btn btn-ghost task3-iconBtn task3-codeScaffoldBtn" id="scaffoldBtn" type="button" aria-label="Codeger\u00fcst" title="Codeger\u00fcst anzeigen (-1)">
+  <span class="task3-codeScaffoldIcon" aria-hidden="true">&lt;/&gt;</span>
+  <span class="task3-codeScaffoldText">Codeger&uuml;st</span>
 </button>
 
 
