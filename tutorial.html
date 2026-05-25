@@ -960,6 +960,112 @@ pre.sql.sqlFill .blank input{
     @keyframes onboardingLeave {
       to { opacity: 0; transform: translateY(14px) scale(.985); }
     }
+
+    .name-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background:
+        radial-gradient(760px 480px at 18% 12%, rgba(0,122,255,.28), transparent 60%),
+        radial-gradient(720px 500px at 82% 18%, rgba(240,136,4,.22), transparent 58%),
+        radial-gradient(760px 540px at 54% 96%, rgba(175,82,222,.18), transparent 60%),
+        rgba(6,9,15,.50);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .name-dialog {
+      position: relative;
+      isolation: isolate;
+      width: min(430px, 100%);
+      padding: 26px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,.50);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90));
+      box-shadow: 0 34px 110px rgba(0,0,0,.34);
+      overflow: hidden;
+      animation: onboardingCardIn .42s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .name-dialog::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      z-index: 0;
+      background:
+        radial-gradient(340px 150px at 18% 0%, rgba(240,136,4,.24), transparent 68%),
+        radial-gradient(320px 150px at 90% 0%, rgba(0,122,255,.20), transparent 70%);
+      pointer-events: none;
+    }
+
+    .name-dialog > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .name-dialog h2 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 2.4vw, 32px);
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+    }
+
+    .name-dialog p {
+      margin: 0 0 16px;
+      color: rgba(11,15,24,.62);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .name-dialog label {
+      display: block;
+      margin: 0 0 8px;
+      color: rgba(11,15,24,.88);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .name-dialog input {
+      width: 100%;
+      height: 50px;
+      border: 1px solid rgba(10,15,24,.13);
+      border-radius: 17px;
+      padding: 0 15px;
+      outline: none;
+      background: rgba(255,255,255,.94);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .name-dialog input:focus {
+      border-color: rgba(0,122,255,.55);
+      box-shadow: 0 0 0 5px rgba(0,122,255,.16);
+    }
+
+    .name-error {
+      display: none;
+      margin: 8px 0 0;
+      color: #b42318;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .name-error.show {
+      display: block;
+    }
+
+    .name-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 
@@ -1289,19 +1395,17 @@ pre.sql.sqlFill .blank input{
       title:"Wiederholung",
       context: withName("kurze Mission, klare Schritte."),
       story: [
-        "Willkommen bei Schulazon! Bevor du in den Shop eintauchst, wollen wir mit dir noch einmal die Grundlagen von SQL auffrischen.",
-        "In dieser geführten Einarbeitung lernst du die wichtigsten Bausteine von SQL-Abfragen kennen – und wie du sie anwendest, um Daten aus einer Datenbank abzurufen."
+        "In dieser Einarbeitung wiederholst du die SQL-Bausteine, die du direkt im Shop brauchst."
       ]
     },
 
     {
       id:"intro",
       title:"Einleitung",
-      context: withName("wir starten mit dem Grundmuster – das ist die Schablone für fast alle Abfragen."),
+      context: withName("wir starten mit dem Grundmuster."),
       nameInTheory: true,
       theory: [
-        "Eine SQL-Abfrage liefert immer eine Ergebnistabelle. Du baust sie aus festen Bausteinen zusammen: SELECT legt die Spalten fest, FROM die Tabellen, WHERE filtert Zeilen, ORDER BY sortiert.",
-        "Merksatz: Erst Daten auswählen (FROM), dann Zeilen filtern (WHERE), dann sortieren (ORDER BY). Gruppierung (GROUP BY/HAVING) ist ein eigener Schritt."
+        "Grundmuster: SELECT legt die Ausgabespalten fest, FROM die Tabelle, WHERE filtert Zeilen, ORDER BY sortiert das Ergebnis."
       ],
       table: `
         <div class="schemaWrap">
@@ -1344,8 +1448,7 @@ pre.sql.sqlFill .blank input{
       title:"SELECT & FROM",
       context: "Damit legst du fest, welche Spalten aus welcher Tabelle im Ergebnis stehen.",
       theory: [
-        "SELECT bestimmt die Spalten im Ergebnis. Das Sternchen (*) bedeutet \"alle Spalten\".",
-        "DISTINCT entfernt Duplikate in der Ausgabespalte (gibt jeden Wert nur einmal aus). LIMIT begrenzt die Anzahl der Zeilen."
+        "SELECT bestimmt die Ausgabespalten, FROM die Tabelle. * steht für alle Spalten; DISTINCT entfernt Duplikate; LIMIT begrenzt die Zeilenzahl."
       ],
       sqlTone: "tone-blue",
       sqlBlocks: [
@@ -1476,8 +1579,7 @@ pre.sql.sqlFill .blank input{
       context: "Mit WHERE wählst du die passenden Zeilen aus.",
       nameInTheory: true,
       theory: [
-        "WHERE filtert einzelne Zeilen: Nur Datensätze, die die Bedingung erfüllen, kommen ins Ergebnis.",
-        "Mehrere Bedingungen kombinierst du mit AND (beide wahr) und OR (mindestens eine wahr). NOT kehrt eine Bedingung um."
+        "WHERE filtert Zeilen nach Bedingungen. AND verlangt beide Bedingungen, OR mindestens eine; NOT kehrt die Bedingung um."
       ],
       table: `
         <div class="schemaWrap">
@@ -1537,10 +1639,9 @@ pre.sql.sqlFill .blank input{
     {
       id:"order",
       title:"ORDER BY (Sortieren)",
-      context: "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
+      context: "ORDER BY legt die Reihenfolge der Ergebnistabelle fest.",
       theory: [
-        "ORDER BY sortiert das Ergebnis nach einer oder mehreren Spalten.",
-        "ASC sortiert aufsteigend (z. B. billig -> teuer), DESC absteigend (teuer -> billig)."
+        "ASC sortiert aufsteigend, DESC absteigend."
       ],
       sqlTone: "tone-blue",
       sqlBlocks: [
@@ -1630,11 +1731,10 @@ pre.sql.sqlFill .blank input{
     {
       id:"rel_bundle",
       title:"Verbund: Schlüssel, 1:n und n:m",
-      context: "So verbindest du Tabellen sauber (und verstehst, warum es funktioniert).",
+      context: "So verbindest du Tabellen über Schlüssel.",
       theory: [
-        "Ein Primärschlüssel identifiziert einen Datensatz eindeutig (z. B. kategorien.id). Ein Fremdschlüssel speichert den Primärschlüssel einer anderen Tabelle (z. B. produkte.kategorie_id → kategorien.id).",
-        "Bei 1:n liegt der Fremdschlüssel auf der n-Seite: Viele Produkte gehören zu einer Kategorie.",
-        "Bei n:m brauchst du eine Beziehungstabelle: z. B. warenkorb verbindet nutzer und produkte; sie speichert beide Fremdschlüssel (n:m wird zu zwei 1:n)."
+        "Primärschlüssel identifizieren Datensätze eindeutig; Fremdschlüssel verweisen auf Primärschlüssel anderer Tabellen.",
+        "Bei 1:n liegt der Fremdschlüssel auf der n-Seite. Bei n:m verbindet eine Beziehungstabelle beide Seiten über Fremdschlüssel."
       ],
       sqlTone: "tone-teal",
       sqlMarks: { id: "pkTok", kategorie_id: "fkTok", nutzer_id: "fkTok", produkt_id: "fkTok" },
@@ -1663,7 +1763,7 @@ pre.sql.sqlFill .blank input{
             <button class="pillBtn" id="toggleFK" type="button">FK: an</button>
           </div>
           <div style="margin-top:8px; font-size: var(--small); color: rgba(11,15,24,.68); line-height: 1.55;">
-            Du kannst die Schluesselanzeige (PK/FK) jederzeit ein- und ausblenden.
+            Du kannst die Schlüsselanzeige (PK/FK) jederzeit ein- und ausblenden.
           </div>
         </div>
       `
@@ -1698,7 +1798,7 @@ pre.sql.sqlFill .blank input{
       title:"Ende",
       finish: true,
       context: withName("Geführte Einarbeitung abgeschlossen. Jetzt kannst du im freien Modus starten."),
-      theory: ["Wechsle jetzt in den freien Modus und schalte so viele Buttons frei wie möglich."]
+      theory: ["Starte jetzt den freien Modus und schalte die Shop-Funktionen frei."]
     }
   ];
 
@@ -2381,15 +2481,20 @@ function renderInfo(p){
 
   function goToFreeMode(opts = {}){
     const completed = !!(opts && opts.completed);
-    if(completed){
-      unlockAllTutorialTasks();
-    } else {
-      const page = pages[state.i] || {};
-    }
-    const n = (state.name || "").toString().trim();
-    try { sessionStorage.setItem("schulazon_skip_reset_v1", "true"); } catch {}
-    const url = "free.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
-    smoothGo(url);
+    requestFreeModeName((n)=>{
+      state.name = n;
+      if(completed){
+        unlockAllTutorialTasks();
+      } else {
+        const page = pages[state.i] || {};
+      }
+      try {
+        sessionStorage.setItem("schulazon_skip_reset_v1", "true");
+        sessionStorage.setItem("schulazon_name", n);
+        localStorage.setItem("schulazon_name", n);
+      } catch {}
+      smoothGo(`free.html?name=${encodeURIComponent(n)}`);
+    });
   }
 
   function smoothGo(url){
@@ -2397,6 +2502,63 @@ function renderInfo(p){
     window.setTimeout(() => {
       window.location.href = url;
     }, 180);
+  }
+
+  function cleanFreeModeName(value){
+    return String(value || "").trim().replace(/\s+/g, " ");
+  }
+
+  function clearStoredFreeModeName(){
+    try{
+      sessionStorage.removeItem("schulazon_name");
+      localStorage.removeItem("schulazon_name");
+    }catch(_){}
+  }
+
+  function requestFreeModeName(onSubmit){
+    clearStoredFreeModeName();
+    document.querySelector(".name-modal")?.remove();
+
+    const wrap = document.createElement("div");
+    wrap.className = "name-modal";
+    wrap.innerHTML = `
+      <form class="name-dialog" id="freeNameForm" novalidate>
+        <h2>Wie heißt du im freien Modus?</h2>
+        <p>Gib deinen Entwicklernamen ein. Dieser Name wird nur für den freien Modus übernommen.</p>
+        <label for="freeModeName">Entwicklername</label>
+        <input id="freeModeName" type="text" maxlength="40" autocomplete="off" />
+        <div class="name-error" id="freeNameError">Bitte gib einen Namen ein.</div>
+        <div class="name-actions">
+          <button class="btn" id="freeNameCancel" type="button">Abbrechen</button>
+          <button class="btn primary" type="submit">Weiter</button>
+        </div>
+      </form>
+    `;
+    document.body.appendChild(wrap);
+
+    const form = wrap.querySelector("#freeNameForm");
+    const input = wrap.querySelector("#freeModeName");
+    const error = wrap.querySelector("#freeNameError");
+    const cancel = wrap.querySelector("#freeNameCancel");
+
+    window.setTimeout(()=>input.focus(), 0);
+
+    cancel.addEventListener("click", ()=>{
+      wrap.remove();
+    });
+
+    form.addEventListener("submit", (event)=>{
+      event.preventDefault();
+      const name = cleanFreeModeName(input.value);
+      if(!name){
+        error.classList.add("show");
+        input.focus();
+        return;
+      }
+      error.classList.remove("show");
+      wrap.remove();
+      onSubmit(name);
+    });
   }
 
   async function toggleFullscreen(){
