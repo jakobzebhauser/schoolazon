@@ -55,13 +55,47 @@ const ALL_TASK_IDS = [
 ];
 
 /* ===========================
-   Free-Mode-Start: vorhandenen Spielstand nicht automatisch löschen.
+   Free-Mode-Start: normal frisch starten, Import/Tutorial-Übergang behalten.
    =========================== */
-(function initFreeModeStateOnLoad(){
+function isTopLevelFreeModePage() {
   try {
     const isFree = (document.body && document.body.dataset && document.body.dataset.mode) === "free";
-    if (!isFree) return;
-    try { sessionStorage.removeItem("schulazon_skip_reset_v1"); } catch (_) {}
+    if (!isFree) return false;
+    return window.self === window.top;
+  } catch (_) {
+    return false;
+  }
+}
+
+function clearFreeModeStartState() {
+  const keys = [
+    "schulazon_name",
+    "schulazon_unlocked_v1",
+    "schulazon_unlocked_source_v1",
+    "schulazon_hint_used_v1",
+    "schulazon_scaffold_used_v1",
+    "schulazon_solution_sql_v1",
+    "schulazon_sqli_done_v1",
+    "schulazon_spicker_used_v1",
+    "schulazon_free_resume_v1",
+    "schulazon_free_header_collapsed_v1"
+  ];
+
+  try { delete window.SCHULAZON_NAME; } catch (_) {}
+
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      for (const key of keys) storage.removeItem(key);
+    } catch (_) {}
+  }
+}
+
+(function initFreeModeStateOnLoad(){
+  try {
+    if (!isTopLevelFreeModePage()) return;
+    const preserveExistingState = sessionStorage.getItem("schulazon_skip_reset_v1") === "true";
+    sessionStorage.removeItem("schulazon_skip_reset_v1");
+    if (!preserveExistingState) clearFreeModeStartState();
   } catch (_) {}
 })();
 
