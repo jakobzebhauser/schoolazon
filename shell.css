@@ -3941,3 +3941,366 @@ body[data-mode="free"] #auxShell .spicker-item{
     align-items: stretch;
   }
 }
+
+/* ===============================
+   Final topbar button polish
+   Visual-only: keeps existing IDs and event listeners intact.
+   =============================== */
+body[data-mode="free"] .topbar{
+  gap: 12px;
+}
+
+body[data-mode="free"] .status{
+  gap: 10px;
+}
+
+body[data-mode="free"] .pillBtn,
+body[data-mode="free"] .topbar-menu > summary{
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 44px;
+  padding: 11px 15px;
+  border: 0 !important;
+  border-radius: 17px !important;
+  background: linear-gradient(180deg, #ffb14a 0%, #f08804 100%) !important;
+  color: #171103 !important;
+  font-weight: 950;
+  letter-spacing: 0;
+  box-shadow:
+    0 16px 34px rgba(240,136,4,.24),
+    inset 0 1px 0 rgba(255,255,255,.42) !important;
+  cursor: pointer;
+  transform: translateY(0);
+  transition:
+    transform .16s ease,
+    box-shadow .18s ease,
+    filter .18s ease,
+    background .18s ease;
+}
+
+body[data-mode="free"] .pillBtn::after,
+body[data-mode="free"] .topbar-menu > summary::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.42) 48%, transparent 100%);
+  transform: translateX(-130%) skewX(-16deg);
+  opacity: .82;
+  transition: transform .55s ease;
+  pointer-events: none;
+}
+
+body[data-mode="free"] .pillBtn:hover,
+body[data-mode="free"] .topbar-menu > summary:hover,
+body[data-mode="free"] .topbar-menu[open] > summary{
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #ffc06c 0%, #f08804 100%) !important;
+  box-shadow:
+    0 20px 42px rgba(240,136,4,.30),
+    inset 0 1px 0 rgba(255,255,255,.48) !important;
+  filter: saturate(1.03);
+}
+
+body[data-mode="free"] .pillBtn:hover::after,
+body[data-mode="free"] .topbar-menu > summary:hover::after{
+  transform: translateX(130%) skewX(-16deg);
+}
+
+body[data-mode="free"] .pillBtn:active,
+body[data-mode="free"] .topbar-menu > summary:active{
+  transform: translateY(0);
+  box-shadow:
+    0 11px 24px rgba(240,136,4,.22),
+    inset 0 1px 0 rgba(255,255,255,.38) !important;
+}
+
+body[data-mode="free"] .pillBtn:focus-visible,
+body[data-mode="free"] .topbar-menu > summary:focus-visible{
+  outline: none;
+  box-shadow:
+    0 0 0 5px rgba(0,122,255,.16),
+    0 18px 38px rgba(240,136,4,.28),
+    inset 0 1px 0 rgba(255,255,255,.48) !important;
+}
+
+body[data-mode="free"] .pillBtn.icon-btn::before{
+  background: #171103 !important;
+  filter: drop-shadow(0 5px 8px rgba(23,17,3,.18)) !important;
+}
+
+body[data-mode="free"] .pillBtn.icon-btn:hover::before{
+  background: #171103 !important;
+  filter: drop-shadow(0 6px 10px rgba(23,17,3,.22)) !important;
+}
+
+body[data-mode="free"] .topbar-menu > summary::before{
+  background: #171103 !important;
+  filter: drop-shadow(0 5px 8px rgba(23,17,3,.18)) !important;
+}
+
+body[data-mode="free"] .topbar-menu[open] > summary::before{
+  background: #171103 !important;
+  filter: drop-shadow(0 6px 10px rgba(23,17,3,.22)) !important;
+}
+
+body[data-mode="free"] .menu-panel{
+  border-color: rgba(240,136,4,.18) !important;
+  box-shadow: 0 28px 78px rgba(10,15,24,.20), 0 10px 34px rgba(240,136,4,.12) !important;
+}
+
+body[data-mode="free"] .menu-panel .btn{
+  min-height: 43px;
+  border: 1px solid rgba(10,15,24,.10) !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.78) !important;
+  color: rgba(11,15,24,.88) !important;
+  box-shadow: none !important;
+  transition: transform .16s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+body[data-mode="free"] .menu-panel .btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(240,136,4,.34) !important;
+  background:
+    linear-gradient(90deg, rgba(240,136,4,.16), rgba(255,255,255,.90)) !important;
+  box-shadow: 0 12px 24px rgba(240,136,4,.12) !important;
+}
+
+body[data-mode="free"] .menu-panel .btn-locked,
+body[data-mode="free"] .menu-panel .btn-locked:hover{
+  color: rgba(11,15,24,.46) !important;
+  border-color: rgba(10,15,24,.08) !important;
+  background: rgba(10,15,24,.045) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+body[data-mode="free"] .topbar-progress,
+body[data-mode="free"] .topbar-score,
+body[data-mode="free"] .pill#pillName{
+  border-color: rgba(240,136,4,.18) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,248,238,.78)) !important;
+}
+
+body[data-mode="free"] .progress-fill{
+  background: linear-gradient(90deg, #007aff 0%, #af52de 52%, #f08804 100%) !important;
+}
+
+@media (max-width: 720px){
+  body[data-mode="free"] .pillBtn,
+  body[data-mode="free"] .topbar-menu > summary{
+    min-height: 40px;
+    padding: 9px 12px;
+    border-radius: 15px !important;
+  }
+
+  body[data-mode="free"] .status{
+    gap: 8px;
+  }
+}
+
+/* ===============================
+   Final aux workspace alignment
+   Visual-only: DB schema, spicker, solutions and bonus match task panels.
+   =============================== */
+body[data-mode="free"] #taskShell,
+body[data-mode="free"] #auxShell{
+  width: 100%;
+  max-width: none;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+}
+
+body[data-mode="free"] #auxShell.aux-shell{
+  padding: 0 !important;
+  gap: 14px !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-view,
+body[data-mode="free"] #auxShell .schema-view,
+body[data-mode="free"] #auxShell .solutions-view,
+body[data-mode="free"] #auxShell .bonus-view{
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  min-height: 0;
+  gap: 14px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+body[data-mode="free"] #auxShell .bonus-view .task3-surface{
+  width: 100%;
+  max-width: none;
+  padding: 0 !important;
+  gap: 14px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-head,
+body[data-mode="free"] #auxShell .bonus-view .task3-header{
+  width: 100%;
+  min-height: auto;
+  border-radius: var(--work-radius-md) !important;
+  border: 1px solid var(--work-line) !important;
+  background:
+    radial-gradient(320px 120px at 14% 0%, rgba(240,136,4,.13), transparent 72%),
+    radial-gradient(320px 120px at 90% 0%, rgba(0,122,255,.11), transparent 72%),
+    rgba(255,255,255,.64) !important;
+  box-shadow: none !important;
+  padding: 16px 18px !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-title,
+body[data-mode="free"] #auxShell .bonus-view .task3-title{
+  margin: 0;
+  font-size: clamp(20px, 1.35vw + 14px, 28px) !important;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 950;
+  color: rgba(11,15,24,.94);
+}
+
+body[data-mode="free"] #auxShell .spicker-sub,
+body[data-mode="free"] #auxShell .bonus-view .task3-kicker,
+body[data-mode="free"] #auxShell .bonus-view .task3-cardMeta,
+body[data-mode="free"] #auxShell .spicker-block-title{
+  color: var(--work-text-muted) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-list,
+body[data-mode="free"] #auxShell .schema-grid,
+body[data-mode="free"] #auxShell .schema-rel-list,
+body[data-mode="free"] #auxShell .spicker-chapter{
+  width: 100%;
+  max-width: none;
+  gap: 14px !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-content,
+body[data-mode="free"] #auxShell .spicker-item,
+body[data-mode="free"] #auxShell .schema-card,
+body[data-mode="free"] #auxShell .schema-rel-item,
+body[data-mode="free"] #auxShell .spicker-block,
+body[data-mode="free"] #auxShell .bonus-view .task3-card,
+body[data-mode="free"] #auxShell .bonus-view #sideBody{
+  width: 100%;
+  max-width: none;
+  border-radius: var(--work-radius-md) !important;
+  border: 1px solid var(--work-line) !important;
+  background: var(--work-fill) !important;
+  box-shadow: none !important;
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(11,15,24,.82);
+}
+
+body[data-mode="free"] #auxShell .spicker-content,
+body[data-mode="free"] #auxShell .schema-card,
+body[data-mode="free"] #auxShell .spicker-block,
+body[data-mode="free"] #auxShell .bonus-view .task3-card,
+body[data-mode="free"] #auxShell .bonus-view #sideBody{
+  padding: 16px 18px !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-item{
+  min-height: 58px;
+  padding: 14px 16px !important;
+  text-align: left;
+}
+
+body[data-mode="free"] #auxShell .spicker-item:hover,
+body[data-mode="free"] #auxShell .schema-card:hover{
+  transform: none !important;
+  border-color: var(--work-line) !important;
+  background: var(--work-fill) !important;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-chapter-top{
+  width: 100%;
+  min-height: 42px;
+  padding-bottom: 0;
+  gap: 12px;
+}
+
+body[data-mode="free"] #auxShell .spicker-chapter-title,
+body[data-mode="free"] #auxShell .spicker-item-title,
+body[data-mode="free"] #auxShell .schema-name{
+  font-size: 15px !important;
+  line-height: 1.25;
+  color: rgba(11,15,24,.90);
+  font-weight: 950;
+}
+
+body[data-mode="free"] #auxShell .spicker-content p,
+body[data-mode="free"] #auxShell .schema-rel-item,
+body[data-mode="free"] #auxShell .schema-card,
+body[data-mode="free"] #auxShell .bonus-view #sideBody p,
+body[data-mode="free"] #auxShell .bonus-view #sideBody li{
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+body[data-mode="free"] #auxShell .spicker-table{
+  width: 100%;
+  font-size: 14px !important;
+  border: 1px solid var(--work-line) !important;
+  border-radius: var(--work-radius-sm) !important;
+  background: rgba(255,255,255,.58) !important;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] #auxShell .spicker-table thead th{
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--work-line-soft) !important;
+  background: rgba(10,15,24,.045) !important;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body[data-mode="free"] #auxShell .spicker-table tbody td{
+  padding: 10px 12px;
+  border-bottom-color: var(--work-line-soft) !important;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+body[data-mode="free"] #auxShell .spicker-code,
+body[data-mode="free"] #auxShell pre,
+body[data-mode="free"] #auxShell code{
+  font-size: var(--sql);
+}
+
+body[data-mode="free"] #auxShell .btn-close,
+body[data-mode="free"] #auxShell .task3-closeBtn{
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px){
+  body[data-mode="free"] #auxShell .spicker-head,
+  body[data-mode="free"] #auxShell .bonus-view .task3-header,
+  body[data-mode="free"] #auxShell .spicker-content,
+  body[data-mode="free"] #auxShell .schema-card,
+  body[data-mode="free"] #auxShell .spicker-block,
+  body[data-mode="free"] #auxShell .bonus-view .task3-card,
+  body[data-mode="free"] #auxShell .bonus-view #sideBody{
+    padding: 14px !important;
+  }
+}
