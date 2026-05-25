@@ -2150,6 +2150,36 @@ async applyUnlockedToShop() {
     } catch (_) {}
   }
 
+  getFeedbackMessage(type, detail) {
+    switch (type) {
+      case "empty":
+        return "Keine Abfrage eingegeben.";
+      case "not-select":
+        return "Nur SELECT-Abfragen sind erlaubt.";
+      case "syntax":
+        return `Syntaxfehler:\n${detail || ""}`;
+      case "structure":
+        return "Strukturfehler:\nDie Ergebnisstruktur passt noch nicht.";
+      case "logic":
+        return "Logikfehler:\nDie Abfrage liefert noch nicht das erwartete Ergebnis.";
+      case "correct":
+        return "Richtig. Du kannst freischalten.";
+      default:
+        return "Logikfehler:\nDie Abfrage liefert noch nicht das erwartete Ergebnis.";
+    }
+  }
+
+  hasResultStructureMismatch(studentExec, refExec, mode) {
+    if (!(mode === 'rows_order' || mode === 'rows_set' || mode === 'order' || mode === 'set')) {
+      return false;
+    }
+
+    const studentRows = this.extractRows(studentExec);
+    const refRows = this.extractRows(refExec);
+    if (!studentRows.ok || !refRows.ok) return false;
+    return studentRows.colCount !== refRows.colCount;
+  }
+
 
   checkCurrent() {
     this.setOutput("");
@@ -2162,32 +2192,31 @@ async applyUnlockedToShop() {
 
     const taskId = this.currentId;
     if (!taskId) {
-      finish("Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.");
+      finish(this.getFeedbackMessage("logic"));
       return;
     }
 
-    const sql = this.sqlEl.value || "";
+    const sql = (this.sqlEl.value || "").trim();
     const t = this.TASKS[taskId];
 
     let result = "error";
     let errorType = null;
 
     if (!this.db) {
-      finish("DB ist nicht geladen.");
+      finish(this.getFeedbackMessage("logic"));
       errorType = "runtime";
       return;
     }
 
-    if (!this.isSelectOnly(sql)) {
-      finish("Nur SELECT-Abfragen sind erlaubt.");
+    if (!sql) {
+      finish(this.getFeedbackMessage("empty"));
       result = "wrong";
       errorType = "logic";
       return;
     }
 
-    const sqlCheck = this.validateSqlStructure(sql, t);
-    if (!sqlCheck.ok) {
-      finish(sqlCheck.message || "Die Abfrage passt nicht zur Aufgabe.");
+    if (!this.isSelectOnly(sql)) {
+      finish(this.getFeedbackMessage("not-select"));
       result = "wrong";
       errorType = "logic";
       return;
@@ -2197,7 +2226,7 @@ async applyUnlockedToShop() {
     try {
       studentRes = this.db.exec(sql);
     } catch (e) {
-      finish("SQL-Fehler: " + e.message);
+      finish(this.getFeedbackMessage("syntax", e.message));
       errorType = "syntax";
       return;
     }
@@ -2205,25 +2234,30 @@ async applyUnlockedToShop() {
     try {
       refRes = this.db.exec(t.refSql);
     } catch (e) {
-      finish("Interner Referenz-Fehler: " + e.message);
+      finish(this.getFeedbackMessage("logic"));
       errorType = "runtime";
       return;
     }
 
-    const ok = this.validate(studentRes, refRes, t.mode);
+    const sqlCheck = this.validateSqlStructure(sql, t);
+    const ok = !!(sqlCheck.ok && this.validate(studentRes, refRes, t.mode));
 
     if (ok) {
       result = "correct";
       if (this.unlocked[taskId]) {
-        finish("✅ Korrekt (bereits freigeschaltet).");
+        finish(this.getFeedbackMessage("correct"));
         return;
       }
-      finish("✅ Korrekt! Du kannst jetzt freischalten.");
+      finish(this.getFeedbackMessage("correct"));
       this.setUnlockState(true);
       return;
     }
 
-    finish("\u274c Noch nicht korrekt.");
+    if (sqlCheck.ok && this.hasResultStructureMismatch(studentRes, refRes, t.mode)) {
+      finish(this.getFeedbackMessage("structure"));
+    } else {
+      finish(this.getFeedbackMessage("logic"));
+    }
     result = "wrong";
     errorType = "logic";
   }
@@ -3019,16 +3053,23 @@ if (H[taskId]) return H[taskId];
 
 
   isSelectOnly(sql) {
-    const s = String(sql || "").trim().toLowerCase();
-    if (!s.startsWith("select")) return false;
+    const s = this.stripSqlLiterals(this.stripSqlComments(sql)).trim().toLowerCase();
+    if (!/^select\b/.test(s)) return false;
     const forbidden = ["insert", "update", "delete", "drop", "alter", "create", "pragma", "attach", "detach"];
-    return !forbidden.some(k => s.includes(k));
+    return !new RegExp(`\\b(?:${forbidden.join("|")})\\b`).test(s);
   }
 
   stripSqlComments(sql) {
     const s = String(sql || "");
     const noBlock = s.replace(/\/\*[\s\S]*?\*\//g, "");
     return noBlock.replace(/--.*$/gm, "");
+  }
+
+  stripSqlLiterals(sql) {
+    return String(sql || "")
+      .replace(/'([^']|'')*'/g, "''")
+      .replace(/"([^"]|"")*"/g, '""')
+      .replace(/`([^`]|``)*`/g, "``");
   }
 
   normalizeSqlForCheck(sql) {
