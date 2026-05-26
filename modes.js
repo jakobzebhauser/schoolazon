@@ -1095,6 +1095,10 @@ renderShell() {
 
               <div id="schemaList" class="spicker-list" aria-label="Tabellenübersicht"></div>
 
+              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" id="schemaPdfDownloadBtn" type="button">Schema als PDF herunterladen</button>
+              </div>
+
               <div id="schemaTable" class="spicker-chapter" style="display:none;">
                 <div class="spicker-chapter-top">
                   <button class="btn btn-ghost" id="schemaBack" type="button">← Übersicht</button>
@@ -1216,6 +1220,7 @@ renderShell() {
     this.schemaTableTitleEl = this.root.querySelector('#schemaTableTitle');
     this.schemaBackBtn = this.root.querySelector('#schemaBack');
     this.schemaCloseBtn = this.root.querySelector('#schemaClose');
+    this.schemaPdfDownloadBtn = this.root.querySelector('#schemaPdfDownloadBtn');
 
     // Solutions view
     this.solutionsViewEl = this.root.querySelector('#solutionsView');
@@ -1347,6 +1352,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       const name = btn.getAttribute('data-table');
       this.openSchemaTable(name);
     });
+    this.schemaPdfDownloadBtn?.addEventListener('click', () => this.downloadSchemaPdf());
 
     this.solutionsBackBtn?.addEventListener('click', () => this.openSolutionsIndex());
     this.solutionsCloseBtn?.addEventListener('click', () => this.closeSolutions());
@@ -1627,6 +1633,15 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     if (this.schemaTableEl) this.schemaTableEl.style.display = '';
   }
 
+  downloadSchemaPdf() {
+    // Download the schema.pdf file from the server
+    const link = document.createElement('a');
+    link.href = 'schema.pdf';
+    link.download = 'schema.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   /* ===========================
      Bereits gelöste Aufgaben (Freischalt‑SQL)
