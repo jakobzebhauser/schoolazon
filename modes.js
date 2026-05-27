@@ -1075,6 +1075,10 @@ renderShell() {
 
               <div id="spickerList" class="spicker-list" aria-label="Kapitelübersicht"></div>
 
+              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" id="theoriePdfDownloadBtn" type="button">Theorie als PDF herunterladen</button>
+              </div>
+
               <div id="spickerChapter" class="spicker-chapter" style="display:none;">
                 <div class="spicker-chapter-top">
                   <button class="btn btn-ghost" id="spickerBack" type="button">← Übersicht</button>
@@ -1119,6 +1123,10 @@ renderShell() {
               </div>
 
               <div id="solutionsList" class="spicker-list" aria-label="Aufgabenübersicht"></div>
+
+              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" id="solutionsPdfDownloadBtn" type="button">Aufgaben als PDF herunterladen</button>
+              </div>
 
               <div id="solutionsTask" class="spicker-chapter" style="display:none;">
                 <div class="spicker-chapter-top">
@@ -1212,6 +1220,7 @@ renderShell() {
     this.spickerChapterTitleEl = this.root.querySelector('#spickerChapterTitle');
     this.spickerBackBtn = this.root.querySelector('#spickerBack');
     this.spickerCloseBtn = this.root.querySelector('#spickerClose');
+    this.theoriePdfDownloadBtn = this.root.querySelector('#theoriePdfDownloadBtn');
     // DB-Schema view
     this.schemaViewEl = this.root.querySelector('#schemaView');
     this.schemaListEl = this.root.querySelector('#schemaList');
@@ -1230,6 +1239,7 @@ renderShell() {
     this.solutionsTaskTitleEl = this.root.querySelector('#solutionsTaskTitle');
     this.solutionsBackBtn = this.root.querySelector('#solutionsBack');
     this.solutionsCloseBtn = this.root.querySelector('#solutionsClose');
+    this.solutionsPdfDownloadBtn = this.root.querySelector('#solutionsPdfDownloadBtn');
 
     this.categoryEl = this.root.querySelector('#taskCategory');
 
@@ -1344,6 +1354,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       const id = btn.getAttribute('data-chapter');
       this.openSpickerChapter(id);
     });
+    this.theoriePdfDownloadBtn?.addEventListener('click', () => this.downloadTheoriePdf());
     this.schemaBackBtn?.addEventListener('click', () => this.openSchemaIndex());
     this.schemaCloseBtn?.addEventListener('click', () => this.closeSchema());
     this.schemaListEl?.addEventListener('click', (e) => {
@@ -1356,6 +1367,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
     this.solutionsBackBtn?.addEventListener('click', () => this.openSolutionsIndex());
     this.solutionsCloseBtn?.addEventListener('click', () => this.closeSolutions());
+    this.solutionsPdfDownloadBtn?.addEventListener('click', () => this.downloadSolutionsPdf());
     this.solutionsListEl?.addEventListener('click', (e) => {
       const btn = e.target?.closest?.('[data-solution]');
       if (!btn) return;
@@ -1641,6 +1653,185 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  generatePdfFromElement(element, filename) {
+    const opt = {
+      margin: 10,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    };
+    html2pdf().set(opt).from(element).save();
+  }
+
+  downloadTheoriePdf() {
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '16px';
+    wrapper.style.backgroundColor = '#fff';
+    wrapper.style.color = '#000';
+    wrapper.style.fontFamily = 'Arial, sans-serif';
+    wrapper.style.lineHeight = '1.4';
+    wrapper.style.fontSize = '12px';
+    wrapper.style.wordWrap = 'break-word';
+
+    const title = document.createElement('h1');
+    title.textContent = 'Theorie-Spicker';
+    title.style.marginTop = '0';
+    title.style.fontSize = '18px';
+    title.style.marginBottom = '10px';
+    wrapper.appendChild(title);
+
+    const info = document.createElement('p');
+    info.textContent = `Exportiert am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}`;
+    info.style.color = '#666';
+    info.style.marginBottom = '20px';
+    wrapper.appendChild(info);
+
+    THEORY_CHAPTERS.forEach((ch, index) => {
+      const chapterWrapper = document.createElement('div');
+      chapterWrapper.style.pageBreakInside = 'avoid';
+      chapterWrapper.style.breakInside = 'avoid';
+      chapterWrapper.style.marginBottom = '16px';
+
+      const chapterHeading = document.createElement('h2');
+      chapterHeading.textContent = `${index + 1}. ${ch.title}`;
+      chapterHeading.style.fontSize = '14px';
+      chapterHeading.style.margin = '20px 0 8px';
+      chapterWrapper.appendChild(chapterHeading);
+
+      const chapterHtml = document.createElement('div');
+      chapterHtml.innerHTML = ch.html || '';
+      chapterHtml.style.marginBottom = '10px';
+      chapterHtml.style.fontSize = '12px';
+      chapterWrapper.appendChild(chapterHtml);
+
+      if (ch.exampleSql) {
+        const exampleBlock = document.createElement('div');
+        exampleBlock.style.marginTop = '10px';
+        exampleBlock.style.padding = '10px';
+        exampleBlock.style.border = '1px solid #ccc';
+        exampleBlock.style.backgroundColor = '#f9f9f9';
+        exampleBlock.style.pageBreakInside = 'avoid';
+        exampleBlock.style.breakInside = 'avoid';
+
+        const exampleTitle = document.createElement('div');
+        exampleTitle.textContent = 'Beispielabfrage';
+        exampleTitle.style.fontWeight = 'bold';
+        exampleTitle.style.marginBottom = '6px';
+        exampleBlock.appendChild(exampleTitle);
+
+        const examplePre = document.createElement('pre');
+        examplePre.textContent = ch.exampleSql;
+        examplePre.style.whiteSpace = 'pre-wrap';
+        examplePre.style.margin = '0';
+        examplePre.style.fontSize = '11px';
+        exampleBlock.appendChild(examplePre);
+
+        chapterWrapper.appendChild(exampleBlock);
+      }
+
+      wrapper.appendChild(chapterWrapper);
+    });
+
+    this.generatePdfFromElement(wrapper, 'theorie.pdf');
+  }
+
+  downloadSolutionsPdf() {
+    const solvedIds = Object.keys(this.TASKS).filter(id => !!this.unlocked?.[id]);
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '16px';
+    wrapper.style.backgroundColor = '#fff';
+    wrapper.style.color = '#000';
+    wrapper.style.fontFamily = 'Arial, sans-serif';
+    wrapper.style.lineHeight = '1.4';
+    wrapper.style.fontSize = '12px';
+    wrapper.style.wordWrap = 'break-word';
+
+    const title = document.createElement('h1');
+    title.textContent = 'Gelöste Aufgaben';
+    title.style.marginTop = '0';
+    title.style.fontSize = '18px';
+    title.style.marginBottom = '10px';
+    wrapper.appendChild(title);
+
+    const info = document.createElement('p');
+    info.textContent = `Exportiert am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}`;
+    info.style.color = '#666';
+    info.style.marginBottom = '20px';
+    wrapper.appendChild(info);
+
+    if (!solvedIds.length) {
+      const noTasks = document.createElement('p');
+      noTasks.textContent = 'Noch keine Aufgaben freigeschaltet.';
+      wrapper.appendChild(noTasks);
+      this.generatePdfFromElement(wrapper, 'aufgaben.pdf');
+      return;
+    }
+
+    solvedIds.forEach((id, index) => {
+      const taskWrapper = document.createElement('div');
+      taskWrapper.style.pageBreakInside = 'avoid';
+      taskWrapper.style.breakInside = 'avoid';
+      taskWrapper.style.marginBottom = '16px';
+
+      const t = this.TASKS[id] || {};
+      const taskTitle = document.createElement('h2');
+      taskTitle.textContent = `${index + 1}. ${t.title || id}`;
+      taskTitle.style.fontSize = '14px';
+      taskTitle.style.margin = '20px 0 8px';
+      taskWrapper.appendChild(taskTitle);
+
+      const category = document.createElement('div');
+      category.textContent = `Kategorie: ${this.getCategoryLabel(id)}`;
+      category.style.marginBottom = '8px';
+      category.style.color = '#555';
+      category.style.fontSize = '12px';
+      taskWrapper.appendChild(category);
+
+      const taskText = document.createElement('div');
+      taskText.textContent = this.sanitizeTaskText(t.task || '').replace(/^aufgabe:\s*/i, '').trim();
+      taskText.style.whiteSpace = 'pre-wrap';
+      taskText.style.marginBottom = '12px';
+      taskText.style.fontSize = '12px';
+      taskWrapper.appendChild(taskText);
+
+      const sqlCode = String(this.solutionSql?.[id] || '').trim();
+      const solutionBlock = document.createElement('div');
+      solutionBlock.style.padding = '10px';
+      solutionBlock.style.border = '1px solid #ccc';
+      solutionBlock.style.backgroundColor = '#f9f9f9';
+      solutionBlock.style.pageBreakInside = 'avoid';
+      solutionBlock.style.breakInside = 'avoid';
+
+      const solutionTitle = document.createElement('div');
+      solutionTitle.textContent = 'Freischalt-SQL';
+      solutionTitle.style.fontWeight = 'bold';
+      solutionTitle.style.marginBottom = '6px';
+      solutionTitle.style.fontSize = '12px';
+      solutionBlock.appendChild(solutionTitle);
+
+      if (sqlCode) {
+        const solutionPre = document.createElement('pre');
+        solutionPre.textContent = sqlCode;
+        solutionPre.style.whiteSpace = 'pre-wrap';
+        solutionPre.style.margin = '0';
+        solutionPre.style.fontSize = '11px';
+        solutionBlock.appendChild(solutionPre);
+      } else {
+        const missing = document.createElement('div');
+        missing.textContent = 'Keine gespeicherte Freischalt-SQL verfügbar.';
+        missing.style.color = '#666';
+        missing.style.fontSize = '11px';
+        solutionBlock.appendChild(missing);
+      }
+
+      taskWrapper.appendChild(solutionBlock);
+      wrapper.appendChild(taskWrapper);
+    });
+
+    this.generatePdfFromElement(wrapper, 'aufgaben.pdf');
   }
 
   /* ===========================
@@ -3158,6 +3349,11 @@ if (H[taskId]) return H[taskId];
         const reRev = new RegExp(`(?:\\b[^\\s\\.]+\\.)?${b}\\s*={1,2}\\s*(?:\\b[^\\s\\.]+\\.)?${a}`);
         return re.test(norm.flat) || reRev.test(norm.flat);
       }
+    }
+    if (/^(['"]).*\1$/.test(p)) {
+      const value = this.escapeRegExp(p.slice(1, -1));
+      const quotedValueRe = new RegExp(`(?:'${value}'|"${value}")`);
+      return quotedValueRe.test(norm.flat);
     }
     if (/\s/.test(p)) return norm.flat.includes(p);
     return norm.nospace.includes(p) || norm.noparen.includes(p) || norm.flat.includes(p);
