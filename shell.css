@@ -2866,15 +2866,15 @@ body.help-open{
 }
 .task3-editorShell:focus-within{
   border: 0;
-  box-shadow: none;
+  box-shadow: 0 0 0 3px rgba(0,122,255,.20);
 }
 
 .task3-editorCard{
   border-color: rgba(10,15,24,.18) !important;
 }
 .task3-editorCard:focus-within{
-  border-color: rgba(0,122,255,.45) !important;
-  box-shadow: 0 0 0 4px rgba(0,122,255,.18), 0 12px 28px rgba(10,15,24,.10);
+  border-color: rgba(0,122,255,.22) !important;
+  box-shadow: 0 12px 28px rgba(10,15,24,.10);
 }
 .task3-editorToolbar{
   height: 34px;
@@ -2896,6 +2896,61 @@ body.help-open{
   display: flex;
   min-height: 230px;
 }
+
+.task3-editorInputWrap{
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 230px;
+  background: transparent;
+  display: flex;
+  overflow: hidden;
+}
+
+.task3-editorValue{
+  display: none !important;
+}
+
+.task-view.task-v3 .task3-editor{
+  position: relative;
+  margin: 0;
+  width: 100%;
+  height: auto;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 2;
+  font-family: var(--mono);
+  font-size: var(--sql);
+  line-height: 1.65;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0;
+  word-spacing: 0;
+  text-transform: none;
+  box-sizing: border-box;
+}
+
+.task3-editorDiagnostics{
+  min-height: 20px;
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.task3-editorDiagnostics span{
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(220,38,38,.18);
+  background: rgba(254,226,226,.72);
+  color: rgba(127,29,29,.92);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
 .task3-editorGutter{
   width: 44px;
   padding: 10px 8px;
@@ -2912,15 +2967,64 @@ body.help-open{
   white-space: pre;
 }
 .task-view.task-v3 .task3-editor{
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
   flex: 1;
+  overflow: auto;
   border: 0;
   background: transparent;
+  color: rgba(11,15,24,.95) !important;
+  -webkit-text-fill-color: currentColor;
   box-shadow: none;
   border-radius: 0;
-  padding: 10px 12px;
   min-height: 230px;
   resize: none;
   outline: none;
+  caret-color: rgba(0,122,255,.95);
+}
+
+.task-view.task-v3 .task3-editor .tok-keyword{
+  color: rgba(0,82,204,.95);
+  -webkit-text-fill-color: currentColor;
+}
+
+.task-view.task-v3 .task3-editor .tok-string{
+  color: rgba(20,118,64,.95);
+  -webkit-text-fill-color: currentColor;
+}
+
+.task-view.task-v3 .task3-editor .tok-number{
+  color: rgba(117,72,176,.95);
+  -webkit-text-fill-color: currentColor;
+}
+
+.task-view.task-v3 .task3-editor .tok-comment{
+  color: rgba(90,98,112,.78);
+  -webkit-text-fill-color: currentColor;
+}
+
+.task-view.task-v3 .task3-editor .tok-error{
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: rgba(220,38,38,.95);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.task-view.task-v3 .task3-editor .tok-ghost{
+  color: rgba(11,15,24,.42);
+  -webkit-text-fill-color: currentColor;
+  background: rgba(11,15,24,.07);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.task-view.task-v3 .task3-editor::selection{
+  background: rgba(0,122,255,.22);
 }
 .task-view.task-v3 .task3-editor:focus{
   border: 0;
@@ -3127,6 +3231,10 @@ body[data-mode="free"] .task3-editorShell{
   overflow: hidden;
 }
 
+body[data-mode="free"] .task3-editorShell:focus-within{
+  box-shadow: 0 0 0 3px rgba(0,122,255,.20) !important;
+}
+
 body[data-mode="free"] .task3-editorToolbar{
   height: 34px;
   border-bottom: 1px solid var(--work-line);
@@ -3135,6 +3243,7 @@ body[data-mode="free"] .task3-editorToolbar{
 }
 
 body[data-mode="free"] .task3-editorBody,
+body[data-mode="free"] .task3-editorInputWrap,
 body[data-mode="free"] .task-view.task-v3 .task3-editor{
   min-height: clamp(190px, 24vh, 300px);
 }
@@ -3146,6 +3255,15 @@ body[data-mode="free"] .task3-editorGutter{
 
 body[data-mode="free"] .task-view.task-v3 .task3-editor{
   background: transparent !important;
+}
+
+body[data-mode="free"] .task-view.task-v3 .task3-editor,
+body[data-mode="free"] .task3-editorGutter{
+  font-size: 15px;
+  line-height: 1.58;
+  font-weight: 400;
+  letter-spacing: 0;
+  word-spacing: 0;
 }
 
 body[data-mode="free"] .task-view.task-v3 .task3-editor:focus{
@@ -3242,7 +3360,7 @@ body[data-mode="free"] .task-view.task-v3 .task3-actions{
 body[data-mode="free"] .btn,
 body[data-mode="free"] .task-view.task-v3 .task3-actions .btn,
 body[data-mode="free"] .spicker-view .btn-ghost{
-  min-height: 42px;
+  min-height: 46px;
   border-radius: var(--work-radius-sm) !important;
   border: 1px solid var(--work-line) !important;
   background: rgba(255,255,255,.72) !important;
@@ -3873,6 +3991,7 @@ body[data-mode="free"] .task3-editorGutter{
 }
 
 body[data-mode="free"] .task3-editorBody,
+body[data-mode="free"] .task3-editorInputWrap,
 body[data-mode="free"] .task-view.task-v3 .task3-editor{
   min-height: clamp(190px, 24vh, 300px);
 }
@@ -4360,6 +4479,12 @@ body[data-mode="free"] #auxShell code{
   font-size: var(--sql);
 }
 
+body[data-mode="free"] .task-view.task-v3 .task3-editor,
+body[data-mode="free"] .task3-editorGutter{
+  font-size: 15px !important;
+  line-height: 1.58 !important;
+}
+
 body[data-mode="free"] #auxShell .btn-close,
 body[data-mode="free"] #auxShell .task3-closeBtn{
   flex: 0 0 auto;
@@ -4461,4 +4586,12 @@ body[data-mode="free"] .help-footer{
   body[data-mode="free"] .help-panel{
     padding: 20px !important;
   }
+}
+
+body[data-mode="free"] .task-view.task-v3 .task3-actions #runBtn,
+body[data-mode="free"] .task-view.task-v3 .task3-actions #resultTableBtn,
+body[data-mode="free"] .task-view.task-v3 .task3-actions #unlockBtn{
+  min-height: 46px !important;
+  padding-top: 11px !important;
+  padding-bottom: 11px !important;
 }

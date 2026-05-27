@@ -1044,9 +1044,13 @@ renderShell() {
                     </div>
                     <div class="task3-editorBody">
                       <div class="task3-editorGutter" id="sqlGutter" aria-hidden="true">1</div>
-                      <textarea id="sqlInput" class="task3-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="SELECT ?"></textarea>
+                      <div class="task3-editorInputWrap" id="sqlEditorInputWrap">
+                        <textarea id="sqlInput" class="task3-editorValue" aria-hidden="true" tabindex="-1"></textarea>
+                        <div id="sqlEditor" class="task3-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocapitalize="off" data-placeholder=""></div>
+                      </div>
                     </div>
                   </div>
+                  <div class="task3-editorDiagnostics" id="sqlDiagnostics" aria-live="polite"></div>
 
                   <div class="task3-actions">
                     <button class="btn btn-primary" id="runBtn" type="button">Prüfen</button>
@@ -1271,6 +1275,8 @@ renderShell() {
 
     // Editor
     this.sqlEl = this.root.querySelector('#sqlInput');
+    this.sqlEditorEl = this.root.querySelector('#sqlEditor');
+    this.sqlDiagnosticsEl = this.root.querySelector('#sqlDiagnostics');
     this.sqlGutterEl = this.root.querySelector('#sqlGutter');
     this.editorShellEl = this.root.querySelector('#sqlEditorShell');
     this.outEl = this.root.querySelector('#out');
@@ -1299,6 +1305,7 @@ renderShell() {
     this._confirmAction = null;
     this.spickerUsed = false;
     this.lastExecutableResult = null;
+    this.sqlAutocompleteSuggestion = null;
 
     // Codeger\u00fcst card
     this.hintCardEl = this.root.querySelector('#hintCard');
@@ -1330,12 +1337,21 @@ renderShell() {
 
 
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
-    this.sqlEl?.addEventListener('input', () => {
+    this.sqlEditorEl?.addEventListener('input', () => {
+      this.syncSqlEditorValue();
       this.onSqlEdited();
       this.resetResultTable();
       this.updateSqlGutter();
+      this.updateSqlEditorAssist();
     });
-    this.sqlEl?.addEventListener('scroll', () => this.syncGutterScroll());
+    this.sqlEditorEl?.addEventListener('scroll', () => {
+      this.syncGutterScroll();
+    });
+    this.sqlEditorEl?.addEventListener('beforeinput', (e) => this.handleSqlEditorBeforeInput(e));
+    this.sqlEditorEl?.addEventListener('keydown', (e) => this.handleSqlEditorKeydown(e));
+    this.sqlEditorEl?.addEventListener('click', () => this.updateSqlEditorAssist());
+    this.sqlEditorEl?.addEventListener('keyup', () => this.updateSqlEditorAssist());
+    this.sqlEditorEl?.addEventListener('paste', (e) => this.handleSqlEditorPaste(e));
             
     // Hint / Codeger\u00fcst cards
     this.hintConfirmBtn?.addEventListener('click', () => this.confirmHint());
@@ -2283,7 +2299,10 @@ LIMIT 1;</pre>
     this.selectTask(actionId);
 
     // UX: Fokus direkt in Editor
-    try { this.sqlEl?.focus(); } catch (_) {}
+    try {
+      this.sqlEditorEl?.focus();
+      this.setSqlEditorCaretOffset(this.sqlEl?.value?.length || 0);
+    } catch (_) {}
   }
 
 async lockAllShopTasks(locked) {
@@ -2352,13 +2371,16 @@ async applyUnlockedToShop() {
 
     // Editor state
     this.sqlEl.readOnly = isUnlocked;
+    this.sqlEditorEl?.setAttribute('contenteditable', isUnlocked ? 'false' : 'true');
+    this.sqlEditorEl?.setAttribute('aria-readonly', isUnlocked ? 'true' : 'false');
     this.runBtn.disabled = isUnlocked;
     this.runBtn.style.cursor = isUnlocked ? 'not-allowed' : 'pointer';
     this.runBtn.style.opacity = isUnlocked ? '.6' : '1';
 
-    this.sqlEl.value = 'SELECT ';
+    this.setSqlEditorValue('');
     this.updateSqlGutter();
     this.syncGutterScroll();
+    this.updateSqlEditorAssist();
         this.setOutput(isUnlocked ? 'Bereits freigeschaltet.' : '');
     this.resetResultTable();
 
@@ -2372,7 +2394,10 @@ async applyUnlockedToShop() {
     if (this.spickerViewEl) this.spickerViewEl.style.display = 'none';
 
     // UX: Fokus direkt in Editor
-    try { this.sqlEl?.focus(); } catch (_) {}
+    try {
+      this.sqlEditorEl?.focus();
+      this.setSqlEditorCaretOffset(this.sqlEl?.value?.length || 0);
+    } catch (_) {}
   }
 
   setOutput(text) {
@@ -2508,6 +2533,8 @@ async applyUnlockedToShop() {
 
 
   checkCurrent() {
+    this.syncSqlEditorValue();
+    const resultTableWasVisible = this.isResultTableVisible();
     this.setOutput("");
     this.resetUnlockButton();
     this.resetResultTable();
@@ -2558,6 +2585,12 @@ async applyUnlockedToShop() {
       return;
     }
     this.setResultTableAvailable(studentRes);
+    if (resultTableWasVisible && this.resultTableCardEl) {
+      this.resultTableCardEl.style.display = '';
+      this.resultTableCardEl.setAttribute('aria-hidden', 'false');
+      if (this.resultTableBtn) this.resultTableBtn.textContent = 'Ergebnistabelle ausblenden';
+      this.renderResultTable();
+    }
 
     try {
       refRes = this.db.exec(t.refSql);
@@ -2607,15 +2640,409 @@ async applyUnlockedToShop() {
 
   updateSqlGutter() {
     if (!this.sqlGutterEl || !this.sqlEl) return;
-    const lines = Math.max(1, this.sqlEl.value.split("\n").length);
+    const logicalLines = Math.max(1, this.sqlEl.value.split("\n").length);
+    let visualLines = logicalLines;
+    if (this.sqlEditorEl) {
+      const cs = window.getComputedStyle(this.sqlEditorEl);
+      const lineHeight = Number.parseFloat(cs.lineHeight) || 1;
+      const paddingTop = Number.parseFloat(cs.paddingTop) || 0;
+      const paddingBottom = Number.parseFloat(cs.paddingBottom) || 0;
+      const contentHeight = Math.max(0, this.sqlEditorEl.scrollHeight - paddingTop - paddingBottom);
+      visualLines = Math.max(logicalLines, Math.ceil(contentHeight / lineHeight));
+    }
+    const lines = Math.max(1, visualLines);
     let out = "";
     for (let i = 1; i <= lines; i++) out += i + (i === lines ? "" : "\n");
     this.sqlGutterEl.textContent = out;
   }
 
   syncGutterScroll() {
-    if (!this.sqlGutterEl || !this.sqlEl) return;
-    this.sqlGutterEl.scrollTop = this.sqlEl.scrollTop;
+    if (!this.sqlGutterEl || !this.sqlEditorEl) return;
+    this.sqlGutterEl.scrollTop = this.sqlEditorEl.scrollTop;
+  }
+
+  updateSqlEditorAssist() {
+    this.updateSqlAutocomplete();
+    this.renderSqlDiagnostics();
+    this.renderSqlEditor();
+  }
+
+  getSqlEditorText() {
+    if (!this.sqlEditorEl) return this.sqlEl?.value || '';
+    const clone = this.sqlEditorEl.cloneNode(true);
+    clone.querySelectorAll('[data-ghost="true"]').forEach((n) => n.remove());
+    clone.querySelectorAll('[data-editor-tail="true"]').forEach((n) => n.remove());
+    return (clone.textContent || '').replace(/\u00a0/g, ' ');
+  }
+
+  syncSqlEditorValue() {
+    if (!this.sqlEl) return;
+    this.sqlEl.value = this.getSqlEditorText();
+  }
+
+  applySqlEditorValue(value, caretOffset, { suggest = true } = {}) {
+    if (!this.sqlEl) return;
+    this.sqlEl.value = String(value ?? '');
+    this.onSqlEdited();
+    this.resetResultTable();
+    this.updateSqlGutter();
+    this.hideSqlAutocomplete();
+    this.renderSqlDiagnostics();
+    this.renderSqlEditor();
+    this.setSqlEditorCaretOffset(caretOffset);
+    if (suggest) {
+      this.updateSqlAutocomplete();
+      this.renderSqlEditor();
+      this.setSqlEditorCaretOffset(caretOffset);
+    }
+  }
+
+  setSqlEditorValue(value) {
+    const text = String(value ?? '');
+    if (this.sqlEl) this.sqlEl.value = text;
+    if (this.sqlEditorEl) {
+      this.sqlEditorEl.textContent = text;
+      this.renderSqlEditor();
+    }
+  }
+
+  getSqlEditorCaretOffset() {
+    if (!this.sqlEditorEl) return 0;
+    const sel = window.getSelection?.();
+    if (!sel || sel.rangeCount === 0) return this.getSqlEditorText().length;
+    const range = sel.getRangeAt(0);
+    if (!this.sqlEditorEl.contains(range.startContainer)) return this.getSqlEditorText().length;
+
+    let offset = 0;
+    const walk = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.parentElement?.closest?.('[data-ghost="true"],[data-editor-tail="true"]')) return true;
+        if (node === range.startContainer) {
+          offset += Math.min(range.startOffset, node.nodeValue.length);
+          return false;
+        }
+        offset += node.nodeValue.length;
+        return true;
+      }
+      if (node === range.startContainer) {
+        const children = Array.from(node.childNodes).slice(0, range.startOffset);
+        for (const child of children) {
+          if (!walk(child)) return false;
+        }
+        return false;
+      }
+      for (const child of Array.from(node.childNodes || [])) {
+        if (!walk(child)) return false;
+      }
+      return true;
+    };
+    walk(this.sqlEditorEl);
+    return offset;
+  }
+
+  getSqlEditorSelectionOffsets() {
+    if (!this.sqlEditorEl) return null;
+    const sel = window.getSelection?.();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    const range = sel.getRangeAt(0);
+    if (!this.sqlEditorEl.contains(range.startContainer) || !this.sqlEditorEl.contains(range.endContainer)) return null;
+    const original = range.cloneRange();
+    const measure = document.createRange();
+    measure.selectNodeContents(this.sqlEditorEl);
+    measure.setEnd(original.startContainer, original.startOffset);
+    const start = this.countSqlEditorRangeText(measure);
+    measure.selectNodeContents(this.sqlEditorEl);
+    measure.setEnd(original.endContainer, original.endOffset);
+    const end = this.countSqlEditorRangeText(measure);
+    return { start: Math.min(start, end), end: Math.max(start, end) };
+  }
+
+  countSqlEditorRangeText(range) {
+    const box = document.createElement('div');
+    box.appendChild(range.cloneContents());
+    box.querySelectorAll('[data-ghost="true"],[data-editor-tail="true"]').forEach((n) => n.remove());
+    return (box.textContent || '').replace(/\u00a0/g, ' ').length;
+  }
+
+  setSqlEditorCaretOffset(offset) {
+    if (!this.sqlEditorEl) return;
+    const target = Math.max(0, Number(offset) || 0);
+    const range = document.createRange();
+    const sel = window.getSelection?.();
+    let remaining = target;
+    let placed = false;
+
+    const walker = document.createTreeWalker(this.sqlEditorEl, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => node.parentElement?.closest?.('[data-ghost="true"]')
+        || node.parentElement?.closest?.('[data-editor-tail="true"]')
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT
+    });
+
+    let node;
+    let last = null;
+    while ((node = walker.nextNode())) {
+      last = node;
+      const len = node.nodeValue.length;
+      if (remaining <= len) {
+        range.setStart(node, remaining);
+        placed = true;
+        break;
+      }
+      remaining -= len;
+    }
+
+    if (!placed) {
+      if (last) range.setStart(last, last.nodeValue.length);
+      else range.setStart(this.sqlEditorEl, 0);
+    }
+    range.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  getSqlSchemaInfo() {
+    const fallback = {
+      produkte: ['id', 'name', 'preis', 'kategorie_id', 'lagerbestand', 'liefertage'],
+      kategorien: ['id', 'name'],
+      bewertungen: ['id', 'produkt_id', 'sterne'],
+      'verkäufe': ['id', 'produkt_id', 'nutzer_id', 'anzahl'],
+      warenkorb: ['produkt_id', 'menge', 'nutzer_id']
+    };
+    const schema = {};
+    if (this.db) {
+      try {
+        const tables = this.listSchemaTables?.() || [];
+        for (const table of tables) {
+          const q = this.quoteIdent(table);
+          const res = this.db.exec(`PRAGMA table_info(${q});`);
+          const cols = res?.[0]?.values?.map((r) => String(r?.[1] || '').toLowerCase()).filter(Boolean) || [];
+          if (cols.length) schema[String(table).toLowerCase()] = cols;
+        }
+      } catch (_) {}
+    }
+    return Object.keys(schema).length ? schema : fallback;
+  }
+
+  analyzeSqlForEditor(sql) {
+    const text = String(sql || '');
+    const schema = this.getSqlSchemaInfo();
+    const tables = new Set(Object.keys(schema));
+    const allColumns = new Set(Object.values(schema).flat());
+    const keywords = new Set([
+      'select','from','where','and','or','not','order','by','group','having','limit','asc','desc',
+      'distinct','as','join','inner','left','right','on','in','between','like','is','null',
+      'sum','avg','min','max','count'
+    ]);
+    const diagnostics = [];
+    const badRanges = [];
+    const aliases = new Map();
+
+    const cleaned = this.stripSqlLiterals(this.stripSqlComments(text)).toLowerCase();
+    const fromJoinRe = /\b(?:from|join)\s+([a-z_äöüß][\wäöüß]*)(?:\s+(?:as\s+)?([a-z_äöüß][\wäöüß]*))?/gi;
+    let m;
+    while ((m = fromJoinRe.exec(cleaned)) !== null) {
+      const table = String(m[1] || '').toLowerCase();
+      const alias = String(m[2] || '').toLowerCase();
+      if (tables.has(table)) {
+        aliases.set(table, table);
+        if (alias && !keywords.has(alias) && alias !== 'where' && alias !== 'join' && alias !== 'on') aliases.set(alias, table);
+      }
+    }
+
+    const markFirst = (needle, message) => {
+      if (!needle) return;
+      const re = new RegExp(`\\b${this.escapeRegExp(needle)}\\b`, 'i');
+      const match = text.match(re);
+      if (match && typeof match.index === 'number') {
+        badRanges.push({ start: match.index, end: match.index + match[0].length });
+      }
+      diagnostics.push(message);
+    };
+
+    const tableRefRe = /\b(?:from|join)\s+([a-z_äöüß][\wäöüß]*)/gi;
+    while ((m = tableRefRe.exec(cleaned)) !== null) {
+      const table = String(m[1] || '').toLowerCase();
+      if (table && !tables.has(table)) markFirst(table, `Unbekannte Tabelle: ${table}`);
+    }
+
+    const qualifiedRe = /\b([a-z_äöüß][\wäöüß]*)\.([a-z_äöüß][\wäöüß]*)\b/gi;
+    while ((m = qualifiedRe.exec(cleaned)) !== null) {
+      const prefix = String(m[1] || '').toLowerCase();
+      const col = String(m[2] || '').toLowerCase();
+      const table = aliases.get(prefix) || (tables.has(prefix) ? prefix : '');
+      if (!table) {
+        continue;
+      } else if (!schema[table]?.includes(col)) {
+        markFirst(col, `Unbekannte Spalte für ${prefix}: ${col}`);
+      }
+    }
+
+    const knownFunctions = new Set(['sum','avg','min','max','count']);
+    const selectMatch = cleaned.match(/\bselect\s+([\s\S]*?)\bfrom\b/i);
+    if (selectMatch) {
+      const selectPart = selectMatch[1] || '';
+      const items = selectPart.split(',');
+      for (const itemRaw of items) {
+        const item = itemRaw.replace(/\bas\s+[a-z_äöüß][\wäöüß]*\b/gi, ' ').trim();
+        if (!item || item === '*' || item.includes('.')) continue;
+        const fnMatch = item.match(/\b(?:sum|avg|min|max|count)\s*\(\s*([a-z_äöüß][\wäöüß]*)\s*\)/i);
+        const bareMatch = item.match(/^([a-z_äöüß][\wäöüß]*)(?:\s+[a-z_äöüß][\wäöüß]*)?$/i);
+        const token = (fnMatch?.[1] || bareMatch?.[1] || '').toLowerCase();
+        if (!token || keywords.has(token) || knownFunctions.has(token)) continue;
+        if (tables.has(token) || aliases.has(token)) continue;
+        if (!allColumns.has(token)) markFirst(token, `Möglicherweise unbekannte Spalte: ${token}`);
+      }
+    }
+
+    return { badRanges, diagnostics: [...new Set(diagnostics)].slice(0, 3), schema, keywords };
+  }
+
+  renderSqlEditor() {
+    if (!this.sqlEditorEl || !this.sqlEl) return;
+    const hadFocus = document.activeElement === this.sqlEditorEl;
+    const caret = hadFocus ? this.getSqlEditorCaretOffset() : 0;
+    const text = this.sqlEl.value || '';
+    const analysis = this.analyzeSqlForEditor(text);
+    const ranges = analysis.badRanges || [];
+    const inlineSuggestion = this.sqlAutocompleteSuggestion;
+    const tokenRe = /(--.*$|\/\*[\s\S]*?\*\/|'(?:[^']|'')*'|"(?:[^"]|"")*"|\b\d+(?:\.\d+)?\b|\b[a-z_äöüß][\wäöüß]*\b|[^\wäöüß]+)/gim;
+    let html = '';
+    let pos = 0;
+    const classFor = (value, start, end) => {
+      const lower = value.toLowerCase();
+      const classes = [];
+      if (/^--|^\/\*/.test(value)) classes.push('tok-comment');
+      else if (/^'/.test(value)) classes.push('tok-string');
+      else if (/^\d/.test(value)) classes.push('tok-number');
+      else if (analysis.keywords?.has(lower)) classes.push('tok-keyword');
+      if (ranges.some((r) => start < r.end && end > r.start)) classes.push('tok-error');
+      return classes.join(' ');
+    };
+
+    let m;
+    while ((m = tokenRe.exec(text)) !== null) {
+      const value = m[0];
+      const start = m.index;
+      const end = start + value.length;
+      if (start > pos) html += this.escapeHtml(text.slice(pos, start));
+      const cls = classFor(value, start, end);
+      html += cls ? `<span class="${cls}">${this.escapeHtml(value)}</span>` : this.escapeHtml(value);
+      if (inlineSuggestion && end === inlineSuggestion.end && inlineSuggestion.value.toLowerCase().startsWith(value.toLowerCase())) {
+        const suffix = inlineSuggestion.value.slice(value.length);
+        if (suffix) html += `<span class="tok-ghost" data-ghost="true" contenteditable="false">${this.escapeHtml(suffix)}</span>`;
+      }
+      pos = end;
+    }
+    if (pos < text.length) html += this.escapeHtml(text.slice(pos));
+    if (text.endsWith('\n')) html += '<span data-editor-tail="true" contenteditable="false">\u200b</span>';
+    this.sqlEditorEl.innerHTML = html || '';
+    this.sqlEditorEl.toggleAttribute('data-empty', !text);
+    if (hadFocus) this.setSqlEditorCaretOffset(caret);
+    this.updateSqlGutter();
+  }
+
+  renderSqlDiagnostics() {
+    if (!this.sqlDiagnosticsEl || !this.sqlEl) return;
+    const diagnostics = this.analyzeSqlForEditor(this.sqlEl.value || '').diagnostics || [];
+    this.sqlDiagnosticsEl.innerHTML = diagnostics.length
+      ? diagnostics.map((d) => `<span>${this.escapeHtml(d)}</span>`).join('')
+      : '';
+  }
+
+  getCurrentSqlWord() {
+    if (!this.sqlEditorEl || !this.sqlEl) return null;
+    const pos = this.getSqlEditorCaretOffset();
+    const text = this.sqlEl.value || '';
+    const left = text.slice(0, pos);
+    const match = left.match(/([a-zA-Z_äöüÄÖÜß][\wäöüÄÖÜß]*)$/);
+    if (!match) return null;
+    const word = match[1];
+    return { word, start: pos - word.length, end: pos };
+  }
+
+  updateSqlAutocomplete() {
+    if (!this.sqlEditorEl || document.activeElement !== this.sqlEditorEl) {
+      this.hideSqlAutocomplete();
+      return;
+    }
+    const current = this.getCurrentSqlWord();
+    if (!current || current.word.length < 3) {
+      this.hideSqlAutocomplete();
+      return;
+    }
+    const schema = this.getSqlSchemaInfo();
+    const options = [...Object.keys(schema), ...new Set(Object.values(schema).flat())]
+      .filter((v) => v.toLowerCase().startsWith(current.word.toLowerCase()) && v.toLowerCase() !== current.word.toLowerCase())
+      .sort((a, b) => a.length - b.length || a.localeCompare(b));
+    const suggestion = options[0];
+    if (!suggestion) {
+      this.hideSqlAutocomplete();
+      return;
+    }
+    this.sqlAutocompleteSuggestion = { ...current, value: suggestion };
+  }
+
+  hideSqlAutocomplete() {
+    this.sqlAutocompleteSuggestion = null;
+  }
+
+  handleSqlEditorKeydown(e) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && this.sqlEditorEl) {
+      const selection = this.getSqlEditorSelectionOffsets();
+      if (selection && selection.end > selection.start) {
+        e.preventDefault();
+        this.syncSqlEditorValue();
+        const text = this.sqlEl?.value || '';
+        this.applySqlEditorValue(text.slice(0, selection.start) + text.slice(selection.end), selection.start, { suggest: false });
+        return;
+      }
+    }
+    if (e.key === 'Enter' && this.sqlEditorEl) {
+      e.preventDefault();
+      this.insertSqlEditorText('\n', { suggest: false });
+      return;
+    }
+    if (e.key !== 'Tab' || !this.sqlAutocompleteSuggestion || !this.sqlEl) return;
+    const s = this.sqlAutocompleteSuggestion;
+    const current = this.getCurrentSqlWord();
+    if (!current || current.start !== s.start || current.end !== s.end) return;
+    e.preventDefault();
+    const text = this.sqlEl.value || '';
+    const caret = s.start + s.value.length;
+    this.applySqlEditorValue(text.slice(0, s.start) + s.value + text.slice(s.end), caret, { suggest: false });
+  }
+
+  handleSqlEditorBeforeInput(e) {
+    if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') {
+      e.preventDefault();
+      this.insertSqlEditorText('\n', { suggest: false });
+      return;
+    }
+
+    if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+      const selection = this.getSqlEditorSelectionOffsets();
+      if (!selection || selection.end <= selection.start) return;
+      e.preventDefault();
+      this.syncSqlEditorValue();
+      const text = this.sqlEl?.value || '';
+      this.applySqlEditorValue(text.slice(0, selection.start) + text.slice(selection.end), selection.start, { suggest: false });
+    }
+  }
+
+  insertSqlEditorText(insertText, { suggest = false } = {}) {
+    this.syncSqlEditorValue();
+    const pos = this.getSqlEditorCaretOffset();
+    const text = this.sqlEl?.value || '';
+    const insert = String(insertText || '');
+    this.applySqlEditorValue(text.slice(0, pos) + insert + text.slice(pos), pos + insert.length, { suggest });
+  }
+
+  handleSqlEditorPaste(e) {
+    if (!this.sqlEditorEl) return;
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text/plain') || '';
+    this.insertSqlEditorText(text, { suggest: false });
   }
 
   pulseShopAction(taskId) {
@@ -2657,10 +3084,11 @@ async applyUnlockedToShop() {
       if (!id || !this.TASKS?.[id]) return;
       this.selectTask(id);
       if (typeof data.sql === "string") {
-        this.sqlEl.value = data.sql;
+        this.setSqlEditorValue(data.sql);
         this.onSqlEdited();
         this.updateSqlGutter();
         this.syncGutterScroll();
+        this.updateSqlEditorAssist();
       }
     } catch (_) {}
   }
