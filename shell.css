@@ -3163,6 +3163,71 @@ body[data-mode="free"] .output{
   box-shadow: none !important;
 }
 
+body[data-mode="free"] .task3-resultTableCard{
+  margin-top: 0;
+}
+
+body[data-mode="free"] .task3-resultTableShell{
+  border: 1px solid var(--work-line) !important;
+  border-left: 4px solid rgba(0,122,255,.34) !important;
+  border-radius: var(--work-radius-sm) !important;
+  background: rgba(255,255,255,.58) !important;
+  max-height: 28vh;
+  overflow: auto;
+  box-shadow: none !important;
+}
+
+body[data-mode="free"] .task3-resultScroller{
+  overflow: auto;
+}
+
+body[data-mode="free"] .task3-resultTable{
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+body[data-mode="free"] .task3-resultTable th,
+body[data-mode="free"] .task3-resultTable td{
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--work-line-soft);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+body[data-mode="free"] .task3-resultTable th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(245,247,252,.96);
+  color: rgba(11,15,24,.82);
+  font-weight: 850;
+}
+
+body[data-mode="free"] .task3-resultTable tbody tr:nth-child(2n) td{
+  background: rgba(10,15,24,.025);
+}
+
+body[data-mode="free"] .task3-resultEmpty,
+body[data-mode="free"] .task3-resultSetLabel{
+  padding: 10px 12px;
+  color: var(--work-text-muted);
+  font-size: 12px;
+}
+
+body[data-mode="free"] .task3-resultSetLabel{
+  font-weight: 850;
+  color: rgba(11,15,24,.76);
+}
+
+body[data-mode="free"] .task3-null{
+  color: var(--work-text-muted);
+  font-style: italic;
+}
+
 body[data-mode="free"] .task-view.task-v3 .task3-actions{
   position: sticky;
   bottom: 0;
@@ -3197,6 +3262,13 @@ body[data-mode="free"] .task-view.task-v3 .task3-actions .btn-primary{
   background: linear-gradient(180deg, #ffb14a, #f08804) !important;
   color: #171103 !important;
   box-shadow: 0 14px 30px rgba(240,136,4,.20) !important;
+}
+
+body[data-mode="free"] #unlockBtn.btn-unlock-ready{
+  border-color: rgba(52,199,89,.36) !important;
+  background: linear-gradient(180deg, rgba(214,248,224,.96), rgba(179,238,196,.92)) !important;
+  color: #12451f !important;
+  box-shadow: 0 10px 24px rgba(52,199,89,.18) !important;
 }
 
 body[data-mode="free"] .task3-difficulty-lite,

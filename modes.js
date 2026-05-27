@@ -1050,6 +1050,7 @@ renderShell() {
 
                   <div class="task3-actions">
                     <button class="btn btn-primary" id="runBtn" type="button">Prüfen</button>
+                    <button class="btn" id="resultTableBtn" type="button" disabled aria-disabled="true">Ergebnistabelle anzeigen</button>
                     <button class="btn" id="unlockBtn" type="button" disabled aria-disabled="true">Freischalten</button>
                   </div>
                 </div>
@@ -1060,6 +1061,14 @@ renderShell() {
                     <div class="task3-cardMeta">Ergebnis / Fehlermeldung</div>
                   </div>
                   <pre class="output task3-output" id="out"></pre>
+                </div>
+
+                <div class="task3-card task3-resultTableCard" id="resultTableCard" style="display:none;" aria-hidden="true">
+                  <div class="task3-cardHead">
+                    <div class="task3-cardTitle">Ergebnistabelle</div>
+                    <div class="task3-cardMeta">Ausgabe deiner Abfrage</div>
+                  </div>
+                  <div class="task3-resultTableShell" id="resultTableContent"></div>
                 </div>
 
                 <!-- Legacy hook (nicht sichtbar) – Logik bleibt kompatibel -->
@@ -1267,6 +1276,9 @@ renderShell() {
     this.outEl = this.root.querySelector('#out');
     this.runBtn = this.root.querySelector('#runBtn');
     this.unlockBtn = this.root.querySelector('#unlockBtn');
+    this.resultTableBtn = this.root.querySelector('#resultTableBtn');
+    this.resultTableCardEl = this.root.querySelector('#resultTableCard');
+    this.resultTableContentEl = this.root.querySelector('#resultTableContent');
 
     // Confirm modal
     this.confirmOverlayEl = this.root.querySelector('#confirmOverlay');
@@ -1286,6 +1298,7 @@ renderShell() {
     this._pendingHintTaskId = null;
     this._confirmAction = null;
     this.spickerUsed = false;
+    this.lastExecutableResult = null;
 
     // Codeger\u00fcst card
     this.hintCardEl = this.root.querySelector('#hintCard');
@@ -1310,6 +1323,7 @@ renderShell() {
     this.headerToggleBtn?.addEventListener('click', () => this.toggleHeaderCollapse());
     this.runBtn.addEventListener('click', () => this.checkCurrent());
     this.unlockBtn.addEventListener('click', () => this.unlockCurrent());
+    this.resultTableBtn?.addEventListener('click', () => this.toggleResultTable());
     this.closeTaskBtn.addEventListener('click', () => this.closeTask());
     this.hintBtn?.addEventListener('click', () => this.requestHint());
     this.scaffoldBtn?.addEventListener('click', () => this.requestScaffold());
@@ -1318,6 +1332,7 @@ renderShell() {
     // Bei SQL-Änderung: Freischalten wieder deaktivieren (muss erneut geprüft werden)
     this.sqlEl?.addEventListener('input', () => {
       this.onSqlEdited();
+      this.resetResultTable();
       this.updateSqlGutter();
     });
     this.sqlEl?.addEventListener('scroll', () => this.syncGutterScroll());
@@ -2033,8 +2048,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
                   <tr><td>password</td><td>TEXT</td><td>Passwort</td></tr>
                   <tr><td>role</td><td>TEXT</td><td>z. B. admin/user</td></tr>
                   <tr><td>status</td><td>TEXT</td><td>active/locked</td></tr>
-                  <tr><td>created_at</td><td>DATETIME</td><td>Erstellung</td></tr>
-                  <tr><td>last_login</td><td>DATETIME</td><td>letzter Login</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2347,6 +2360,7 @@ async applyUnlockedToShop() {
     this.updateSqlGutter();
     this.syncGutterScroll();
         this.setOutput(isUnlocked ? 'Bereits freigeschaltet.' : '');
+    this.resetResultTable();
 
     this.resetUnlockButton();
 
@@ -2370,6 +2384,89 @@ async applyUnlockedToShop() {
     void this.outEl.offsetWidth;
     this.outEl.textContent = msg;
     if (msg) this.outEl.classList.add('out-flash');
+  }
+
+  resetResultTable() {
+    this.lastExecutableResult = null;
+    if (this.resultTableBtn) {
+      this.resultTableBtn.disabled = true;
+      this.resultTableBtn.setAttribute('aria-disabled', 'true');
+      this.resultTableBtn.textContent = 'Ergebnistabelle anzeigen';
+    }
+    if (this.resultTableCardEl) {
+      this.resultTableCardEl.style.display = 'none';
+      this.resultTableCardEl.setAttribute('aria-hidden', 'true');
+    }
+    if (this.resultTableContentEl) this.resultTableContentEl.innerHTML = '';
+  }
+
+  setResultTableAvailable(result) {
+    this.lastExecutableResult = Array.isArray(result) ? result : [];
+    if (this.resultTableBtn) {
+      this.resultTableBtn.disabled = false;
+      this.resultTableBtn.setAttribute('aria-disabled', 'false');
+    }
+    if (this.isResultTableVisible()) {
+      this.renderResultTable();
+    }
+  }
+
+  isResultTableVisible() {
+    return !!this.resultTableCardEl && this.resultTableCardEl.style.display !== 'none';
+  }
+
+  toggleResultTable() {
+    if (!this.resultTableBtn || this.resultTableBtn.disabled || !this.resultTableCardEl) return;
+    const show = !this.isResultTableVisible();
+    this.resultTableCardEl.style.display = show ? '' : 'none';
+    this.resultTableCardEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+    this.resultTableBtn.textContent = show ? 'Ergebnistabelle ausblenden' : 'Ergebnistabelle anzeigen';
+    if (show) {
+      this.renderResultTable();
+      try { this.resultTableCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+    }
+  }
+
+  renderResultTable() {
+    if (!this.resultTableContentEl) return;
+    const resultSets = Array.isArray(this.lastExecutableResult) ? this.lastExecutableResult : [];
+    if (!resultSets.length) {
+      this.resultTableContentEl.innerHTML = '<div class="task3-resultEmpty">Die Abfrage wurde ausgeführt, liefert aber keine Ergebnistabelle.</div>';
+      return;
+    }
+
+    const html = resultSets.map((res, idx) => {
+      const columns = Array.isArray(res?.columns) ? res.columns : [];
+      const values = Array.isArray(res?.values) ? res.values : [];
+      if (!columns.length) {
+        return '<div class="task3-resultEmpty">Keine Spalten in diesem Ergebnis.</div>';
+      }
+      const head = columns.map((c) => `<th scope="col">${this.escapeHtml(c)}</th>`).join('');
+      const body = values.length
+        ? values.map((row) => {
+            const cells = columns.map((_, i) => `<td>${this.formatResultCell(row?.[i])}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+          }).join('')
+        : `<tr><td colspan="${columns.length}"><span class="muted">Keine Zeilen.</span></td></tr>`;
+      const label = resultSets.length > 1 ? `<div class="task3-resultSetLabel">Ergebnis ${idx + 1}</div>` : '';
+      return `
+        ${label}
+        <div class="task3-resultScroller">
+          <table class="task3-resultTable">
+            <thead><tr>${head}</tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    this.resultTableContentEl.innerHTML = html;
+  }
+
+  formatResultCell(value) {
+    if (value === null || value === undefined) return '<span class="task3-null">NULL</span>';
+    if (typeof value === 'number') return this.escapeHtml(Number.isFinite(value) ? String(value) : String(value));
+    return this.escapeHtml(String(value));
   }
 
   scrollToOutput() {
@@ -2413,6 +2510,7 @@ async applyUnlockedToShop() {
   checkCurrent() {
     this.setOutput("");
     this.resetUnlockButton();
+    this.resetResultTable();
 
     const finish = (msg) => {
       this.setOutput(msg);
@@ -2459,6 +2557,7 @@ async applyUnlockedToShop() {
       errorType = "syntax";
       return;
     }
+    this.setResultTableAvailable(studentRes);
 
     try {
       refRes = this.db.exec(t.refSql);
