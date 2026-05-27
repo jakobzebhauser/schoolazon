@@ -429,6 +429,11 @@ if (msg.type === "SHOP_READY") {
     this.send("SET_LOCK", { taskId, locked });
   }
 
+  async setTaskMeta(tasks) {
+    await this.ready;
+    this.send("SET_TASK_META", { tasks });
+  }
+
   async pulse(taskId) {
     await this.ready;
     this.send("PULSE_ACTION", { taskId });
@@ -952,6 +957,7 @@ LIMIT 2;`,
   this.renderShell();
   // 1) Shop initialisieren + Buttons sperren
   await this.shop.ready;
+  await this.syncTaskMetaToShop();
   await this.lockAllShopTasks(true);
 
   // Persistierte Freischaltungen wieder anwenden (Bugfix: Reload darf nichts „verlieren“)
@@ -2272,6 +2278,18 @@ async lockAllShopTasks(locked) {
   for (const id of ids) {
     await this.shop.lock(id, locked);
   }
+}
+
+async syncTaskMetaToShop() {
+  const tasks = {};
+  Object.entries(this.TASKS || {}).forEach(([id, task]) => {
+    const level = this.getDifficultyLevel(task?.difficulty);
+    tasks[id] = {
+      difficulty: String(task?.difficulty || "+"),
+      difficultyLevel: level
+    };
+  });
+  await this.shop.setTaskMeta(tasks);
 }
 
 async applyUnlockedToShop() {

@@ -1348,6 +1348,25 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
       return;
     }
 
+    if (msg.type === "SET_TASK_META") {
+      const tasks = (msg.tasks && typeof msg.tasks === "object") ? msg.tasks : {};
+      document.querySelectorAll("[data-task]").forEach((el) => {
+        const meta = tasks[el.dataset.task];
+        if (!meta) {
+          el.removeAttribute("data-lock-difficulty");
+          el.removeAttribute("data-difficulty-level");
+          return;
+        }
+
+        const level = Math.max(1, Math.min(3, Number(meta.difficultyLevel) || 1));
+        const rawLabel = String(meta.difficulty || "").trim();
+        const label = /^[+]{1,3}$/.test(rawLabel) ? rawLabel : "+".repeat(level);
+        el.setAttribute("data-lock-difficulty", label);
+        el.setAttribute("data-difficulty-level", String(level));
+      });
+      return;
+    }
+
     // a2) Unlock-Pulse auf einem konkreten Button
     if (msg.type === "PULSE_ACTION") {
       const { taskId } = msg;
