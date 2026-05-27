@@ -1107,31 +1107,6 @@ renderShell() {
               </div>
             </div>
 
-            <div id="schemaView" style="display:none; min-height:0;" class="spicker-view schema-view">
-              <div class="spicker-head">
-                <div>
-                  <h3 class="spicker-title">DB‑Schema</h3>
-                  <div class="spicker-sub">Tabelle auswählen</div>
-                </div>
-                <button class="btn btn-close" id="schemaClose" type="button" aria-label="Schließen" title="Aufgabe schließen">✕</button>
-              </div>
-
-              <div id="schemaList" class="spicker-list" aria-label="Tabellenübersicht"></div>
-
-              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary" id="schemaPdfDownloadBtn" type="button">Schema als PDF herunterladen</button>
-              </div>
-
-              <div id="schemaTable" class="spicker-chapter" style="display:none;">
-                <div class="spicker-chapter-top">
-                  <button class="btn btn-ghost" id="schemaBack" type="button">← Übersicht</button>
-                  <div class="spicker-chapter-title" id="schemaTableTitle"></div>
-                </div>
-                <div id="schemaContent" class="spicker-content"></div>
-              </div>
-            </div>
-
-
             <div id="solutionsView" style="display:none; min-height:0;" class="spicker-view solutions-view">
               <div class="spicker-head">
                 <div>
@@ -1220,7 +1195,6 @@ renderShell() {
     this.scoreEl = document.getElementById('scoreEl');
 
     // Actions
-    this.btnSchema = document.getElementById('btnSchema');
     this.btnSpicker = document.getElementById('btnSpicker');
     this.btnSolutions = document.getElementById('btnSolutions');
     this.btnBonus = document.getElementById('btnBonus');
@@ -1240,16 +1214,6 @@ renderShell() {
     this.spickerBackBtn = this.root.querySelector('#spickerBack');
     this.spickerCloseBtn = this.root.querySelector('#spickerClose');
     this.theoriePdfDownloadBtn = this.root.querySelector('#theoriePdfDownloadBtn');
-    // DB-Schema view
-    this.schemaViewEl = this.root.querySelector('#schemaView');
-    this.schemaListEl = this.root.querySelector('#schemaList');
-    this.schemaTableEl = this.root.querySelector('#schemaTable');
-    this.schemaContentEl = this.root.querySelector('#schemaContent');
-    this.schemaTableTitleEl = this.root.querySelector('#schemaTableTitle');
-    this.schemaBackBtn = this.root.querySelector('#schemaBack');
-    this.schemaCloseBtn = this.root.querySelector('#schemaClose');
-    this.schemaPdfDownloadBtn = this.root.querySelector('#schemaPdfDownloadBtn');
-
     // Solutions view
     this.solutionsViewEl = this.root.querySelector('#solutionsView');
     this.solutionsListEl = this.root.querySelector('#solutionsList');
@@ -1377,7 +1341,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     }
 
 
-    this.btnSchema.addEventListener('click', () => { this.openSchema(); });
     this.btnSpicker.addEventListener('click', () => this.requestSpicker());
     this.btnSolutions.addEventListener('click', () => this.openSolutions());
     this.btnBonus.addEventListener('click', () => this.openBonus());
@@ -1392,16 +1355,6 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       this.openSpickerChapter(id);
     });
     this.theoriePdfDownloadBtn?.addEventListener('click', () => this.downloadTheoriePdf());
-    this.schemaBackBtn?.addEventListener('click', () => this.openSchemaIndex());
-    this.schemaCloseBtn?.addEventListener('click', () => this.closeSchema());
-    this.schemaListEl?.addEventListener('click', (e) => {
-      const btn = e.target?.closest?.('[data-table]');
-      if (!btn) return;
-      const name = btn.getAttribute('data-table');
-      this.openSchemaTable(name);
-    });
-    this.schemaPdfDownloadBtn?.addEventListener('click', () => this.downloadSchemaPdf());
-
     this.solutionsBackBtn?.addEventListener('click', () => this.openSolutionsIndex());
     this.solutionsCloseBtn?.addEventListener('click', () => this.closeSolutions());
     this.solutionsPdfDownloadBtn?.addEventListener('click', () => this.downloadSolutionsPdf());
@@ -1680,16 +1633,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
 
     if (this.schemaListEl) this.schemaListEl.style.display = 'none';
     if (this.schemaTableEl) this.schemaTableEl.style.display = '';
-  }
-
-  downloadSchemaPdf() {
-    // Download the schema.pdf file from the server
-    const link = document.createElement('a');
-    link.href = 'schema.pdf';
-    link.download = 'schema.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   }
 
   generatePdfFromElement(element, filename) {

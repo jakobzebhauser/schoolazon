@@ -90,7 +90,6 @@
         <details class="topbar-menu" id="labMenu">
           <summary class="pillBtn" aria-haspopup="menu">Tools</summary>
           <div class="menu-panel" role="menu">
-            <button class="btn" id="btnSchema" type="button" role="menuitem">DB-Schema</button>
             <button class="btn" id="btnSpicker" type="button" role="menuitem">Theorie-Spicker</button>
             <button class="btn" id="btnSolutions" type="button" role="menuitem">Bereits gelöste Aufgaben</button>
             <button class="btn btn-locked" id="btnBonus" type="button" role="menuitem" aria-label="Zusatzaufgabe: Hacking">Zusatzaufgabe: Hacking</button>
@@ -106,13 +105,201 @@
 
     <div class="mode-shell">
       <div class="shop-monitor">
-        <div class="shop-screen">
-          <div class="shop-screen-top" aria-hidden="true">
-            <span class="shop-screen-cam"></span>
+        <div class="left-view-tabs" role="tablist" aria-label="Linke Ansicht">
+          <button class="left-view-tab is-active" id="leftViewShopTab" type="button" role="tab" aria-selected="true" aria-controls="leftViewShop" data-left-view="shop">Shop</button>
+          <button class="left-view-tab" id="leftViewSchemaTab" type="button" role="tab" aria-selected="false" aria-controls="leftViewSchema" data-left-view="schema">DB-Schema</button>
+        </div>
+
+        <div class="left-view-stage">
+          <div class="left-view-panel is-active" id="leftViewShop" role="tabpanel" aria-labelledby="leftViewShopTab" data-left-panel="shop">
+            <div class="shop-screen">
+              <div class="shop-screen-top" aria-hidden="true">
+                <span class="shop-screen-cam"></span>
+              </div>
+              <div class="shop-screen-inner">
+                <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
+              </div>
+            </div>
           </div>
-          <div class="shop-screen-inner">
-            <iframe id="shopFrame" class="shop-frame" src="shop.html" title="Shop"></iframe>
-          </div>
+
+          <section class="left-view-panel left-schema-panel" id="leftViewSchema" role="tabpanel" aria-labelledby="leftViewSchemaTab" data-left-panel="schema" hidden>
+            <div class="left-schema-tools" aria-label="Schema-Zoom">
+              <button class="left-schema-toolBtn" type="button" data-schema-zoom="out" aria-label="Verkleinern">-</button>
+              <span class="left-schema-zoomLabel" id="leftSchemaZoomLabel">100%</span>
+              <button class="left-schema-toolBtn" type="button" data-schema-zoom="in" aria-label="Vergrößern">+</button>
+              <button class="left-schema-toolBtn left-schema-fitBtn" type="button" data-schema-zoom="fit">Einpassen</button>
+            </div>
+            <div class="left-schema-scroll">
+              <svg class="left-schema-svg" viewBox="0 0 1320 720" preserveAspectRatio="xMidYMid meet" aria-label="DB-Schema" role="img">
+                <line class="left-rel-line" x1="240" y1="345" x2="320" y2="345" data-source="produkte.kategorie_id" data-target="kategorien.id" />
+                <text class="left-cardinality" x="255" y="335">1</text>
+                <text class="left-cardinality" x="300" y="335">N</text>
+
+                <polyline class="left-rel-line" points="620,285 675,285 675,145 740,145" data-source="bewertungen.produkt_id" data-target="produkte.id" />
+                <text class="left-cardinality" x="635" y="275">1</text>
+                <text class="left-cardinality" x="720" y="135">N</text>
+
+                <line class="left-rel-line" x1="620" y1="345" x2="740" y2="345" data-source="verkäufe.produkt_id" data-target="produkte.id" />
+                <text class="left-cardinality" x="635" y="335">1</text>
+                <text class="left-cardinality" x="720" y="335">N</text>
+
+                <polyline class="left-rel-line" points="620,405 675,405 675,530 740,530" data-source="warenkorb.produkt_id" data-target="produkte.id" />
+                <text class="left-cardinality" x="635" y="395">1</text>
+                <text class="left-cardinality" x="720" y="520">N</text>
+
+                <polyline class="left-rel-line" points="1060,145 1105,145 1140,315 1180,315" data-source="bewertungen.nutzer_id" data-target="users.id" />
+                <text class="left-cardinality" x="1075" y="135">N</text>
+                <text class="left-cardinality" x="1155" y="305">1</text>
+
+                <line class="left-rel-line" x1="1060" y1="345" x2="1180" y2="345" data-source="verkäufe.nutzer_id" data-target="users.id" />
+                <text class="left-cardinality" x="1075" y="335">N</text>
+                <text class="left-cardinality" x="1155" y="335">1</text>
+
+                <polyline class="left-rel-line" points="1060,530 1105,530 1140,385 1180,385" data-source="warenkorb.nutzer_id" data-target="users.id" />
+                <text class="left-cardinality" x="1075" y="520">N</text>
+                <text class="left-cardinality" x="1155" y="375">1</text>
+
+                <g class="left-table" transform="translate(40,305)">
+                  <rect class="left-table-box" width="200" height="82" rx="6" />
+                  <text class="left-table-title" x="100" y="22" text-anchor="middle">kategorien</text>
+                  <line class="left-table-separator" x1="16" y1="31" x2="184" y2="31" />
+                  <g class="left-row is-pk" data-key="kategorien.id" transform="translate(14,42)">
+                    <rect class="left-row-bg" width="172" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">id: INTEGER [PK]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,60)">
+                    <rect class="left-row-bg" width="172" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">name: TEXT</text>
+                  </g>
+                </g>
+
+                <g class="left-table" transform="translate(320,250)">
+                  <rect class="left-table-box" width="300" height="190" rx="6" />
+                  <text class="left-table-title" x="150" y="22" text-anchor="middle">produkte</text>
+                  <line class="left-table-separator" x1="16" y1="31" x2="284" y2="31" />
+                  <g class="left-row is-pk" data-key="produkte.id" transform="translate(14,42)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">id: INTEGER [PK]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,62)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">name: TEXT</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,82)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">preis: REAL</text>
+                  </g>
+                  <g class="left-row is-fk" data-target="kategorien.id" transform="translate(14,102)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">kategorie_id: INTEGER [FK -&gt; kategorien.id]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,122)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">lagerbestand: INTEGER</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,142)">
+                    <rect class="left-row-bg" width="272" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">liefertage: INTEGER</text>
+                  </g>
+                </g>
+
+                <g class="left-table" transform="translate(740,80)">
+                  <rect class="left-table-box" width="320" height="130" rx="6" />
+                  <text class="left-table-title" x="160" y="22" text-anchor="middle">bewertungen</text>
+                  <line class="left-table-separator" x1="16" y1="31" x2="304" y2="31" />
+                  <g class="left-row is-pk" data-key="bewertungen.id" transform="translate(14,42)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">id: INTEGER [PK]</text>
+                  </g>
+                  <g class="left-row is-fk" data-target="produkte.id" transform="translate(14,62)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">produkt_id: INTEGER [FK -&gt; produkte.id]</text>
+                  </g>
+                  <g class="left-row is-fk" data-target="users.id" transform="translate(14,82)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">nutzer_id: INTEGER [FK -&gt; users.id]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,102)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">sterne: INTEGER (1 bis 5)</text>
+                  </g>
+                </g>
+
+                <g class="left-table" transform="translate(740,280)">
+                  <rect class="left-table-box" width="320" height="130" rx="6" />
+                  <text class="left-table-title" x="160" y="22" text-anchor="middle">verk&auml;ufe</text>
+                  <line class="left-table-separator" x1="16" y1="31" x2="304" y2="31" />
+                  <g class="left-row is-pk" data-key="verk&auml;ufe.id" transform="translate(14,42)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">id: INTEGER [PK]</text>
+                  </g>
+                  <g class="left-row is-fk" data-target="produkte.id" transform="translate(14,62)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">produkt_id: INTEGER [FK -&gt; produkte.id]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,82)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">anzahl: INTEGER</text>
+                  </g>
+                  <g class="left-row is-fk" data-target="users.id" transform="translate(14,102)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">nutzer_id: INTEGER [FK -&gt; users.id]</text>
+                  </g>
+                </g>
+
+                <g class="left-table" transform="translate(740,485)">
+                  <rect class="left-table-box" width="320" height="110" rx="6" />
+                  <text class="left-table-title" x="160" y="22" text-anchor="middle">warenkorb*</text>
+                  <line class="left-table-separator" x1="16" y1="31" x2="304" y2="31" />
+                  <g class="left-row is-pk is-fk" data-target="users.id" transform="translate(14,42)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">nutzer_id: INTEGER [PK, FK -&gt; users.id]</text>
+                  </g>
+                  <g class="left-row is-pk is-fk" data-target="produkte.id" transform="translate(14,62)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">produkt_id: INTEGER [PK, FK -&gt; produkte.id]</text>
+                  </g>
+                  <g class="left-row" transform="translate(14,82)">
+                    <rect class="left-row-bg" width="292" height="18" rx="3" />
+                    <text class="left-row-text" x="4" y="13">menge: INTEGER</text>
+                  </g>
+                </g>
+
+                <g class="left-table" transform="translate(1180,285)">
+                  <rect class="left-table-box" width="125" height="150" rx="6" />
+                  <text class="left-table-title" x="62.5" y="22" text-anchor="middle">users</text>
+                  <line class="left-table-separator" x1="14" y1="31" x2="111" y2="31" />
+                  <g class="left-row is-pk" data-key="users.id" transform="translate(10,42)">
+                    <rect class="left-row-bg" width="105" height="18" rx="3" />
+                    <text class="left-row-text is-small" x="4" y="13">id: INTEGER [PK]</text>
+                  </g>
+                  <g class="left-row" transform="translate(10,62)">
+                    <rect class="left-row-bg" width="105" height="18" rx="3" />
+                    <text class="left-row-text is-small" x="4" y="13">username: TEXT</text>
+                  </g>
+                  <g class="left-row" transform="translate(10,82)">
+                    <rect class="left-row-bg" width="105" height="18" rx="3" />
+                    <text class="left-row-text is-small" x="4" y="13">password: TEXT</text>
+                  </g>
+                  <g class="left-row" transform="translate(10,102)">
+                    <rect class="left-row-bg" width="105" height="18" rx="3" />
+                    <text class="left-row-text is-small" x="4" y="13">role: TEXT</text>
+                  </g>
+                  <g class="left-row" transform="translate(10,122)">
+                    <rect class="left-row-bg" width="105" height="18" rx="3" />
+                    <text class="left-row-text is-small" x="4" y="13">status: TEXT</text>
+                  </g>
+                </g>
+
+                <g transform="translate(710,630)">
+                  <rect class="left-note-box" width="460" height="62" rx="6" />
+                  <text class="left-note-text" x="12" y="19"><tspan font-weight="800">* Hinweis:</tspan><tspan> Die Tabelle </tspan><tspan font-family="monospace" font-weight="800">warenkorb</tspan><tspan> speichert Warenkorbpositionen.</tspan></text>
+                  <text class="left-note-text" x="12" y="38">Ein Nutzer kann mehrere Warenkorbpositionen besitzen;</text>
+                  <text class="left-note-text" x="12" y="55">eine Warenkorbposition geh&ouml;rt genau zu einem Nutzer.</text>
+                </g>
+              </svg>
+            </div>
+          </section>
         </div>
         <div class="shop-stand" aria-hidden="true"></div>
         <div class="shop-base" aria-hidden="true"></div>
@@ -146,7 +333,7 @@
           </div>
           <div class="help-card">
             <div class="help-card-title"><span class="help-icon" data-icon="tools"></span>Tools &amp; Bonus</div>
-            <div class="help-card-body">Im Tools-Men&uuml; findest du <strong>DB-Schema</strong>, <strong>Theorie-Spicker</strong>, gel&ouml;ste Aufgaben, Bonus und Export.</div>
+            <div class="help-card-body">Im Tools-Men&uuml; findest du <strong>Theorie-Spicker</strong>, gel&ouml;ste Aufgaben, Bonus und Export.</div>
           </div>
         </div>
 
@@ -167,5 +354,215 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <!-- Mode Logic -->
   <script src="modes.js"></script>
+  <script>
+    (() => {
+      const initLeftViews = () => {
+        const tabs = Array.from(document.querySelectorAll("[data-left-view]"));
+        const panels = Array.from(document.querySelectorAll("[data-left-panel]"));
+        if (!tabs.length || !panels.length) return;
+
+        const showView = (view) => {
+          tabs.forEach((tab) => {
+            const active = tab.dataset.leftView === view;
+            tab.classList.toggle("is-active", active);
+            tab.setAttribute("aria-selected", active ? "true" : "false");
+          });
+
+          panels.forEach((panel) => {
+            const active = panel.dataset.leftPanel === view;
+            panel.classList.toggle("is-active", active);
+            panel.hidden = !active;
+          });
+
+        };
+
+        tabs.forEach((tab, index) => {
+          tab.addEventListener("click", () => showView(tab.dataset.leftView));
+          tab.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            const step = event.key === "ArrowRight" ? 1 : -1;
+            const next = tabs[(index + step + tabs.length) % tabs.length];
+            next.focus();
+            showView(next.dataset.leftView);
+          });
+        });
+
+        showView("shop");
+      };
+
+      const initLeftSchemaForeignKeys = () => {
+        const schema = document.querySelector(".left-schema-svg");
+        if (!schema) return;
+        const rows = Array.from(schema.querySelectorAll(".left-row"));
+        const relations = Array.from(schema.querySelectorAll(".left-rel-line"));
+        const norm = (value) => String(value || "").trim().toLowerCase();
+        const getTableName = (row) => norm(row.closest(".left-table")?.querySelector(".left-table-title")?.textContent?.replace("*", ""));
+        const getRowColumn = (row) => norm(row.querySelector(".left-row-text")?.textContent?.split(":")?.[0]);
+        const getRowKey = (row) => norm(row.dataset.key || `${getTableName(row)}.${getRowColumn(row)}`);
+        const clearHighlights = () => {
+          rows.forEach((item) => item.classList.remove("highlight-source", "highlight-target"));
+          relations.forEach((item) => item.classList.remove("highlight-rel"));
+        };
+
+        rows.filter((row) => row.classList.contains("is-fk")).forEach((row) => {
+          row.addEventListener("click", (event) => {
+            event.stopPropagation();
+            clearHighlights();
+            row.classList.add("highlight-source");
+
+            const sourceKey = getRowKey(row);
+            const targetKey = norm(row.dataset.target);
+            const target = rows.find((item) => getRowKey(item) === targetKey);
+            if (target) target.classList.add("highlight-target");
+
+            relations.forEach((rel) => {
+              const relSource = norm(rel.dataset.source);
+              const relTarget = norm(rel.dataset.target);
+              const isMatch = relSource === sourceKey && relTarget === targetKey;
+              rel.classList.toggle("highlight-rel", isMatch);
+            });
+          });
+        });
+
+        schema.addEventListener("click", (event) => {
+          if (event.target?.closest?.(".left-row.is-fk")) return;
+          clearHighlights();
+        });
+      };
+
+      const initLeftSchemaTaskHints = () => {
+        const schema = document.querySelector(".left-schema-svg");
+        if (!schema) return;
+        const tables = Array.from(schema.querySelectorAll(".left-table"));
+        const rows = Array.from(schema.querySelectorAll(".left-row"));
+        const relations = Array.from(schema.querySelectorAll(".left-rel-line"));
+        const norm = (value) => String(value || "").trim().toLowerCase();
+        const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const stripSqlNoise = (value) => String(value || "")
+          .replace(/--.*$/gm, " ")
+          .replace(/\/\*[\s\S]*?\*\//g, " ")
+          .replace(/'(?:[^']|'')*'|"(?:[^"]|"")*"/g, " ")
+          .toLowerCase();
+        const hasWord = (text, word) => new RegExp(`(^|[^\\wäöüß])${escapeRegExp(word)}(?=$|[^\\wäöüß])`, "i").test(text);
+        const getTableName = (table) => norm(table.querySelector(".left-table-title")?.textContent?.replace("*", ""));
+        const getRowTable = (row) => getTableName(row.closest(".left-table"));
+        const getRowColumn = (row) => norm(row.querySelector(".left-row-text")?.textContent?.split(":")?.[0]);
+        const getRowKey = (row) => norm(row.dataset.key || `${getRowTable(row)}.${getRowColumn(row)}`);
+
+        const update = () => {
+          tables.forEach((table) => table.classList.remove("task-related"));
+          rows.forEach((row) => row.classList.remove("task-related"));
+          relations.forEach((rel) => rel.classList.remove("task-related"));
+
+          const mode = window.currentMode;
+          const task = mode?.TASKS?.[mode?.currentId];
+          if (!task) return;
+
+          const rawSql = `${task.refSql || ""}\n${task.starter || ""}`;
+          const sql = stripSqlNoise(rawSql);
+          if (!sql.trim()) return;
+
+          const tableNames = tables.map(getTableName).filter(Boolean);
+          const usedTables = new Set(tableNames.filter((table) => hasWord(sql, table)));
+          const aliases = new Map();
+
+          for (const table of tableNames) {
+            const aliasRe = new RegExp(`(?:\\bfrom\\b|\\bjoin\\b|,)\\s*${escapeRegExp(table)}(?:\\s+(?:as\\s+)?([a-z_äöüß][\\wäöüß]*))?`, "gi");
+            let match;
+            while ((match = aliasRe.exec(sql)) !== null) {
+              usedTables.add(table);
+              const alias = norm(match[1]);
+              if (alias && !["where", "join", "on", "group", "order", "limit"].includes(alias)) aliases.set(alias, table);
+            }
+          }
+
+          const markRow = (row) => {
+            row.classList.add("task-related");
+            row.closest(".left-table")?.classList.add("task-related");
+          };
+
+          tables.forEach((table) => {
+            if (usedTables.has(getTableName(table))) table.classList.add("task-related");
+          });
+
+          rows.forEach((row) => {
+            const table = getRowTable(row);
+            const column = getRowColumn(row);
+            if (!table || !column) return;
+
+            const aliasMatches = Array.from(aliases.entries())
+              .some(([alias, aliasTable]) => aliasTable === table && hasWord(sql, `${alias}.${column}`));
+            const qualifiedMatch = hasWord(sql, `${table}.${column}`);
+            const unqualifiedMatch = column !== "id" && usedTables.has(table) && hasWord(sql, column);
+            if (qualifiedMatch || aliasMatches || unqualifiedMatch) markRow(row);
+          });
+
+          const sqlRules = JSON.stringify(task.sqlRules || {}).toLowerCase();
+          rows.forEach((row) => {
+            const [table, column] = getRowKey(row).split(".");
+            if (table && column && sqlRules.includes(`tablecol:${table}:${column}`)) markRow(row);
+          });
+
+          relations.forEach((rel) => {
+            const source = norm(rel.dataset.source);
+            const target = norm(rel.dataset.target);
+            const sourceTable = source.split(".")[0];
+            const targetTable = target.split(".")[0];
+            const sourceRow = rows.find((row) => getRowKey(row) === source);
+            const targetRow = rows.find((row) => getRowKey(row) === target);
+            const relationRelevant = (sourceRow?.classList.contains("task-related") && targetRow?.classList.contains("task-related"))
+              || (usedTables.has(sourceTable) && usedTables.has(targetTable));
+            if (relationRelevant) rel.classList.add("task-related");
+          });
+        };
+
+        window.__schulazonUpdateLeftSchemaTaskHints = update;
+      };
+
+      const initLeftSchemaZoom = () => {
+        const scroll = document.querySelector(".left-schema-scroll");
+        const svg = document.querySelector(".left-schema-svg");
+        const label = document.querySelector("#leftSchemaZoomLabel");
+        const buttons = Array.from(document.querySelectorAll("[data-schema-zoom]"));
+        if (!scroll || !svg || !buttons.length) return;
+
+        const levels = [1, 1.25, 1.5, 1.75, 2];
+        let index = 0;
+        const applyZoom = () => {
+          const zoom = levels[index];
+          svg.style.width = `${zoom * 100}%`;
+          svg.style.height = `${zoom * 100}%`;
+          scroll.classList.toggle("is-zoomed", zoom > 1);
+          if (label) label.textContent = `${Math.round(zoom * 100)}%`;
+          if (zoom === 1) scroll.scrollTo({ left: 0, top: 0, behavior: "auto" });
+        };
+
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const action = button.dataset.schemaZoom;
+            if (action === "in") index = Math.min(levels.length - 1, index + 1);
+            else if (action === "out") index = Math.max(0, index - 1);
+            else index = 0;
+            applyZoom();
+          });
+        });
+
+        applyZoom();
+      };
+
+      const init = () => {
+        initLeftViews();
+        initLeftSchemaForeignKeys();
+        initLeftSchemaZoom();
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init, { once: true });
+      } else {
+        init();
+      }
+    })();
+  </script>
 </body>
 </html>
