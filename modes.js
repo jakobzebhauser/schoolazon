@@ -1349,8 +1349,8 @@ renderShell() {
     });
     this.sqlEditorEl?.addEventListener('beforeinput', (e) => this.handleSqlEditorBeforeInput(e));
     this.sqlEditorEl?.addEventListener('keydown', (e) => this.handleSqlEditorKeydown(e));
-    this.sqlEditorEl?.addEventListener('click', () => this.updateSqlEditorAssist());
-    this.sqlEditorEl?.addEventListener('keyup', () => this.updateSqlEditorAssist());
+    this.sqlEditorEl?.addEventListener('click', () => this.updateSqlAutocomplete());
+    this.sqlEditorEl?.addEventListener('keyup', () => this.updateSqlAutocomplete());
     this.sqlEditorEl?.addEventListener('paste', (e) => this.handleSqlEditorPaste(e));
             
     // Hint / Codeger\u00fcst cards
@@ -2688,11 +2688,11 @@ async applyUnlockedToShop() {
     this.updateSqlGutter();
     this.hideSqlAutocomplete();
     this.renderSqlDiagnostics();
-    this.renderSqlEditor();
+    this.renderSqlEditor({ force: true });
     this.setSqlEditorCaretOffset(caretOffset);
     if (suggest) {
       this.updateSqlAutocomplete();
-      this.renderSqlEditor();
+      this.renderSqlEditor({ force: true });
       this.setSqlEditorCaretOffset(caretOffset);
     }
   }
@@ -2702,7 +2702,7 @@ async applyUnlockedToShop() {
     if (this.sqlEl) this.sqlEl.value = text;
     if (this.sqlEditorEl) {
       this.sqlEditorEl.textContent = text;
-      this.renderSqlEditor();
+      this.renderSqlEditor({ force: true });
     }
   }
 
@@ -2746,22 +2746,53 @@ async applyUnlockedToShop() {
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
     const range = sel.getRangeAt(0);
     if (!this.sqlEditorEl.contains(range.startContainer) || !this.sqlEditorEl.contains(range.endContainer)) return null;
-    const original = range.cloneRange();
-    const measure = document.createRange();
-    measure.selectNodeContents(this.sqlEditorEl);
-    measure.setEnd(original.startContainer, original.startOffset);
-    const start = this.countSqlEditorRangeText(measure);
-    measure.selectNodeContents(this.sqlEditorEl);
-    measure.setEnd(original.endContainer, original.endOffset);
-    const end = this.countSqlEditorRangeText(measure);
+    const start = this.getSqlEditorOffsetForPoint(range.startContainer, range.startOffset);
+    const end = this.getSqlEditorOffsetForPoint(range.endContainer, range.endOffset);
     return { start: Math.min(start, end), end: Math.max(start, end) };
   }
 
-  countSqlEditorRangeText(range) {
-    const box = document.createElement('div');
-    box.appendChild(range.cloneContents());
-    box.querySelectorAll('[data-ghost="true"],[data-editor-tail="true"]').forEach((n) => n.remove());
-    return (box.textContent || '').replace(/\u00a0/g, ' ').length;
+  getSqlEditorOffsetForPoint(targetNode, targetOffset) {
+    if (!this.sqlEditorEl) return 0;
+    let offset = 0;
+    let found = false;
+    const walk = (node) => {
+      if (found) return false;
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.parentElement?.closest?.('[data-ghost="true"],[data-editor-tail="true"]')) return true;
+        if (node === targetNode) {
+          offset += Math.min(targetOffset, node.nodeValue.length);
+          found = true;
+          return false;
+        }
+        offset += node.nodeValue.length;
+        return true;
+      }
+      if (node === targetNode) {
+        const children = Array.from(node.childNodes).slice(0, targetOffset);
+        for (const child of children) this.addSqlEditorNodeTextLength(child, (n) => { offset += n; });
+        found = true;
+        return false;
+      }
+      for (const child of Array.from(node.childNodes || [])) {
+        if (!walk(child)) return false;
+      }
+      return true;
+    };
+    walk(this.sqlEditorEl);
+    return offset;
+  }
+
+  addSqlEditorNodeTextLength(node, add) {
+    if (!node) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (!node.parentElement?.closest?.('[data-ghost="true"],[data-editor-tail="true"]')) {
+        add(node.nodeValue.length);
+      }
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.closest?.('[data-ghost="true"],[data-editor-tail="true"]')) return;
+    for (const child of Array.from(node.childNodes || [])) this.addSqlEditorNodeTextLength(child, add);
   }
 
   setSqlEditorCaretOffset(offset) {
@@ -2898,9 +2929,10 @@ async applyUnlockedToShop() {
     return { badRanges, diagnostics: [...new Set(diagnostics)].slice(0, 3), schema, keywords };
   }
 
-  renderSqlEditor() {
+  renderSqlEditor({ force = false } = {}) {
     if (!this.sqlEditorEl || !this.sqlEl) return;
     const hadFocus = document.activeElement === this.sqlEditorEl;
+    if (!force && hadFocus && this.hasSqlEditorSelection()) return;
     const caret = hadFocus ? this.getSqlEditorCaretOffset() : 0;
     const text = this.sqlEl.value || '';
     const analysis = this.analyzeSqlForEditor(text);
@@ -2940,6 +2972,14 @@ async applyUnlockedToShop() {
     this.sqlEditorEl.toggleAttribute('data-empty', !text);
     if (hadFocus) this.setSqlEditorCaretOffset(caret);
     this.updateSqlGutter();
+  }
+
+  hasSqlEditorSelection() {
+    if (!this.sqlEditorEl) return false;
+    const sel = window.getSelection?.();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return false;
+    const range = sel.getRangeAt(0);
+    return this.sqlEditorEl.contains(range.startContainer) && this.sqlEditorEl.contains(range.endContainer);
   }
 
   renderSqlDiagnostics() {
@@ -2987,14 +3027,19 @@ async applyUnlockedToShop() {
     this.sqlAutocompleteSuggestion = null;
   }
 
+  deleteSqlEditorSelection(selection) {
+    if (!selection || selection.end <= selection.start) return false;
+    this.syncSqlEditorValue();
+    const text = this.sqlEl?.value || '';
+    this.applySqlEditorValue(text.slice(0, selection.start) + text.slice(selection.end), selection.start, { suggest: false });
+    return true;
+  }
+
   handleSqlEditorKeydown(e) {
     if ((e.key === 'Delete' || e.key === 'Backspace') && this.sqlEditorEl) {
       const selection = this.getSqlEditorSelectionOffsets();
-      if (selection && selection.end > selection.start) {
+      if (this.deleteSqlEditorSelection(selection)) {
         e.preventDefault();
-        this.syncSqlEditorValue();
-        const text = this.sqlEl?.value || '';
-        this.applySqlEditorValue(text.slice(0, selection.start) + text.slice(selection.end), selection.start, { suggest: false });
         return;
       }
     }
@@ -3024,18 +3069,18 @@ async applyUnlockedToShop() {
       const selection = this.getSqlEditorSelectionOffsets();
       if (!selection || selection.end <= selection.start) return;
       e.preventDefault();
-      this.syncSqlEditorValue();
-      const text = this.sqlEl?.value || '';
-      this.applySqlEditorValue(text.slice(0, selection.start) + text.slice(selection.end), selection.start, { suggest: false });
+      this.deleteSqlEditorSelection(selection);
     }
   }
 
   insertSqlEditorText(insertText, { suggest = false } = {}) {
-    this.syncSqlEditorValue();
-    const pos = this.getSqlEditorCaretOffset();
-    const text = this.sqlEl?.value || '';
+    const selection = this.getSqlEditorSelectionOffsets();
+    const start = selection ? selection.start : this.getSqlEditorCaretOffset();
+    const end = selection ? selection.end : start;
     const insert = String(insertText || '');
-    this.applySqlEditorValue(text.slice(0, pos) + insert + text.slice(pos), pos + insert.length, { suggest });
+    this.syncSqlEditorValue();
+    const current = this.sqlEl?.value || '';
+    this.applySqlEditorValue(current.slice(0, start) + insert + current.slice(end), start + insert.length, { suggest });
   }
 
   handleSqlEditorPaste(e) {
