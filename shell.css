@@ -1691,7 +1691,7 @@ body.help-open{
 }
 
 /* ===============================
-   Theorie‑Spicker
+   SQL-Nachschlagewerk
    =============================== */
 
 .spicker-view{
@@ -1758,6 +1758,14 @@ body.help-open{
   font-size: 15px;
 }
 
+.spicker-item-goal{
+  margin-top: 4px;
+  color: rgba(11,15,24,.62);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .spicker-item-meta{
   font-weight: 900;
   font-size: 13px;
@@ -1777,6 +1785,16 @@ body.help-open{
   flex-wrap:wrap;
   gap: 6px;
   justify-content:flex-end;
+}
+
+.spicker-item .spicker-tags{
+  justify-content:flex-start;
+  margin-top: 8px;
+}
+
+.spicker-tags-detail{
+  justify-content:flex-start;
+  margin: 0 0 12px;
 }
 
 .spicker-tag{
@@ -1840,6 +1858,24 @@ body.help-open{
   line-height: 1.5;
 }
 
+.spicker-goal{
+  margin: 0 0 10px !important;
+  color: rgba(11,15,24,.82);
+  font-weight: 900;
+}
+
+.spicker-recipe p:last-child{
+  margin-bottom: 0;
+}
+
+.spicker-recipe code{
+  font-family: var(--mono);
+  font-weight: 900;
+  background: rgba(10,15,24,.06);
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+
 .spicker-table{
   width: 100%;
   border-collapse: separate;
@@ -1872,7 +1908,7 @@ body.help-open{
 }
 
 /* ===============================
-   Theorie-Spicker: Highlights & Codeblöcke
+   SQL-Nachschlagewerk: Highlights & Codeblöcke
    =============================== */
 .spicker-block{
   margin: 10px 0 14px 0;
@@ -1900,6 +1936,16 @@ body.help-open{
   overflow: auto;
   white-space: pre;
   box-shadow: 0 12px 26px rgba(10,15,24,.06);
+}
+
+.spicker-template-block{
+  background: rgba(255,149,0,.06);
+  border-color: rgba(255,149,0,.18);
+}
+
+.spicker-template-code{
+  border-color: rgba(255,149,0,.22);
+  background: rgba(255,255,255,.96);
 }
 
 /* ===============================
@@ -4538,21 +4584,32 @@ body[data-mode="free"] .task3-codeScaffoldText{
 }
 
 body[data-mode="free"] .help-panel{
-  width: min(560px, calc(100vw - 32px)) !important;
-  padding: 28px !important;
-  border-radius: 30px !important;
-  border: 1px solid rgba(255,255,255,.58) !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,252,.90)) !important;
-  box-shadow: 0 34px 110px rgba(0,0,0,.34) !important;
+  width: min(620px, calc(100vw - 32px)) !important;
+  padding: 22px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(15,23,42,.16) !important;
+  background: #fff !important;
+  box-shadow: 0 24px 70px rgba(15,23,42,.28) !important;
+}
+
+body[data-mode="free"] .help-overlay{
+  background: rgba(15,23,42,.48) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body[data-mode="free"] .help-panel::before,
+body[data-mode="free"] .help-panel::after{
+  display: none !important;
 }
 
 body[data-mode="free"] .help-head{
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 body[data-mode="free"] .help-title{
-  font-size: 28px;
-  letter-spacing: -0.025em;
+  font-size: 24px;
+  letter-spacing: 0;
 }
 
 body[data-mode="free"] .help-grid{
@@ -4562,15 +4619,15 @@ body[data-mode="free"] .help-grid{
 
 body[data-mode="free"] .help-card{
   min-height: auto !important;
-  border: 1px solid rgba(10,15,24,.08) !important;
-  border-radius: 18px !important;
-  background: rgba(255,255,255,.76) !important;
-  box-shadow: 0 12px 28px rgba(10,15,24,.08) !important;
-  padding: 14px 15px 13px !important;
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  padding: 13px 14px !important;
 }
 
 body[data-mode="free"] .help-footer{
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 @media (max-width: 620px){
@@ -4583,7 +4640,7 @@ body[data-mode="free"] .help-footer{
     display: none;
   }
 
-  body[data-mode="free"] .help-panel{
+body[data-mode="free"] .help-panel{
     padding: 20px !important;
   }
 }
@@ -4745,11 +4802,6 @@ body[data-mode="free"] .left-schema-toolBtn:hover{
   border-color: rgba(255,149,0,.28);
   background: rgba(255,255,255,.96);
   color: rgba(11,15,24,.92);
-}
-
-body[data-mode="free"] .left-schema-fitBtn{
-  min-width: 68px;
-  padding: 0 9px;
 }
 
 body[data-mode="free"] .left-schema-zoomLabel{

@@ -102,114 +102,247 @@ function clearFreeModeStartState() {
 
 const THEORY_CHAPTERS = [
   {
-    id: 'einleitung',
-    title: 'Einleitung',
-    html: `<p><strong>SQL</strong> ist die Standardsprache, um Daten aus einer Datenbank abzufragen. Eine SQL-Abfrage besteht aus festen Bausteinen (z. B. <strong>SELECT</strong>, <strong>FROM</strong>, <strong>WHERE</strong>), die du je nach Ziel kombinierst.</p>
-<table class="spicker-table"><thead><tr><th>Baustein</th><th>Zweck (kurz)</th></tr></thead><tbody>
-<tr><td><strong>SELECT</strong></td><td>Welche Spalten sollen angezeigt werden</td></tr>
-<tr><td><strong>FROM</strong></td><td>Aus welcher(n) Tabelle(n) kommen die Daten</td></tr>
-<tr><td><strong>WHERE</strong></td><td>Welche Zeilen sollen ausgewählt werden (Bedingungen)</td></tr>
-<tr><td><strong>ORDER BY</strong></td><td>Sortierung der Ergebnistabelle</td></tr>
-<tr><td><strong>Aggregat</strong> / <strong>GROUP BY</strong> / <strong>HAVING</strong></td><td>Zusammenfassen und Filtern von Gruppen</td></tr>
-</tbody></table>`,
+    id: 'grundmuster',
+    title: 'SQL-Grundmuster',
+    goal: 'Ich will eine einfache Abfrage richtig aufbauen.',
+    tags: ['SELECT', 'FROM'],
+    html: `<div class="spicker-recipe">
+<p><code>SELECT</code> nennt die Spalten. <code>FROM</code> nennt die Tabelle.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle;`,
     exampleSql: `SELECT name, preis
-FROM produkte
-WHERE preis <= 50
-ORDER BY preis ASC;`
+FROM produkte;`
   },
   {
-    id: 'schluessel',
-    title: 'Schlüssel',
-    html: `<p>Eine Datenbank speichert Daten in Tabellen, in denen jede Zeile ein Datensatz ist und jede Spalte ein Attribut. Ein <strong>Primärschlüssel</strong> identifiziert einen Datensatz eindeutig; ein <strong>Fremdschlüssel</strong> verweist auf den Primärschlüssel einer anderen Tabelle, um Tabellen zu verbinden.</p>`
+    id: 'spalten-auswaehlen',
+    title: 'Spalten auswählen',
+    goal: 'Ich will nicht alle Spalten sehen, sondern nur bestimmte.',
+    tags: ['SELECT'],
+    html: `<div class="spicker-recipe">
+<p>Mehrere Spalten werden mit Komma getrennt. <code>*</code> zeigt alle Spalten. <code>AS</code> benennt eine Ergebnisspalte.</p>
+</div>`,
+    templateSql: `SELECT spalte1 AS neuer_name,
+       spalte2
+FROM tabelle;`,
+    exampleSql: `SELECT name AS produktname,
+       preis,
+       lagerbestand
+FROM produkte;`
   },
   {
-    id: 'select-from',
-    title: 'SELECT … FROM …',
-    html: `<p><strong>*</strong> bedeutet „alle Spalten“. <strong>DISTINCT</strong> entfernt doppelte Werte in einer Ergebnisspalte. <strong>LIMIT</strong> begrenzt die Anzahl der Zeilen im Ergebnis.</p>
-<table class="spicker-table"><thead><tr><th>liefertage ohne DISTINCT</th><th>liefertage mit DISTINCT</th></tr></thead><tbody>
-<tr><td>2</td><td>2</td></tr>
-<tr><td><span style="color:#c00;text-decoration:line-through;">2</span></td><td>3</td></tr>
-<tr><td>3</td><td>5</td></tr>
-<tr><td><span style="color:#c00;text-decoration:line-through;">3</span></td><td>&nbsp;</td></tr>
-<tr><td>5</td><td>&nbsp;</td></tr>
-</tbody></table>`,
-    exampleSql: `SELECT DISTINCT liefertage
-FROM produkte
-ORDER BY liefertage
-LIMIT 3;`
-  },
-  {
-    id: 'where',
-    title: 'WHERE',
-    html: `<p><strong>WHERE</strong> filtert Zeilen: Nur Datensätze, die die Bedingung erfüllen, kommen ins Ergebnis. Mehrere Bedingungen kannst du mit <strong>AND</strong> und <strong>OR</strong> verknüpfen; <strong>NOT</strong> kehrt eine Bedingung um.</p>
-<table class="spicker-table"><thead><tr><th>Operator</th><th>Bedeutung</th></tr></thead><tbody>
-<tr><td><strong>=</strong></td><td>gleich</td></tr>
-<tr><td><strong>&lt;&gt;</strong></td><td>ungleich</td></tr>
-<tr><td><strong>&lt; / &lt;=</strong></td><td>kleiner / kleiner-gleich</td></tr>
-<tr><td><strong>&gt; / &gt;=</strong></td><td>größer / größer-gleich</td></tr>
-</tbody></table>
-<table class="spicker-table"><thead><tr><th>Logik</th><th>Wirkung</th></tr></thead><tbody>
-<tr><td><strong>AND</strong></td><td>beide Bedingungen müssen wahr sein</td></tr>
-<tr><td><strong>OR</strong></td><td>mindestens eine Bedingung muss wahr sein</td></tr>
-<tr><td><strong>NOT</strong></td><td>macht „wahr“ zu „falsch“ (und umgekehrt)</td></tr>
-</tbody></table>`,
-    exampleSql: `SELECT name, preis, lagerbestand
-FROM produkte
-WHERE preis <= 50
-  AND lagerbestand > 0;`
-  },
-  {
-    id: 'order-by',
-    title: 'ORDER BY',
-    html: `<p><strong>ORDER BY</strong> sortiert die Ergebnistabelle nach einer oder mehreren Spalten. Du kannst aufsteigend (<strong>ASC</strong>) oder absteigend (<strong>DESC</strong>) sortieren.</p>`,
-    exampleSql: `SELECT name, preis, liefertage
-FROM produkte
-ORDER BY liefertage ASC, preis DESC;`
-  },
-  {
-    id: 'aggregat-as',
-    title: 'Aggregat & AS',
-    html: `<p><strong>Aggregatfunktionen</strong> fassen viele Zeilen zu einem Ergebniswert zusammen (z. B. Anzahl, Minimum, Durchschnitt). Mit <strong>AS</strong> gibst du Spalten im Ergebnis einen verständlichen Namen (Alias).</p>
-<table class="spicker-table"><thead><tr><th>Aggregatfunktion</th><th>Zweck</th></tr></thead><tbody>
-<tr><td><strong>COUNT(...)</strong></td><td>zählt Werte/Zeilen</td></tr>
-<tr><td><strong>SUM(...)</strong></td><td>Summe</td></tr>
-<tr><td><strong>AVG(...)</strong></td><td>Durchschnitt</td></tr>
-<tr><td><strong>MIN(...)</strong></td><td>kleinster Wert</td></tr>
-<tr><td><strong>MAX(...)</strong></td><td>größter Wert</td></tr>
-</tbody></table>`,
-    exampleSql: `SELECT COUNT(*) AS anzahl
+    id: 'filtern',
+    title: 'Zeilen filtern',
+    goal: 'Ich will nur Zeilen anzeigen, die eine Bedingung erfüllen.',
+    tags: ['WHERE', '<', '>'],
+    html: `<div class="spicker-recipe">
+<p><code>WHERE</code> steht nach <code>FROM</code>. Wichtige Vergleiche: <code>=</code>, <code>&lt;&gt;</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+WHERE spalte > wert;`,
+    exampleSql: `SELECT name, preis
 FROM produkte
 WHERE lagerbestand > 0;`
   },
   {
-    id: 'group-by-having',
-    title: 'GROUP BY & HAVING',
-    html: `<p><strong>GROUP BY</strong> bildet Gruppen von Zeilen mit gleichem Wert in einer Spalte, damit du pro Gruppe Aggregatwerte berechnen kannst. <strong>HAVING</strong> filtert anschließend Gruppen (nicht einzelne Zeilen).</p>`,
-    exampleSql: `SELECT kategorie_id, COUNT(*) AS anzahl
+    id: 'bedingungen-verknuepfen',
+    title: 'Bedingungen verbinden',
+    goal: 'Ich will mehrere Bedingungen gleichzeitig prüfen.',
+    tags: ['AND', 'OR'],
+    html: `<div class="spicker-recipe">
+<p><code>AND</code>: alles muss passen. <code>OR</code>: mindestens eine Bedingung muss passen.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+WHERE bedingung1
+  AND bedingung2;`,
+    exampleSql: `SELECT name, preis
 FROM produkte
-GROUP BY kategorie_id
-HAVING COUNT(*) >= 3;`
+WHERE lagerbestand > 0
+  AND preis <= 80;`
   },
   {
-    id: 'verbund-1-n',
-    title: 'Verbund 1:n',
-    html: `<p>Eine <strong>1:n‑Beziehung</strong> bedeutet: Ein Datensatz auf der „1‑Seite“ gehört zu vielen Datensätzen auf der „n‑Seite“. In Tabellen setzt man das um, indem man den <strong>Primärschlüssel</strong> der „1‑Seite“ als <strong>Fremdschlüssel</strong> in der Tabelle der „n‑Seite“ speichert.</p>
-<p><strong>Beispiel:</strong> Eine Kategorie hat viele Produkte (kategorien → produkte).</p>`,
-    exampleSql: `SELECT p.name, k.name AS kategorie
+    id: 'textwerte',
+    title: 'Nach Text suchen',
+    goal: 'Ich will Textwerte oder Textteile finden.',
+    tags: ['Text', 'LIKE', '%'],
+    html: `<div class="spicker-recipe">
+<p>Text steht in <code>'...'</code> oder <code>"..."</code>. <code>=</code> sucht exakt, <code>LIKE</code> sucht Muster, <code>%</code> steht für beliebig viele Zeichen.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+WHERE textspalte LIKE '%text%';`,
+    exampleSql: `SELECT name
+FROM produkte
+WHERE name LIKE '%ball%';`
+  },
+  {
+    id: 'sortieren',
+    title: 'Sortieren',
+    goal: 'Ich will die Reihenfolge der Zeilen festlegen.',
+    tags: ['ORDER BY', 'ASC', 'DESC'],
+    html: `<div class="spicker-recipe">
+<p><code>ORDER BY</code> sortiert. <code>ASC</code> ist aufsteigend, <code>DESC</code> absteigend.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+ORDER BY spalte ASC;`,
+    exampleSql: `SELECT name, preis
+FROM produkte
+ORDER BY name ASC;`
+  },
+  {
+    id: 'begrenzen',
+    title: 'Ergebnis begrenzen',
+    goal: 'Ich will nur die ersten Zeilen anzeigen.',
+    tags: ['LIMIT'],
+    html: `<div class="spicker-recipe">
+<p><code>LIMIT</code> steht am Ende und begrenzt die Anzahl der Ergebniszeilen.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+LIMIT anzahl;`,
+    exampleSql: `SELECT name
+FROM produkte
+ORDER BY name ASC
+LIMIT 4;`
+  },
+  {
+    id: 'distinct',
+    title: 'Doppelte Werte vermeiden',
+    goal: 'Ich will jeden Wert nur einmal sehen.',
+    tags: ['DISTINCT'],
+    html: `<div class="spicker-recipe">
+<p><code>DISTINCT</code> entfernt doppelte Ergebniszeilen. Es steht direkt nach <code>SELECT</code>.</p>
+</div>`,
+    templateSql: `SELECT DISTINCT spalte
+FROM tabelle;`,
+    exampleSql: `SELECT DISTINCT liefertage
+FROM produkte
+ORDER BY liefertage ASC;`
+  },
+  {
+    id: 'tabellen-verbinden',
+    title: 'Tabellen verbinden',
+    goal: 'Ich will Informationen aus mehreren Tabellen nutzen.',
+    tags: ['WHERE', 'JOIN', 'FK'],
+    html: `<div class="spicker-recipe">
+<p><strong>PK</strong> erkennt eine Zeile eindeutig. <strong>FK</strong> verweist darauf. Verbinde FK und PK mit <code>WHERE</code> oder <code>JOIN ... ON</code>.</p>
+</div>`,
+    templateSql: `-- WHERE-Verknüpfung
+SELECT ...
+FROM tabelle1 a, tabelle2 b
+WHERE a.fremdschluessel = b.primaerschluessel;
+
+-- JOIN-Verknüpfung
+SELECT ...
+FROM tabelle1 a
+JOIN tabelle2 b ON a.fremdschluessel = b.primaerschluessel;`,
+    exampleSql: `-- Variante mit WHERE-Verknüpfung
+SELECT p.name, k.name AS kategorie
 FROM produkte p, kategorien k
 WHERE p.kategorie_id = k.id
-ORDER BY k.name, p.name;
+  AND p.lagerbestand > 0;
 
--- Alternative mit JOIN
+-- Gleiche Verbindung mit JOIN
 SELECT p.name, k.name AS kategorie
 FROM produkte p
 JOIN kategorien k ON p.kategorie_id = k.id
-ORDER BY k.name, p.name;`
+WHERE p.lagerbestand > 0;`
   },
   {
-    id: 'verbund-n-m',
-    title: 'Verbund n:m',
-    html: `<p>Eine <strong>n:m‑Beziehung</strong> bedeutet: Viele Datensätze aus Tabelle A passen zu vielen Datensätze aus Tabelle B. Das setzt man mit einer zusätzlichen <strong>Beziehungstabelle</strong> um, die die beiden <strong>Primärschlüssel</strong> als <strong>Fremdschlüssel</strong> speichert; oft bilden diese beiden Fremdschlüssel zusammen den Primärschlüssel der Beziehungstabelle.</p>`
+    id: 'rechnen',
+    title: 'Mit Spalten rechnen',
+    goal: 'Ich will aus vorhandenen Werten neue Werte berechnen.',
+    tags: ['Rechnen', 'AS'],
+    html: `<div class="spicker-recipe">
+<p>Du kannst Spalten in Rechnungen verwenden. Gib dem Ergebnis mit <code>AS</code> einen Namen.</p>
+</div>`,
+    templateSql: `SELECT spalte1,
+       spalte1 * zahl AS neuer_wert
+FROM tabelle;`,
+    exampleSql: `SELECT name,
+       preis,
+       preis * 0.9 AS aktionspreis
+FROM produkte;`
+  },
+  {
+    id: 'aggregieren',
+    title: 'Kennwerte berechnen',
+    goal: 'Ich will aus vielen Zeilen einen Wert berechnen.',
+    tags: ['COUNT', 'SUM', 'AVG'],
+    html: `<div class="spicker-recipe">
+<table class="spicker-table spicker-table-compact"><thead><tr><th>Funktion</th><th>Zweck</th></tr></thead><tbody>
+<tr><td><code>COUNT(*)</code></td><td>Zeilen zählen</td></tr>
+<tr><td><code>SUM(...)</code></td><td>Summe bilden</td></tr>
+<tr><td><code>AVG(...)</code></td><td>Durchschnitt</td></tr>
+</tbody></table>
+</div>`,
+    templateSql: `SELECT COUNT(*) AS anzahl,
+       AVG(spalte) AS durchschnitt
+FROM tabelle;`,
+    exampleSql: `SELECT COUNT(*) AS produkte,
+       AVG(preis) AS durchschnitt
+FROM produkte;`
+  },
+  {
+    id: 'gruppieren',
+    title: 'Gruppen bilden',
+    goal: 'Ich will pro Gruppe einen Kennwert berechnen.',
+    tags: ['GROUP BY'],
+    html: `<div class="spicker-recipe">
+<p><code>GROUP BY</code> fasst Zeilen mit gleichem Wert zusammen.</p>
+</div>`,
+    templateSql: `SELECT gruppenspalte,
+       COUNT(*) AS anzahl
+FROM tabelle
+GROUP BY gruppenspalte;`,
+    exampleSql: `SELECT produkt_id,
+       COUNT(*) AS anzahl_bewertungen
+FROM bewertungen
+GROUP BY produkt_id;`
+  },
+  {
+    id: 'gruppen-filtern',
+    title: 'Gruppen filtern',
+    goal: 'Ich will nur bestimmte Gruppen anzeigen.',
+    tags: ['HAVING'],
+    html: `<div class="spicker-recipe">
+<p><code>HAVING</code> filtert nach dem Gruppieren.</p>
+</div>`,
+    templateSql: `SELECT gruppenspalte,
+       COUNT(*) AS anzahl
+FROM tabelle
+GROUP BY gruppenspalte
+HAVING COUNT(*) >= wert;`,
+    exampleSql: `SELECT produkt_id,
+       COUNT(*) AS anzahl_bewertungen
+FROM bewertungen
+GROUP BY produkt_id
+HAVING COUNT(*) >= 2;`
+  },
+  {
+    id: 'unterabfragen',
+    title: 'Unterabfragen nutzen',
+    goal: 'Ich will erst eine Liste berechnen und damit weiterfiltern.',
+    tags: ['IN', 'Unterabfrage'],
+    html: `<div class="spicker-recipe">
+<p>Eine Unterabfrage steht in Klammern. Mit <code>IN</code> prüfst du, ob ein Wert in dieser berechneten Liste vorkommt.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+WHERE spalte IN (
+  SELECT andere_spalte
+  FROM andere_tabelle
+);`,
+    exampleSql: `SELECT name
+FROM kategorien
+WHERE id IN (
+  SELECT kategorie_id
+  FROM produkte
+  WHERE liefertage <= 2
+);`
   }
 ];
 
@@ -1060,9 +1193,9 @@ renderShell() {
                 </div>
 
                 <div class="task3-card">
-                  <div class="task3-cardHead">
-                    <div class="task3-cardTitle">Ausgabe</div>
-                    <div class="task3-cardMeta">Ergebnis / Fehlermeldung</div>
+                    <div class="task3-cardHead">
+                      <div class="task3-cardTitle">Ausgabe</div>
+                    <div class="task3-cardMeta">Ausgabe deiner Prüfung</div>
                   </div>
                   <pre class="output task3-output" id="out"></pre>
                 </div>
@@ -1086,17 +1219,13 @@ renderShell() {
             <div id="spickerView" style="display:none; min-height:0;" class="spicker-view">
               <div class="spicker-head">
                 <div>
-                  <h3 class="spicker-title">Theorie‑Spicker</h3>
-                  <div class="spicker-sub">Kapitel auswählen</div>
+                  <h3 class="spicker-title">SQL‑Nachschlagewerk</h3>
+                  <div class="spicker-sub">Lernschritt auswählen</div>
                 </div>
                 <button class="btn btn-close" id="spickerClose" type="button" aria-label="Schließen" title="Aufgabe schließen">✕</button>
               </div>
 
               <div id="spickerList" class="spicker-list" aria-label="Kapitelübersicht"></div>
-
-              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary" id="theoriePdfDownloadBtn" type="button">Theorie als PDF herunterladen</button>
-              </div>
 
               <div id="spickerChapter" class="spicker-chapter" style="display:none;">
                 <div class="spicker-chapter-top">
@@ -1117,10 +1246,6 @@ renderShell() {
               </div>
 
               <div id="solutionsList" class="spicker-list" aria-label="Aufgabenübersicht"></div>
-
-              <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,.15); display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary" id="solutionsPdfDownloadBtn" type="button">Aufgaben als PDF herunterladen</button>
-              </div>
 
               <div id="solutionsTask" class="spicker-chapter" style="display:none;">
                 <div class="spicker-chapter-top">
@@ -1213,7 +1338,6 @@ renderShell() {
     this.spickerChapterTitleEl = this.root.querySelector('#spickerChapterTitle');
     this.spickerBackBtn = this.root.querySelector('#spickerBack');
     this.spickerCloseBtn = this.root.querySelector('#spickerClose');
-    this.theoriePdfDownloadBtn = this.root.querySelector('#theoriePdfDownloadBtn');
     // Solutions view
     this.solutionsViewEl = this.root.querySelector('#solutionsView');
     this.solutionsListEl = this.root.querySelector('#solutionsList');
@@ -1222,7 +1346,6 @@ renderShell() {
     this.solutionsTaskTitleEl = this.root.querySelector('#solutionsTaskTitle');
     this.solutionsBackBtn = this.root.querySelector('#solutionsBack');
     this.solutionsCloseBtn = this.root.querySelector('#solutionsClose');
-    this.solutionsPdfDownloadBtn = this.root.querySelector('#solutionsPdfDownloadBtn');
 
     this.categoryEl = this.root.querySelector('#taskCategory');
 
@@ -1354,10 +1477,8 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       const id = btn.getAttribute('data-chapter');
       this.openSpickerChapter(id);
     });
-    this.theoriePdfDownloadBtn?.addEventListener('click', () => this.downloadTheoriePdf());
     this.solutionsBackBtn?.addEventListener('click', () => this.openSolutionsIndex());
     this.solutionsCloseBtn?.addEventListener('click', () => this.closeSolutions());
-    this.solutionsPdfDownloadBtn?.addEventListener('click', () => this.downloadSolutionsPdf());
     this.solutionsListEl?.addEventListener('click', (e) => {
       const btn = e.target?.closest?.('[data-solution]');
       if (!btn) return;
@@ -1367,7 +1488,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
   }
 
   /* ===========================
-     Theorie‑Spicker (aus Tutorial.docx)
+     SQL-Nachschlagewerk
      =========================== */
 
   openSpicker() {
@@ -1409,9 +1530,16 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     const items = THEORY_CHAPTERS.map((c) => {
       const title = this.escapeHtml(c.title);
       const id = this.escapeHtml(c.id);
+      const goal = c.goal ? `<div class="spicker-item-goal">${this.escapeHtml(c.goal)}</div>` : '';
+      const tags = Array.isArray(c.tags) ? c.tags : [];
+      const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.map((tag) => `<span class="spicker-tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : '';
       return `
         <button class="spicker-item" type="button" data-chapter="${id}">
-          <div class="spicker-item-title">${title}</div>
+          <div>
+            <div class="spicker-item-title">${title}</div>
+            ${goal}
+            ${tagsHtml}
+          </div>
           <div class="spicker-item-meta">Öffnen</div>
         </button>
       `;
@@ -1429,13 +1557,25 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     if (this.spickerChapterTitleEl) this.spickerChapterTitleEl.textContent = ch.title;
     if (this.spickerContentEl) {
       const ex = (ch && ch.exampleSql) ? String(ch.exampleSql) : '';
-      const exBlock = ex ? `
-        <div class="spicker-block" style="margin-top:14px;">
-          <div class="spicker-block-title">Beispielabfrage</div>
-          <pre class="output" style="white-space:pre-wrap; margin:0;">${this.escapeHtml(ex)}</pre>
+      const template = (ch && ch.templateSql) ? String(ch.templateSql) : '';
+      const tags = Array.isArray(ch.tags) ? ch.tags : [];
+      const intro = `
+        ${ch.goal ? `<p class="spicker-goal">${this.escapeHtml(ch.goal)}</p>` : ''}
+        ${tags.length ? `<div class="spicker-tags spicker-tags-detail">${tags.map((tag) => `<span class="spicker-tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+      `;
+      const templateBlock = template ? `
+        <div class="spicker-block spicker-template-block" style="margin-top:14px;">
+          <div class="spicker-block-title">Minimalvorlage</div>
+          <pre class="spicker-code spicker-template-code">${this.escapeHtml(template)}</pre>
         </div>
       ` : '';
-      this.spickerContentEl.innerHTML = `${ch.html}${exBlock}`;
+      const exBlock = ex ? `
+        <div class="spicker-block" style="margin-top:14px;">
+          <div class="spicker-block-title">Beispielabfrage aus dem Shop-Schema</div>
+          <pre class="spicker-code">${this.escapeHtml(ex)}</pre>
+        </div>
+      ` : '';
+      this.spickerContentEl.innerHTML = `${intro}${ch.html}${templateBlock}${exBlock}`;
     }
 
     if (this.spickerListEl) this.spickerListEl.style.display = 'none';
@@ -1633,185 +1773,6 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
 
     if (this.schemaListEl) this.schemaListEl.style.display = 'none';
     if (this.schemaTableEl) this.schemaTableEl.style.display = '';
-  }
-
-  generatePdfFromElement(element, filename) {
-    const opt = {
-      margin: 10,
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-    };
-    html2pdf().set(opt).from(element).save();
-  }
-
-  downloadTheoriePdf() {
-    const wrapper = document.createElement('div');
-    wrapper.style.padding = '16px';
-    wrapper.style.backgroundColor = '#fff';
-    wrapper.style.color = '#000';
-    wrapper.style.fontFamily = 'Arial, sans-serif';
-    wrapper.style.lineHeight = '1.4';
-    wrapper.style.fontSize = '12px';
-    wrapper.style.wordWrap = 'break-word';
-
-    const title = document.createElement('h1');
-    title.textContent = 'Theorie-Spicker';
-    title.style.marginTop = '0';
-    title.style.fontSize = '18px';
-    title.style.marginBottom = '10px';
-    wrapper.appendChild(title);
-
-    const info = document.createElement('p');
-    info.textContent = `Exportiert am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}`;
-    info.style.color = '#666';
-    info.style.marginBottom = '20px';
-    wrapper.appendChild(info);
-
-    THEORY_CHAPTERS.forEach((ch, index) => {
-      const chapterWrapper = document.createElement('div');
-      chapterWrapper.style.pageBreakInside = 'avoid';
-      chapterWrapper.style.breakInside = 'avoid';
-      chapterWrapper.style.marginBottom = '16px';
-
-      const chapterHeading = document.createElement('h2');
-      chapterHeading.textContent = `${index + 1}. ${ch.title}`;
-      chapterHeading.style.fontSize = '14px';
-      chapterHeading.style.margin = '20px 0 8px';
-      chapterWrapper.appendChild(chapterHeading);
-
-      const chapterHtml = document.createElement('div');
-      chapterHtml.innerHTML = ch.html || '';
-      chapterHtml.style.marginBottom = '10px';
-      chapterHtml.style.fontSize = '12px';
-      chapterWrapper.appendChild(chapterHtml);
-
-      if (ch.exampleSql) {
-        const exampleBlock = document.createElement('div');
-        exampleBlock.style.marginTop = '10px';
-        exampleBlock.style.padding = '10px';
-        exampleBlock.style.border = '1px solid #ccc';
-        exampleBlock.style.backgroundColor = '#f9f9f9';
-        exampleBlock.style.pageBreakInside = 'avoid';
-        exampleBlock.style.breakInside = 'avoid';
-
-        const exampleTitle = document.createElement('div');
-        exampleTitle.textContent = 'Beispielabfrage';
-        exampleTitle.style.fontWeight = 'bold';
-        exampleTitle.style.marginBottom = '6px';
-        exampleBlock.appendChild(exampleTitle);
-
-        const examplePre = document.createElement('pre');
-        examplePre.textContent = ch.exampleSql;
-        examplePre.style.whiteSpace = 'pre-wrap';
-        examplePre.style.margin = '0';
-        examplePre.style.fontSize = '11px';
-        exampleBlock.appendChild(examplePre);
-
-        chapterWrapper.appendChild(exampleBlock);
-      }
-
-      wrapper.appendChild(chapterWrapper);
-    });
-
-    this.generatePdfFromElement(wrapper, 'theorie.pdf');
-  }
-
-  downloadSolutionsPdf() {
-    const solvedIds = Object.keys(this.TASKS).filter(id => !!this.unlocked?.[id]);
-    const wrapper = document.createElement('div');
-    wrapper.style.padding = '16px';
-    wrapper.style.backgroundColor = '#fff';
-    wrapper.style.color = '#000';
-    wrapper.style.fontFamily = 'Arial, sans-serif';
-    wrapper.style.lineHeight = '1.4';
-    wrapper.style.fontSize = '12px';
-    wrapper.style.wordWrap = 'break-word';
-
-    const title = document.createElement('h1');
-    title.textContent = 'Gelöste Aufgaben';
-    title.style.marginTop = '0';
-    title.style.fontSize = '18px';
-    title.style.marginBottom = '10px';
-    wrapper.appendChild(title);
-
-    const info = document.createElement('p');
-    info.textContent = `Exportiert am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}`;
-    info.style.color = '#666';
-    info.style.marginBottom = '20px';
-    wrapper.appendChild(info);
-
-    if (!solvedIds.length) {
-      const noTasks = document.createElement('p');
-      noTasks.textContent = 'Noch keine Aufgaben freigeschaltet.';
-      wrapper.appendChild(noTasks);
-      this.generatePdfFromElement(wrapper, 'aufgaben.pdf');
-      return;
-    }
-
-    solvedIds.forEach((id, index) => {
-      const taskWrapper = document.createElement('div');
-      taskWrapper.style.pageBreakInside = 'avoid';
-      taskWrapper.style.breakInside = 'avoid';
-      taskWrapper.style.marginBottom = '16px';
-
-      const t = this.TASKS[id] || {};
-      const taskTitle = document.createElement('h2');
-      taskTitle.textContent = `${index + 1}. ${t.title || id}`;
-      taskTitle.style.fontSize = '14px';
-      taskTitle.style.margin = '20px 0 8px';
-      taskWrapper.appendChild(taskTitle);
-
-      const category = document.createElement('div');
-      category.textContent = `Kategorie: ${this.getCategoryLabel(id)}`;
-      category.style.marginBottom = '8px';
-      category.style.color = '#555';
-      category.style.fontSize = '12px';
-      taskWrapper.appendChild(category);
-
-      const taskText = document.createElement('div');
-      taskText.textContent = this.sanitizeTaskText(t.task || '').replace(/^aufgabe:\s*/i, '').trim();
-      taskText.style.whiteSpace = 'pre-wrap';
-      taskText.style.marginBottom = '12px';
-      taskText.style.fontSize = '12px';
-      taskWrapper.appendChild(taskText);
-
-      const sqlCode = String(this.solutionSql?.[id] || '').trim();
-      const solutionBlock = document.createElement('div');
-      solutionBlock.style.padding = '10px';
-      solutionBlock.style.border = '1px solid #ccc';
-      solutionBlock.style.backgroundColor = '#f9f9f9';
-      solutionBlock.style.pageBreakInside = 'avoid';
-      solutionBlock.style.breakInside = 'avoid';
-
-      const solutionTitle = document.createElement('div');
-      solutionTitle.textContent = 'Freischalt-SQL';
-      solutionTitle.style.fontWeight = 'bold';
-      solutionTitle.style.marginBottom = '6px';
-      solutionTitle.style.fontSize = '12px';
-      solutionBlock.appendChild(solutionTitle);
-
-      if (sqlCode) {
-        const solutionPre = document.createElement('pre');
-        solutionPre.textContent = sqlCode;
-        solutionPre.style.whiteSpace = 'pre-wrap';
-        solutionPre.style.margin = '0';
-        solutionPre.style.fontSize = '11px';
-        solutionBlock.appendChild(solutionPre);
-      } else {
-        const missing = document.createElement('div');
-        missing.textContent = 'Keine gespeicherte Freischalt-SQL verfügbar.';
-        missing.style.color = '#666';
-        missing.style.fontSize = '11px';
-        solutionBlock.appendChild(missing);
-      }
-
-      taskWrapper.appendChild(solutionBlock);
-      wrapper.appendChild(taskWrapper);
-    });
-
-    this.generatePdfFromElement(wrapper, 'aufgaben.pdf');
   }
 
   /* ===========================
@@ -3530,16 +3491,6 @@ if (H[taskId]) return H[taskId];
       this.btnBonus.setAttribute('aria-disabled', canBonus ? 'false' : 'true');
       this.btnBonus.title = canBonus ? 'Zusatzaufgabe: Hacking verfügbar' : `Ab ${BONUS_MIN_PCT}% Fortschritt verfügbar`;
     }
-  }
-
-  downloadPdf(url, filename) {
-    // best-effort: einfacher Download im selben Ordner
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || '';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
   }
 
   downloadJson(filename, data) {

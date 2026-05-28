@@ -90,7 +90,7 @@
         <details class="topbar-menu" id="labMenu">
           <summary class="pillBtn" aria-haspopup="menu">Tools</summary>
           <div class="menu-panel" role="menu">
-            <button class="btn" id="btnSpicker" type="button" role="menuitem">Theorie-Spicker</button>
+            <button class="btn" id="btnSpicker" type="button" role="menuitem">SQL-Nachschlagewerk</button>
             <button class="btn" id="btnSolutions" type="button" role="menuitem">Bereits gelöste Aufgaben</button>
             <button class="btn btn-locked" id="btnBonus" type="button" role="menuitem" aria-label="Zusatzaufgabe: Hacking">Zusatzaufgabe: Hacking</button>
             <button class="btn" id="btnExport" type="button" role="menuitem">Spielstand exportieren</button>
@@ -127,7 +127,6 @@
               <button class="left-schema-toolBtn" type="button" data-schema-zoom="out" aria-label="Verkleinern">-</button>
               <span class="left-schema-zoomLabel" id="leftSchemaZoomLabel">100%</span>
               <button class="left-schema-toolBtn" type="button" data-schema-zoom="in" aria-label="Vergrößern">+</button>
-              <button class="left-schema-toolBtn left-schema-fitBtn" type="button" data-schema-zoom="fit">Einpassen</button>
             </div>
             <div class="left-schema-scroll">
               <svg class="left-schema-svg" viewBox="0 0 1320 720" preserveAspectRatio="xMidYMid meet" aria-label="DB-Schema" role="img">
@@ -311,8 +310,8 @@
       <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle" aria-describedby="helpSub">
         <div class="help-head">
           <div>
-            <div class="help-eyebrow">Kurzanleitung</div>
-            <h3 class="help-title" id="helpTitle">So bearbeitest du Aufgaben</h3>
+            <div class="help-eyebrow">Hilfe</div>
+            <h3 class="help-title" id="helpTitle">Freier Modus</h3>
             <div class="help-sub" id="helpSub"></div>
           </div>
           <button class="btn btn-ghost help-close" id="helpClose" type="button" aria-label="Schlie&szlig;en">&#10005;</button>
@@ -321,19 +320,19 @@
         <div class="help-grid">
           <div class="help-card">
             <div class="help-card-title"><span class="help-icon" data-icon="select"></span>Aufgabe ausw&auml;hlen</div>
-            <div class="help-card-body">Klicke im Shop auf einen <strong>gesperrten Button</strong>. Rechts &ouml;ffnet sich die passende SQL-Aufgabe.</div>
+            <div class="help-card-body">Klicke im Shop auf einen <strong>gesperrten Button</strong>. Rechts erscheint die SQL-Aufgabe zu dieser Funktion.</div>
           </div>
           <div class="help-card">
-            <div class="help-card-title"><span class="help-icon" data-icon="check"></span>SQL schreiben</div>
-            <div class="help-card-body">Formuliere die Abfrage, klicke auf <strong>Pr&uuml;fen</strong> und schalte den Button frei, wenn das Ergebnis stimmt.</div>
+            <div class="help-card-title"><span class="help-icon" data-icon="check"></span>Abfrage pr&uuml;fen</div>
+            <div class="help-card-body">Schreibe SQL, klicke auf <strong>Pr&uuml;fen</strong> und vergleiche bei Bedarf deine Ergebnistabelle.</div>
           </div>
           <div class="help-card">
-            <div class="help-card-title"><span class="help-icon" data-icon="hint"></span>Codeger&uuml;st</div>
-            <div class="help-card-body">Das <strong>Codeger&uuml;st</strong> hilft beim Start und kostet einen Score-Punkt.</div>
+            <div class="help-card-title"><span class="help-icon" data-icon="hint"></span>Shop und DB-Schema</div>
+            <div class="help-card-body">Links kannst du zwischen <strong>Shop</strong> und <strong>DB-Schema</strong> wechseln. Das Schema zeigt Tabellen, Spalten und Beziehungen.</div>
           </div>
           <div class="help-card">
-            <div class="help-card-title"><span class="help-icon" data-icon="tools"></span>Tools &amp; Bonus</div>
-            <div class="help-card-body">Im Tools-Men&uuml; findest du <strong>Theorie-Spicker</strong>, gel&ouml;ste Aufgaben, Bonus und Export.</div>
+            <div class="help-card-title"><span class="help-icon" data-icon="tools"></span>Hilfen und Bonus</div>
+            <div class="help-card-body">Das <strong>Codeger&uuml;st</strong> kostet einen Score-Punkt. Im Tools-Men&uuml; findest du Nachschlagewerk, gel&ouml;ste Aufgaben, Export und die sp&auml;tere Hacking-Aufgabe.</div>
           </div>
         </div>
 
@@ -350,8 +349,6 @@
 
   <!-- sql.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-  <!-- html2pdf for PDF generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <!-- Mode Logic -->
   <script src="modes.js"></script>
   <script>
