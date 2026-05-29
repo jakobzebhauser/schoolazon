@@ -51,7 +51,8 @@ const ALL_TASK_IDS = [
   "orders",
   "topProducts",
   "cart-refresh",
-  "cart-total"
+  "cart-total",
+  "sqli"
 ];
 
 /* ===========================
@@ -76,6 +77,10 @@ function clearFreeModeStartState() {
     "schulazon_scaffold_used_v1",
     "schulazon_solution_sql_v1",
     "schulazon_sqli_done_v1",
+    "schulazon_sqli_secured_v1",
+    "schulazon_sqli_secure_sql_v1",
+    "schulazon_sqli_secure_binding_v1",
+    "schulazon_sqli_research_done_v1",
     "schulazon_spicker_used_v1",
     "schulazon_free_resume_v1",
     "schulazon_free_header_collapsed_v1"
@@ -176,6 +181,21 @@ WHERE textspalte LIKE '%text%';`,
     exampleSql: `SELECT name
 FROM produkte
 WHERE name LIKE '%ball%';`
+  },
+  {
+    id: 'kommentare',
+    title: 'Kommentare schreiben',
+    goal: 'Ich will Text in SQL auskommentieren.',
+    tags: ['--', 'Kommentar'],
+    html: `<div class="spicker-recipe">
+<p><code>--</code> kommentiert den Rest der Zeile aus. Das wird oft zum Erklären genutzt, kann aber bei unsicheren Logins auch missbraucht werden.</p>
+</div>`,
+    templateSql: `SELECT spalte
+FROM tabelle
+WHERE bedingung -- Kommentar`,
+    exampleSql: `SELECT name
+FROM produkte
+WHERE lagerbestand > 0 -- nur verfügbare Produkte`
   },
   {
     id: 'sortieren',
@@ -353,7 +373,50 @@ WHERE id IN (
 const FREE_HEADER_COLLAPSE_KEY = "schulazon_free_header_collapsed_v1";
 
 
-const BONUS_MIN_PCT = 70;
+const SQLI_DEFAULT_VULNERABLE_SQL = `SELECT id, username, name
+FROM users
+WHERE username = '\${username}'
+  AND password = '\${password}'
+LIMIT 1;`;
+const SQLI_DEFAULT_SECURE_SQL = `SELECT id, username, name
+FROM users
+WHERE username = ?
+  AND password = ?
+LIMIT 1;`;
+const SQLI_DEFAULT_VULNERABLE_CODE = `function login(username, password) {
+  const sql =
+    "SELECT id, username FROM users " +
+    "WHERE username = '" + username + "' " +
+    "AND password = '" + password + "' " +
+    "LIMIT 1";
+
+  return db.exec(sql);
+}`;
+const SQLI_DEFAULT_SECURE_CODE = `function login(username, password) {
+  const sql =
+    "SELECT id, username FROM users " +
+    "WHERE username = ? " +
+    "AND password = ? " +
+    "LIMIT 1";
+
+  const stmt = db.prepare(sql);
+  stmt.bind([username, password]);
+
+  return stmt.step();
+}`;
+const SQLI_CODE_STARTER = `function login(username, password) {
+  const sql =
+    "SELECT id, username FROM users " +
+    "WHERE username = ? " +
+    "AND password = ? " +
+    "LIMIT 1";
+
+  // TODO: SQL-Statement vorbereiten
+
+  // TODO: username und password an die Platzhalter binden
+
+  // TODO: Statement ausführen und zurückgeben, ob ein Datensatz existiert
+}`;
 function safeGet(storage, key) {
   try { return (storage && storage.getItem(key)) || ""; } catch { return ""; }
 }
@@ -516,8 +579,20 @@ function initTopbarChrome() {
 
     // ready, damit Nachrichten sicher ankommen
     this.ready = new Promise((resolve) => {
-  this._resolveReady = resolve;
-});
+      this._resolveReady = resolve;
+    });
+    const markReady = () => {
+      if (this.isReady) return;
+      this.isReady = true;
+      this._resolveReady?.();
+    };
+    try {
+      this.frame?.addEventListener("load", () => setTimeout(markReady, 0), { once: true });
+      if (this.frame?.contentDocument?.readyState === "complete") {
+        setTimeout(markReady, 0);
+      }
+    } catch (_) {}
+    setTimeout(markReady, 1200);
 
 
     this.handlers = [];
@@ -527,10 +602,7 @@ function initTopbarChrome() {
       const msg = e.data;
       if (!msg || msg.__SCHULAZON__ !== true) return;
 if (msg.type === "SHOP_READY") {
-  if (!this.isReady) {
-    this.isReady = true;
-    this._resolveReady?.();
-  }
+  markReady();
   return;
 }
 
@@ -572,6 +644,16 @@ if (msg.type === "SHOP_READY") {
     this.send("PULSE_ACTION", { taskId });
   }
 
+  async setSqliState(state = {}) {
+    await this.ready;
+    this.send("SET_SQLI_STATE", state);
+  }
+
+  async setSqliProtection(enabled, sql, binding = null) {
+    await this.ready;
+    this.send("SET_SQLI_PROTECTION", { enabled: !!enabled, sql: String(sql || ""), binding });
+  }
+
   onShopAction(fn) {
     this.handlers.push(fn);
   }
@@ -597,6 +679,10 @@ class FreeMode {
     this.hintUsed = {};
     this.scaffoldUsed = {};
     this.sqliDone = false;
+    this.sqliSecured = false;
+    this.sqliSecureSql = SQLI_DEFAULT_SECURE_SQL;
+    this.sqliSecureBinding = null;
+    this.sqliResearchDone = false;
     this.unlockedSource = {};
 
     // gespeicherte Freischalt‑SQL pro Aufgabe
@@ -664,6 +750,10 @@ class FreeMode {
       }
 
       this.sqliDone = localStorage.getItem('schulazon_sqli_done_v1') === 'true';
+      this.sqliSecured = localStorage.getItem('schulazon_sqli_secured_v1') === 'true';
+      this.sqliSecureSql = localStorage.getItem('schulazon_sqli_secure_sql_v1') || SQLI_DEFAULT_SECURE_SQL;
+      try { this.sqliSecureBinding = JSON.parse(localStorage.getItem('schulazon_sqli_secure_binding_v1') || 'null'); } catch (_) { this.sqliSecureBinding = null; }
+      this.sqliResearchDone = localStorage.getItem('schulazon_sqli_research_done_v1') === 'true';
       this.spickerUsed = localStorage.getItem('schulazon_spicker_used_v1') === 'true';
     } catch (_) {
       // ignore
@@ -677,6 +767,10 @@ class FreeMode {
       localStorage.setItem('schulazon_scaffold_used_v1', JSON.stringify(this.scaffoldUsed || {}));
       localStorage.setItem('schulazon_solution_sql_v1', JSON.stringify(this.solutionSql || {}));
       localStorage.setItem('schulazon_sqli_done_v1', this.sqliDone ? 'true' : 'false');
+      localStorage.setItem('schulazon_sqli_secured_v1', this.sqliSecured ? 'true' : 'false');
+      localStorage.setItem('schulazon_sqli_secure_sql_v1', this.sqliSecureSql || SQLI_DEFAULT_SECURE_SQL);
+      localStorage.setItem('schulazon_sqli_secure_binding_v1', JSON.stringify(this.sqliSecureBinding || null));
+      localStorage.setItem('schulazon_sqli_research_done_v1', this.sqliResearchDone ? 'true' : 'false');
       localStorage.setItem('schulazon_spicker_used_v1', this.spickerUsed ? 'true' : 'false');
     } catch (_) {
       // ignore
@@ -688,7 +782,12 @@ class FreeMode {
     this.sqliDone = true;
     this.persistProgressState();
     this.updateProgressUI();
+    this.updateSqliShopState();
     if (this.currentSideView === 'sqli') this.openBonus();
+  }
+
+  isSqliBonusComplete() {
+    return !!(this.sqliDone && this.sqliSecured && this.sqliResearchDone);
   }
 
   buildTasks() {
@@ -1102,6 +1201,7 @@ LIMIT 2;`,
   // 3) Initialer Zustand (keine Aufgabe ausgewählt)
   this.setEmptyState(true);
   this.updateProgressUI();
+  await this.updateSqliShopState();
 
   // Best-effort: Name aktualisieren
   this.syncStudentName();
@@ -1466,7 +1566,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
 
     this.btnSpicker.addEventListener('click', () => this.requestSpicker());
     this.btnSolutions.addEventListener('click', () => this.openSolutions());
-    this.btnBonus.addEventListener('click', () => this.openBonus());
+    this.btnBonus?.addEventListener('click', () => this.openBonus());
     this.btnExport?.addEventListener('click', () => this.exportProgress());
     this.bonusCloseBtn.addEventListener('click', () => this.closeBonus());
     this.spickerBackBtn?.addEventListener('click', () => this.openSpickerIndex());
@@ -1947,55 +2047,8 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
       this.openSolutions();
       return;
     } else if (kind === 'sqli') {
-      this.sideTitleEl.textContent = 'Zusatzaufgabe: Hacking';
-      this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox)';
-
-      this.sideBodyEl.innerHTML = `
-        <div class="task3-card">
-          <div class="task3-cardHead">
-            <div class="task3-cardTitle">Login‑Abfrage</div>
-          </div>
-          <div class="task3-body">
-            <p style="margin:6px 0 0 0;">Die Anmeldung läuft über die Tabelle <strong>users</strong>. Schema:</p>
-            <div style="overflow:auto; -webkit-overflow-scrolling: touch;">
-              <table class="spicker-table spicker-table-compact" aria-label="Schema users">
-                <thead>
-                  <tr><th>Spalte</th><th>Typ</th><th>Hinweis</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>id</td><td>INTEGER</td><td>Primary Key</td></tr>
-                  <tr><td>username</td><td>TEXT</td><td>eindeutig</td></tr>
-                  <tr><td>password</td><td>TEXT</td><td>Passwort</td></tr>
-                  <tr><td>role</td><td>TEXT</td><td>z. B. admin/user</td></tr>
-                  <tr><td>status</td><td>TEXT</td><td>active/locked</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="muted" style="margin:4px 0 8px 0;">Hierfür wird die folgende Abfrage genutzt:</p>
-            <pre class="task3-output" style="white-space:pre-wrap; margin:0; min-height:0;">SELECT id, username, role
-FROM users
-WHERE username = '<span class="muted">EINGABE_USER</span>'
-  AND password = '<span class="muted">EINGABE_PASS</span>'
-LIMIT 1;</pre>
-          </div>
-        </div>
-
-        <div class="task3-card">
-          <div class="task3-cardHead">
-            <div class="task3-cardTitle">Aufgabe</div>
-          </div>
-          <div class="task3-body">
-            <ol style="margin:6px 0 0 18px;">
-              <li>Öffne rechts oben im Shop das <strong>Konto‑Panel</strong>.</li>
-              <li>Teste Eingaben, die die WHERE‑Bedingung verändern.</li>
-              <li>Ziel: Die Anwendung zeigt <strong>„Login erfolgreich“</strong>.</li>
-            </ol>
-            <div class="muted" style="margin-top:10px;">Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
-          </div>
-        </div>
-
-        
-`;
+      this.openBonus();
+      return;
     }
 
     this.showBonusView();
@@ -2102,20 +2155,7 @@ setEmptyState(isEmpty) {
     this.setEmptyState(true);
   }
 
-  openBonus() {
-    // Bei Klick: erst prüfen, ob freigeschaltet. Wenn nicht: kleines Modal anzeigen.
-    const pct = this.getProgressPct();
-    const can = pct >= BONUS_MIN_PCT;
-
-    if (!can) {
-      this.pulseLocked(this.btnBonus);
-      this.showLockedModal(
-        'Noch nicht verfuegbar',
-        'Diese Zusatzaufgabe wird ab 70% Fortschritt freigeschaltet.'
-      );
-      return;
-    }
-
+  openBonus(forcedPhase = '') {
     // Panels konsistent: keine Überschneidung mit anderen Views
     this.hideHint();
     this.closeAllSideViews();
@@ -2124,59 +2164,256 @@ setEmptyState(isEmpty) {
     if (this.sideTitleEl) this.sideTitleEl.textContent = 'Zusatzaufgabe: Hacking';
     if (this.sideMetaEl) this.sideMetaEl.textContent = 'SQL‑Injection (Sandbox)';
 
-    const statusHtml = this.sqliDone
-      ? `<div class=\"task3-status is-success\">
-           <span class=\"status-pill\">Erledigt</span>
-           <span class=\"status-text\">Aufgabe erfolgreich bearbeitet.</span>
-         </div>`
-      : `<div class=\"task3-status\">
-           <span class=\"status-pill is-muted\">Offen</span>
-           <span class=\"status-text\">Bearbeite die Aufgabe, um den Status zu erhalten.</span>
-         </div>`;
+    const vulnerableCode = this.escapeHtml(SQLI_DEFAULT_VULNERABLE_CODE);
+    const starterCode = this.escapeHtml(SQLI_CODE_STARTER);
+    const check = (done) => `<span class="sqli-step-check${done ? ' is-done' : ''}" aria-label="${done ? 'erledigt' : 'offen'}">${done ? '✓' : ''}</span>`;
+    const phaseOne = `
+        <div class="spicker-block">
+          <div class="spicker-block-title sqli-step-title">1. SQL-Injection ausnutzen ${check(this.sqliDone)}</div>
+          <p>Öffne im Shop <strong>Konto &amp; Listen</strong>. Der Login ist absichtlich verwundbar. Melde dich an, ohne das Passwort eines Nutzers zu kennen.</p>
+          <p style="margin:10px 0 0;">
+            <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" rel="noopener noreferrer">Weitere Informationen zu SQL-Injection</a>
+          </p>
+        </div>
+
+        <div class="spicker-block">
+          <div class="spicker-block-title">Aktuelle Login-Prüfung</div>
+          <p>Der aktuelle JavaScript-Code zeigt die unsichere Implementierung der Login-Prüfung.</p>
+          <pre class="spicker-code">${vulnerableCode}</pre>
+          <p class="muted" style="margin:10px 0 0;"><code>db.exec(sql)</code> führt den erzeugten SQL-Befehl aus. Da <code>username</code> und <code>password</code> direkt in den SQL-String eingesetzt werden, können Eingaben die Logik der <code>WHERE</code>-Bedingung verändern.</p>
+        </div>
+    `;
+
+    const phaseTwo = `
+        <div class="spicker-block">
+          <div class="spicker-block-title sqli-step-title">2. Login gegen SQL-Injection absichern ${check(this.sqliSecured)}</div>
+          <p>Ersetze die dynamische Stringverkettung durch eine parametrisierte Abfrage. Nutze dafür in sql.js das Muster aus <code>db.prepare(...)</code>, <code>stmt.bind(...)</code> und <code>stmt.step()</code>.</p>
+          <p style="margin:8px 0 10px;">
+            <a href="https://sql.js.org/documentation/Statement.html" target="_blank" rel="noopener noreferrer">sql.js: Statement, bind und step</a>
+          </p>
+          <p>Für den Funktionstest existiert ein gültiger Demo-Datensatz in der Tabelle <code>users</code>:</p>
+          <pre class="spicker-code">username = anna
+password = geheim</pre>
+          <p>Nach der Korrektur muss gelten:</p>
+          <ul class="spicker-list-plain">
+            <li>Der Datensatz <code>anna</code> / <code>geheim</code> wird weiterhin korrekt authentifiziert.</li>
+            <li>Eine injizierte Eingabe verändert die SQL-Struktur nicht mehr.</li>
+          </ul>
+          <textarea class="sqli-secure-editor" id="sqliSecureCodeEditor" spellcheck="false">${starterCode}</textarea>
+          <div class="sqli-actions">
+            <button class="btn btn-primary" id="sqliSecureBtn" type="button">Code pushen</button>
+          </div>
+          <div class="sqli-check-output" id="sqliSecureOutput" aria-live="polite"></div>
+        </div>
+    `;
+
+    const phaseThree = `
+        <div class="spicker-block">
+          <div class="spicker-block-title sqli-step-title">3. Weitere Schutzmaßnahmen recherchieren ${check(this.sqliResearchDone)}</div>
+          <p>Informiere dich kurz zu weiteren Schutzmechanismen gegen SQL-Injection. Notiere dir mindestens drei zusätzliche Maßnahmen.</p>
+          <p style="margin:8px 0 10px;">
+            <a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank" rel="noopener noreferrer">MITRE CWE-89: SQL Injection</a>
+             · <a href="https://www.cisa.gov/resources-tools/resources/secure-design-alert-eliminating-sql-injection-vulnerabilities-software" target="_blank" rel="noopener noreferrer">CISA: Eliminating SQL Injection Vulnerabilities</a>
+          </p>
+          <div class="sqli-actions">
+            <button class="btn ${this.sqliResearchDone ? 'btn-primary' : 'btn-ghost'}" id="sqliResearchDoneBtn" type="button" ${this.sqliResearchDone ? 'disabled aria-disabled="true"' : ''}>Gelesen und notiert</button>
+          </div>
+        </div>
+        <p class="muted" style="margin:0 2px;">Wenn 1, 2 und 3 erledigt sind, erhältst du einmalig <strong>+10 Score</strong>.</p>
+    `;
 
     const body = `
       <div style="display:flex; flex-direction:column; gap:14px; margin-top:12px;">
-        ${statusHtml}
-        <div class="spicker-block">
-          <div class="spicker-block-title">Login‑Abfrage</div>
-          <p style="margin:6px 0 0 0;">Die Anmeldung läuft über die Tabelle <strong>users</strong>. Schema:</p>
-          <div style="overflow:auto; -webkit-overflow-scrolling: touch;">
-            <table class="spicker-table spicker-table-compact" aria-label="Schema users">
-              <thead>
-                <tr><th>Spalte</th><th>Typ</th><th>Hinweis</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>id</td><td>INTEGER</td><td>Primary Key</td></tr>
-                <tr><td>username</td><td>TEXT</td><td>eindeutig</td></tr>
-                <tr><td>password</td><td>TEXT</td><td>Passwort</td></tr>
-                <tr><td>role</td><td>TEXT</td><td>z. B. admin/user</td></tr>
-                <tr><td>status</td><td>TEXT</td><td>active/locked</td></tr>
-                <tr><td>created_at</td><td>DATETIME</td><td>Erstellung</td></tr>
-                <tr><td>last_login</td><td>DATETIME</td><td>letzter Login</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="muted" style="margin:4px 0 8px 0;">Hierfür wird die folgende Abfrage genutzt:</p>
-          <pre class="output" style="white-space:pre-wrap; margin-top:0;">SELECT id, username, role
-FROM users
-WHERE username = '<span class="muted">EINGABE_USER</span>'
-  AND password = '<span class="muted">EINGABE_PASS</span>'
-LIMIT 1;</pre>
-        </div>
-
-        <div class="spicker-block">
-          <div class="spicker-block-title">Aufgabenstellung</div>
-          <ol type="a" style="margin:6px 0 0 18px;">
-            <li>Versuche dich <strong>in den Login einzuloggen, ohne das Passwort zu kennen</strong>. Öffne dafür rechts oben im Shop das <strong>Konto‑Panel</strong> und teste Eingaben, die die WHERE‑Bedingung verändern.</li>
-            <li>Recherchiere im Internet, <strong>wie man sich vor SQL‑Injection schützt</strong>, und schreibe deine Gedanken stichpunktartig auf.</li>
-          </ol>
-          <div class="muted" style="margin-top:8px;">Ziel: Die Anwendung zeigt <strong>„Login erfolgreich“</strong>. Wenn es klappt, bekommst du automatisch <strong>+10 Score</strong>.</div>
-        </div>
+        ${phaseOne}
+        ${phaseTwo}
+        ${phaseThree}
       </div>
     `;
 
     if (this.sideBodyEl) this.sideBodyEl.innerHTML = body;
     this.showBonusView();
+    this.sideBodyEl?.querySelector('#sqliSecureBtn')?.addEventListener('click', () => this.activateSqliProtection());
+    this.sideBodyEl?.querySelector('#sqliResearchDoneBtn')?.addEventListener('click', () => this.markSqliResearchDone());
+  }
+
+  createSqliBindValues(binding, username, password) {
+    if (!binding || binding.type === 'array') {
+      const order = binding?.order?.length ? binding.order : ['username', 'password'];
+      return order.map((name) => name === 'password' ? password : username);
+    }
+    const values = {};
+    for (const item of binding.items || []) {
+      values[item.key] = item.value === 'password' ? password : username;
+    }
+    return values;
+  }
+
+  runPreparedLoginCheck(sql, username, password, binding = null) {
+    if (!this.db) return false;
+    let stmt = null;
+    try {
+      stmt = this.db.prepare(sql);
+      stmt.bind(this.createSqliBindValues(binding, username, password));
+      return !!stmt.step();
+    } catch (_) {
+      return false;
+    } finally {
+      try { stmt?.free(); } catch (_) {}
+    }
+  }
+
+  decodeSqliCodeString(value) {
+    return String(value || '')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\"/g, '"')
+      .replace(/\\'/g, "'")
+      .replace(/\\\\/g, '\\');
+  }
+
+  collectSqliStringLiterals(source) {
+    const out = [];
+    const re = /(["'`])((?:\\[\s\S]|(?!\1)[\s\S])*?)\1/g;
+    let match;
+    while ((match = re.exec(String(source || '')))) {
+      if (match[1] === '`' && /\$\{/.test(match[2])) return null;
+      out.push(this.decodeSqliCodeString(match[2]));
+    }
+    return out;
+  }
+
+  extractSqliBindingFromCode(code) {
+    const text = String(code || '');
+    const arrayMatch = text.match(/\.\s*bind\s*\(\s*\[([\s\S]*?)\]\s*\)/i);
+    if (arrayMatch) {
+      const order = [];
+      const re = /\b(username|password)\b/gi;
+      let match;
+      while ((match = re.exec(arrayMatch[1]))) order.push(match[1].toLowerCase());
+      if (order.length >= 2 && order.includes('username') && order.includes('password')) {
+        return { type: 'array', order: order.slice(0, 2) };
+      }
+    }
+
+    const objectMatch = text.match(/\.\s*bind\s*\(\s*\{([\s\S]*?)\}\s*\)/i);
+    if (objectMatch) {
+      const items = [];
+      const re = /(?:(["'`])([^"'`]+)\1|([:$@]?[A-Za-z_][\w$]*))\s*:\s*(username|password)\b/gi;
+      let match;
+      while ((match = re.exec(objectMatch[1]))) {
+        const key = match[2] || match[3] || '';
+        const value = match[4].toLowerCase();
+        items.push({ key, value });
+      }
+      if (items.length >= 2 && items.some((i) => i.value === 'username') && items.some((i) => i.value === 'password')) {
+        return { type: 'object', items };
+      }
+    }
+
+    return null;
+  }
+
+  extractPreparedSqlFromCode(code) {
+    const text = String(code || '');
+    const sqlVar = text.match(/\b(?:const|let|var)\s+sql\s*=\s*([\s\S]*?);/i);
+    if (sqlVar) {
+      const pieces = this.collectSqliStringLiterals(sqlVar[1]);
+      if (pieces && pieces.length) return pieces.join('');
+    }
+    const directPrepare = text.match(/\bdb\s*\.\s*prepare\s*\(\s*([\s\S]*?)\s*\)/i);
+    if (directPrepare) {
+      const pieces = this.collectSqliStringLiterals(directPrepare[1]);
+      if (pieces && pieces.length) return pieces.join('');
+    }
+    return '';
+  }
+
+  validateSecureLoginCode(code) {
+    const text = String(code || '').trim();
+    if (!/function\s+login\s*\(\s*username\s*,\s*password\s*\)/i.test(text)) {
+      return { ok: false, message: 'Die Funktionszeile muss erhalten bleiben: function login(username, password).' };
+    }
+    if (/\bdb\s*\.\s*exec\s*\(/i.test(text)) {
+      return { ok: false, message: 'db.exec(sql) führt den zusammengesetzten SQL-Text direkt aus. Ersetze das durch eine vorbereitete sql.js-Abfrage.' };
+    }
+    if (!/\bdb\s*\.\s*prepare\s*\(/i.test(text)) {
+      return { ok: false, message: 'Es fehlt db.prepare(sql). Dadurch entsteht ein Prepared Statement für die SQL-Vorlage; die Werte werden anschließend separat gebunden.' };
+    }
+    if (!/\.\s*bind\s*\(/i.test(text)) {
+      return { ok: false, message: 'Es fehlt stmt.bind(...). username und password müssen getrennt an die vorbereitete Abfrage gebunden werden.' };
+    }
+    if (!/\.\s*step\s*\(/i.test(text)) {
+      return { ok: false, message: 'Es fehlt stmt.step(). Damit wird das vorbereitete Statement ausgeführt und geprüft, ob ein Datensatz gefunden wurde.' };
+    }
+    if (!/\breturn\b/i.test(text)) {
+      return { ok: false, message: 'Die Funktion muss ein Ergebnis zurückgeben, damit der Login entscheiden kann, ob die Anmeldung erfolgreich ist.' };
+    }
+    const binding = this.extractSqliBindingFromCode(text);
+    if (!binding) {
+      return { ok: false, message: 'Binde beide Werte, zum Beispiel in der Reihenfolge der Platzhalter: username und password.' };
+    }
+    if (/(["'`]\s*\+\s*(username|password)\b|\b(username|password)\s*\+\s*["'`]|\$\{\s*(username|password)\s*\})/i.test(text)) {
+      return { ok: false, message: 'username oder password werden noch in den SQL-Text eingebaut. Sie sollen nur über bind(...) übergeben werden.' };
+    }
+
+    const sql = this.extractPreparedSqlFromCode(text).replace(/\s+/g, ' ').trim();
+    const positionalCount = (sql.match(/\?/g) || []).length;
+    const namedCount = binding?.type === 'object'
+      ? (binding.items || []).filter((item) => item.key && sql.includes(item.key)).length
+      : 0;
+    if (!/^select\b/i.test(sql) || !/\bfrom\s+users\b/i.test(sql) || Math.max(positionalCount, namedCount) < 2) {
+      return { ok: false, message: 'Die vorbereitete Abfrage muss aus users lesen und zwei Parameter für username und password enthalten.' };
+    }
+
+    const validLoginWorks = this.runPreparedLoginCheck(sql, 'anna', 'geheim', binding);
+    const injectionPayloads = [
+      "' OR '1'='1' --",
+      "' OR 1=1 --",
+      "anna' --",
+      "' OR 'a'='a' --"
+    ];
+    const userInjectionFails = injectionPayloads.every((payload) => !this.runPreparedLoginCheck(sql, payload, 'x', binding));
+    const passInjectionFails = injectionPayloads.every((payload) => !this.runPreparedLoginCheck(sql, 'anna', payload, binding));
+    if (!validLoginWorks) {
+      return { ok: false, message: 'Test fehlgeschlagen: Benutzername anna und Passwort geheim müssen weiterhin funktionieren.' };
+    }
+    if (!userInjectionFails || !passInjectionFails) {
+      return { ok: false, message: 'Test fehlgeschlagen: Die SQL-Injection aus Teil 1 funktioniert noch. Prüfe, ob alle Eingaben nur über bind(...) gebunden werden.' };
+    }
+    return { ok: true, sql, binding, message: 'Code gepusht. Teste jetzt die Injection im Shop erneut.' };
+  }
+
+  activateSqliProtection() {
+    const editor = this.sideBodyEl?.querySelector('#sqliSecureCodeEditor');
+    const output = this.sideBodyEl?.querySelector('#sqliSecureOutput');
+    const code = String(editor?.value || '').trim();
+    const result = this.validateSecureLoginCode(code);
+    if (!result.ok) {
+      if (output) {
+        output.className = 'sqli-check-output is-error';
+        output.textContent = result.message;
+      }
+      return;
+    }
+    this.sqliSecured = true;
+    this.sqliSecureSql = result.sql || SQLI_DEFAULT_SECURE_SQL;
+    this.sqliSecureBinding = result.binding || null;
+    this.persistProgressState();
+    this.updateSqliShopState();
+    if (output) {
+      output.className = 'sqli-check-output is-success';
+      output.textContent = result.message;
+    }
+    this.updateProgressUI();
+    this.openBonus();
+  }
+
+  markSqliResearchDone() {
+    if (this.sqliResearchDone) return;
+    this.sqliResearchDone = true;
+    this.persistProgressState();
+    this.updateProgressUI();
+    if (this.currentSideView === 'sqli') this.openBonus();
   }
 
 
@@ -2189,6 +2426,11 @@ LIMIT 1;</pre>
   }
 
   onShopSelect(actionId) {
+    if (actionId === "sqli") {
+      this.openBonus();
+      return;
+    }
+
     // Nur Task-Buttons interessieren den Modus
     if (!this.TASKS[actionId]) return;
 
@@ -2235,6 +2477,19 @@ async applyUnlockedToShop() {
   }
 }
 
+async updateSqliShopState() {
+  const canOpen = true;
+  try {
+    await this.shop.lock("sqli", !canOpen);
+    await this.shop.setSqliState({
+      canOpen,
+      injected: !!this.sqliDone,
+      secured: !!this.sqliSecured
+    });
+    await this.shop.setSqliProtection(!!this.sqliSecured, this.sqliSecureSql || SQLI_DEFAULT_SECURE_SQL, this.sqliSecureBinding || null);
+  } catch (_) {}
+}
+
   async loadDb() {
     try {
       const SQL = await initSqlJs({
@@ -2247,6 +2502,7 @@ async applyUnlockedToShop() {
       }
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+      this.ensureSqliDemoUsers();
       // bewusst kein "DB bereit"-Text in der UI
       this.hideHint();
     } catch (e) {
@@ -2558,6 +2814,30 @@ async applyUnlockedToShop() {
     let out = "";
     for (let i = 1; i <= lines; i++) out += i + (i === lines ? "" : "\n");
     this.sqlGutterEl.textContent = out;
+  }
+
+  ensureSqliDemoUsers() {
+    if (!this.db) return;
+    try {
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT,
+          name TEXT,
+          password TEXT
+        );
+      `);
+      const count = this.db.exec("SELECT COUNT(*) AS c FROM users;");
+      const rows = Number(count?.[0]?.values?.[0]?.[0] ?? 0);
+      if (rows === 0) {
+        this.db.run(`
+          INSERT INTO users (username, name, password)
+          VALUES
+            ('anna', 'Anna Mueller', 'geheim'),
+            ('leo',  'Leo Schmidt',  'pass123');
+        `);
+      }
+    } catch (_) {}
   }
 
   syncGutterScroll() {
@@ -3433,7 +3713,7 @@ if (H[taskId]) return H[taskId];
     const ids = Object.keys(this.TASKS || {});
     const base = ids.reduce((acc, id) => acc + (this.unlocked?.[id] ? this.getTaskPoints(id) : 0), 0);
     const scaffolds = Object.keys(this.scaffoldUsed || {}).filter(k => !!this.scaffoldUsed[k]).length;
-    const bonus = this.sqliDone ? 10 : 0;
+    const bonus = this.isSqliBonusComplete() ? 10 : 0;
     const scaffoldPenalty = scaffolds * 1;
     return Math.max(0, base + bonus - scaffoldPenalty);
   }
@@ -3485,12 +3765,7 @@ if (H[taskId]) return H[taskId];
     const score = this.computeScore();
     if (this.scoreEl) this.scoreEl.textContent = `Score ${score}`;
     // Bonus availability
-    const canBonus = pct >= BONUS_MIN_PCT;
-    if (this.btnBonus) {
-      this.btnBonus.classList.toggle('btn-locked', !canBonus);
-      this.btnBonus.setAttribute('aria-disabled', canBonus ? 'false' : 'true');
-      this.btnBonus.title = canBonus ? 'Zusatzaufgabe: Hacking verfügbar' : `Ab ${BONUS_MIN_PCT}% Fortschritt verfügbar`;
-    }
+    this.updateSqliShopState();
   }
 
   downloadJson(filename, data) {
@@ -3522,6 +3797,8 @@ if (H[taskId]) return H[taskId];
       scaffoldUsed: safeObj(this.scaffoldUsed),
       solutionSql: safeObj(this.solutionSql),
       sqliDone: !!this.sqliDone,
+      sqliSecured: !!this.sqliSecured,
+      sqliResearchDone: !!this.sqliResearchDone,
       spickerUsed: !!this.spickerUsed
     };
     this.downloadJson(`schulazon-spielstand-${stamp}.json`, payload);

@@ -1948,6 +1948,90 @@ body.help-open{
   background: rgba(255,255,255,.96);
 }
 
+.sqli-secure-editor{
+  width: 100%;
+  min-height: 170px;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid rgba(15,23,42,.16);
+  background: rgba(255,255,255,.98);
+  color: rgba(15,23,42,.94);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+  outline: none;
+}
+
+.sqli-secure-editor:focus{
+  border-color: rgba(0,122,255,.45);
+  box-shadow: 0 0 0 3px rgba(0,122,255,.12);
+}
+
+.sqli-actions{
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.sqli-check-output{
+  min-height: 20px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(15,23,42,.70);
+}
+
+.sqli-check-output.is-error{
+  color: #b12704;
+}
+
+.sqli-check-output.is-success{
+  color: #047857;
+}
+
+.spicker-list-plain{
+  margin: 8px 0 0 18px;
+  padding: 0;
+  color: rgba(15,23,42,.76);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.spicker-list-plain li{
+  margin: 3px 0;
+}
+
+.sqli-step-title{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sqli-step-check{
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(100,116,139,.32);
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  background: rgba(248,250,252,.9);
+}
+
+.sqli-step-check.is-done{
+  border-color: rgba(4,120,87,.28);
+  background: rgba(220,252,231,.95);
+  color: #047857;
+}
+
 /* ===============================
    DB-Schema View
    =============================== */

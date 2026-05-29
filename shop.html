@@ -64,8 +64,12 @@
         <div class="account-body">
 
 <!-- Login (für spätere SQLi-Aufgabe) -->
-<section class="account-block">
-  <h4>🔐 Mit anderem Konto anmelden</h4>
+<section class="account-block account-sqli-task" id="sqliLoginTask" data-sqli-state="locked">
+  <button type="button" class="account-sqli-gate" id="btnSqliTask" data-locked="false" aria-label="Zusatzaufgabe Hacking">
+    <span class="account-sqli-lock">++++</span>
+    <span class="account-sqli-text">Zusatz</span>
+  </button>
+  <h4>Mit anderem Konto anmelden</h4>
 
   <input class="account-input" id="loginUser" placeholder="Benutzername" />
   <input class="account-input" id="loginPass" placeholder="Passwort" type="password" />

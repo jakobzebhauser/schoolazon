@@ -765,6 +765,8 @@
         scaffoldUsed: asObj(raw.scaffoldUsed),
         solutionSql: asObj(raw.solutionSql),
         sqliDone: !!raw.sqliDone,
+        sqliSecured: !!raw.sqliSecured,
+        sqliResearchDone: !!raw.sqliResearchDone,
         spickerUsed: !!raw.spickerUsed
       };
     }
@@ -828,6 +830,8 @@
         localStorage.setItem("schulazon_scaffold_used_v1", JSON.stringify(importData.scaffoldUsed || {}));
         localStorage.setItem("schulazon_solution_sql_v1", JSON.stringify(importData.solutionSql || {}));
         localStorage.setItem("schulazon_sqli_done_v1", importData.sqliDone ? "true" : "false");
+        localStorage.setItem("schulazon_sqli_secured_v1", importData.sqliSecured ? "true" : "false");
+        localStorage.setItem("schulazon_sqli_research_done_v1", importData.sqliResearchDone ? "true" : "false");
         localStorage.setItem("schulazon_spicker_used_v1", importData.spickerUsed ? "true" : "false");
         sessionStorage.setItem("schulazon_skip_reset_v1", "true");
       } catch (_) {}

@@ -1830,6 +1830,103 @@ t-row strong {
   margin-top: 0;
 }
 
+.account-sqli-task{
+  position: relative;
+  border: 1px solid rgba(240,136,4,.26);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 0;
+  background: rgba(255,250,242,.78);
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.account-sqli-task:hover{
+  border-color: rgba(240,136,4,.48);
+  background: rgba(255,247,232,.92);
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+}
+
+.account-sqli-task h4{
+  padding-right: 116px;
+}
+
+.account-sqli-gate{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  max-width: calc(100% - 20px);
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(240,136,4,.34);
+  background: rgba(255,255,255,.96);
+  color: #7a4a00;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0,0,0,.10);
+  cursor: pointer;
+}
+
+.account-sqli-lock{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: .02em;
+  min-width: 20px;
+  text-align: center;
+}
+
+.account-sqli-gate[data-locked="true"]{
+  border-style: dashed !important;
+}
+
+.account-sqli-gate[data-locked="true"]::before,
+.account-sqli-gate[data-locked="true"]::after{
+  display: none;
+}
+
+.account-sqli-task::after{
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px dashed rgba(240,136,4,.45);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.account-sqli-task.is-sqli-locked .account-input,
+.account-sqli-task.is-sqli-locked #btnLogin{
+  opacity: .62;
+}
+
+.account-sqli-task.is-sqli-ready{
+  border-color: rgba(0,118,0,.22);
+  background: rgba(246,253,247,.90);
+}
+
+.account-sqli-task.is-sqli-ready .account-sqli-gate{
+  color: #065f46;
+  border-color: rgba(16,185,129,.28);
+  background: rgba(236,253,245,.96);
+}
+
+.account-sqli-task.is-sqli-secured{
+  border-color: rgba(37,99,235,.22);
+  background: rgba(239,246,255,.82);
+}
+
+.account-sqli-task.is-sqli-secured .account-sqli-gate{
+  color: #1d4ed8;
+  border-color: rgba(37,99,235,.24);
+  background: rgba(239,246,255,.98);
+}
+
 /* ================================
    Konto & Listen – kompakter Look
    ================================ */

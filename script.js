@@ -1,10 +1,10 @@
 /************************************************************
- * Schulazon Shop – stabile Basis (ohne Sperren/Rechtsklick)
+ * Schulazon Shop � stabile Basis (ohne Sperren/Rechtsklick)
  * DB-Schema:
  * produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)
  * kategorien(id, name)
  * bewertungen(id, produkt_id, sterne)
- * verkäufe(id, produkt_id, anzahl)
+ * verk�ufe(id, produkt_id, anzahl)
  * warenkorb(produkt_id, menge)
  ************************************************************/
 
@@ -46,10 +46,10 @@ const TASKS = {
       difficulty: 1,
     difficultyMax: 3,
     goal: "Zeige nur Produkte, die morgen geliefert werden (liefertage = 1).",
-    tip: "Tipp: Die relevante Spalte heißt `liefertage` in der Tabelle `produkte`.",
+    tip: "Tipp: Die relevante Spalte hei�t `liefertage` in der Tabelle `produkte`.",
     starterSql: `SELECT * FROM produkte WHERE liefertage = 1;`,
 
-    // ✅ Validation: Ergebnis muss (ID-Menge) exakt matchen
+    // ? Validation: Ergebnis muss (ID-Menge) exakt matchen
     validate: (studentRes, db) => {
       const idsStudent = extractIdsFromResult(studentRes);
       const ref = db.exec(`SELECT id FROM produkte WHERE liefertage = 1;`);
@@ -66,7 +66,7 @@ const TASKS = {
   }
 };
 
-// Locks: Startzustand (später per localStorage speicherbar)
+// Locks: Startzustand (sp�ter per localStorage speicherbar)
 const LOCKS = {
   express: false
 };
@@ -101,7 +101,7 @@ async function init() {
 
     // rechter Bereich: Name beibehalten (nur Anzeige)
     const nameEl = els.studentName();
-    if (nameEl) nameEl.textContent = "Anna Müller";
+    if (nameEl) nameEl.textContent = "Anna M�ller";
 
     bindUI();
     await render();
@@ -110,7 +110,7 @@ async function init() {
 
   } catch (err) {
     const c = els.products();
-    if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">❌ ${escapeHtml(err.message)}</p>`;
+    if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">? ${escapeHtml(err.message)}</p>`;
     console.error(err);
   }
 }
@@ -201,7 +201,7 @@ function bindUI() {
   const _btnTotal = document.getElementById("btnTotal");
   if (_btnTotal && !_btnTotal.dataset.task) _btnTotal.dataset.task = "cart-total";
 
-  // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten über data-task
+  // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten �ber data-task
   document.querySelectorAll("[data-task]").forEach(el => {
     const id = el.dataset.task;
     el.addEventListener("click", (e) => {
@@ -359,7 +359,7 @@ async function onAction(actionId) {
   }
 
 
-    // Wenn es eine Aufgabe ist und noch gesperrt: Lab öffnen und NICHT normal ausführen
+    // Wenn es eine Aufgabe ist und noch gesperrt: Lab �ffnen und NICHT normal ausf�hren
   if (TASKS[actionId] && LOCKS[actionId]) {
     openSqlLab(TASKS[actionId]);
     return;
@@ -380,7 +380,7 @@ async function onAction(actionId) {
     resetFilters();
     clearAllActiveButtons()
     state.showProducts = true;
-    state.expressDelivery = true; // ✅ RICHTIG
+    state.expressDelivery = true; // ? RICHTIG
     setActiveButton("shop", "express");
     break;
 
@@ -404,13 +404,13 @@ async function onAction(actionId) {
     /* ===== SORT ===== */
     case "priceAsc":
       state.sort = "priceAsc";
-      setSortLabel("Preis ↑");
+      setSortLabel("Preis ?");
       closeSort();
       break;
 
     case "priceDesc":
       state.sort = "priceDesc";
-      setSortLabel("Preis ↓");
+      setSortLabel("Preis ?");
       closeSort();
       break;
 
@@ -505,26 +505,26 @@ function setSortLabel(text) {
   const selected = els.sortSelected();
   if (!selected) return;
   // Text + Pfeil beibehalten
-  selected.innerHTML = `⇅ Sortieren: ${escapeHtml(text)} <span class="sort-arrow">▾</span>`;
+  selected.innerHTML = `? Sortieren: ${escapeHtml(text)} <span class="sort-arrow">?</span>`;
 }
 
 // ---------- Query Builder (JOINs nach Schema) ----------
 function buildQuery() {
 
   // ======================================================
-  // SCHÜLER-AUFGABE (SQL):
+  // SCH�LER-AUFGABE (SQL):
   // Ein Produkt ist ein BESTSELLER, wenn es mindestens
-  // 300 Verkäufe hat.
+  // 300 Verk�ufe hat.
   //
   // SELECT *
   // FROM produkte p
-  // JOIN verkäufe v ON v.produkt_id = p.id
+  // JOIN verk�ufe v ON v.produkt_id = p.id
   // WHERE v.anzahl >= 300
   // ORDER BY v.anzahl DESC;
   //
   // Umsetzung hier:
-  // - Verkäufe werden summiert (SUM)
-  // - Bestseller werden über HAVING gefiltert
+  // - Verk�ufe werden summiert (SUM)
+  // - Bestseller werden �ber HAVING gefiltert
   // ======================================================
 
   let sql = `
@@ -541,7 +541,7 @@ function buildQuery() {
     FROM produkte p
     LEFT JOIN kategorien k ON k.id = p.kategorie_id
     LEFT JOIN bewertungen b ON b.produkt_id = p.id
-    LEFT JOIN verkäufe v ON v.produkt_id = p.id
+    LEFT JOIN verk�ufe v ON v.produkt_id = p.id
   `.trim();
 
   const where = [];
@@ -574,8 +574,8 @@ function buildQuery() {
   if (state.minRating != null) having.push(`AVG(b.sterne) >= ${Number(state.minRating)}`);
 
   // ======================================================
-  // SCHÜLER-AUFGABE:
-  // Bestseller nur ab 300 Verkäufen anzeigen
+  // SCH�LER-AUFGABE:
+  // Bestseller nur ab 300 Verk�ufen anzeigen
   // ======================================================
   if (state.bestsellerOnly) {
     having.push(`SUM(v.anzahl) >= 300`);
@@ -619,7 +619,7 @@ async function render() {
     return;
   }
 
-  container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte…</p>`;
+  container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte�</p>`;
 
   const sql = buildQuery();
 
@@ -645,10 +645,10 @@ async function render() {
 
     const rating = Number(p.bewertung_avg || 0);
     const starsFull = Math.round(rating); // simple rendering
-    const stars = "★".repeat(Math.max(0, Math.min(5, starsFull))) + "☆".repeat(Math.max(0, 5 - Math.min(5, starsFull)));
+    const stars = "?".repeat(Math.max(0, Math.min(5, starsFull))) + "?".repeat(Math.max(0, 5 - Math.min(5, starsFull)));
 
     const isFast = Number(p.liefertage) === 1;
-    const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei wählbar
+    const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei w�hlbar
     const isLowStock = Number(p.lagerbestand) > 0 && Number(p.lagerbestand) <= 5;
 
    container.insertAdjacentHTML("beforeend", `
@@ -678,15 +678,15 @@ async function render() {
 
         <div class="rating" title="${rating.toFixed(1)} / 5">${stars}</div>
 
-        <div class="price">${Number(p.preis).toFixed(2)} €</div>
+        <div class="price">${Number(p.preis).toFixed(2)} �</div>
 
         <div class="delivery ${isFast ? "fast" : ""}">
           Lieferung in ${Number(p.liefertage)} Tagen
         </div>
 
         <div class="meta">
-          <span class="meta-chip">${escapeHtml(String(p.kategorie_name || "—"))}</span>
-          <span class="meta-chip">${Number(p.lagerbestand) > 0 ? "Auf Lager" : "Nicht verfügbar"}</span>
+          <span class="meta-chip">${escapeHtml(String(p.kategorie_name || "�"))}</span>
+          <span class="meta-chip">${Number(p.lagerbestand) > 0 ? "Auf Lager" : "Nicht verf�gbar"}</span>
         </div>
       </div>
     `);
@@ -730,7 +730,7 @@ function openSqlLab(task) {
 
   renderDifficulty(task.difficulty, task.difficultyMax);
 
-  labEls.title().textContent = `🔒 ${task.title}`;
+  labEls.title().textContent = `?? ${task.title}`;
   labEls.goal().textContent = `Ziel: ${task.goal}`;
 
   labEls.tipBox().textContent = task.tip || "";
@@ -1004,7 +1004,7 @@ cartContent?.addEventListener("click", (e) => {
     cartContent.innerHTML = `<p class="cart-hint">Warenkorb ist leer.</p>`;
   }
 
-  toast("🗑️ Entfernt");
+  toast("??? Entfernt");
 });
 
 
@@ -1058,10 +1058,10 @@ function showCart() {
 
   cartContent.innerHTML = rows.map(r => `
     <div class="cart-row" data-cart-product="${r[0]}">
-      <strong>${escapeHtml(r[1])}<div class="muted">${Number(r[2]).toFixed(2)} €</div></strong>
-      <span>× ${r[3]}</span>
-      <span><strong>${Number(r[4]).toFixed(2)} €</strong></span>
-      <button class="cart-remove" data-remove-cart="${r[0]}" title="Entfernen">✕</button>
+      <strong>${escapeHtml(r[1])}<div class="muted">${Number(r[2]).toFixed(2)} �</div></strong>
+      <span>� ${r[3]}</span>
+      <span><strong>${Number(r[4]).toFixed(2)} �</strong></span>
+      <button class="cart-remove" data-remove-cart="${r[0]}" title="Entfernen">?</button>
     </div>
   `).join("");
 
@@ -1080,7 +1080,7 @@ function showTotal() {
   const res = db.exec(sql);
   const total = (res[0]?.values?.[0]?.[0] ?? 0);
 
-  cartTotal.textContent = `Gesamtpreis: ${Number(total).toFixed(2)} €`;
+  cartTotal.textContent = `Gesamtpreis: ${Number(total).toFixed(2)} �`;
 }
 
 
@@ -1088,8 +1088,21 @@ function showTotal() {
 
 const accountPanel = document.getElementById("accountPanel");
 const accountOverlay = document.getElementById("accountOverlay");
+let sqliProtectionEnabled = false;
+let sqliSecureSql = `SELECT id, username, name
+FROM users
+WHERE username = ?
+  AND password = ?
+LIMIT 1;`;
+let sqliSecureBinding = null;
 
-// Trigger: Klick auf "Hallo, Anna – Konto & Listen"
+try {
+  sqliProtectionEnabled = localStorage.getItem("schulazon_sqli_secured_v1") === "true";
+  sqliSecureSql = localStorage.getItem("schulazon_sqli_secure_sql_v1") || sqliSecureSql;
+  sqliSecureBinding = JSON.parse(localStorage.getItem("schulazon_sqli_secure_binding_v1") || "null");
+} catch (_) {}
+
+// Trigger: Klick auf "Hallo, Anna � Konto & Listen"
 const accountTrigger = Array.from(document.querySelectorAll(".profile"))
   .find(p => p.textContent.includes("Konto"));
 
@@ -1100,8 +1113,95 @@ if (accountTrigger) {
 
 document.getElementById("accountClose")?.addEventListener("click", closeAccount);
 accountOverlay?.addEventListener("click", closeAccount);
+document.getElementById("sqliLoginTask")?.addEventListener("click", () => {
+  emitSqliTaskSelection();
+});
 
 // ================= KONTO & LISTEN =================
+
+function createLoginBindValues(binding, username, password) {
+  if (!binding || binding.type === "array") {
+    const order = binding?.order?.length ? binding.order : ["username", "password"];
+    return order.map((name) => name === "password" ? password : username);
+  }
+  const values = {};
+  (binding.items || []).forEach((item) => {
+    values[item.key] = item.value === "password" ? password : username;
+  });
+  return values;
+}
+
+function queryLoginPrepared(sql, username, password, binding = null) {
+  if (!db) return false;
+  let stmt = null;
+  try {
+    stmt = db.prepare(sql);
+    stmt.bind(createLoginBindValues(binding, username, password));
+    return !!stmt.step();
+  } catch (_) {
+    return false;
+  } finally {
+    try { stmt?.free(); } catch (_) {}
+  }
+}
+
+function isKnownLogin(username, password) {
+  return queryLoginPrepared(
+    "SELECT id FROM users WHERE username = ? AND password = ? LIMIT 1;",
+    username,
+    password
+  );
+}
+
+function runVulnerableLogin(username, password) {
+  const sql = `SELECT id, username, name FROM users WHERE username = '${username}' AND password = '${password}' LIMIT 1;`;
+  const res = db.exec(sql);
+  return !!res?.[0]?.values?.length;
+}
+
+function updateSqliGateState(state = {}) {
+  const gate = document.getElementById("btnSqliTask");
+  const block = document.getElementById("sqliLoginTask");
+  const locked = !state.canOpen;
+  const secured = !!state.secured;
+  const injected = !!state.injected;
+
+  if (gate) {
+    gate.dataset.locked = locked ? "true" : "false";
+    gate.setAttribute("aria-disabled", "false");
+    const text = gate.querySelector(".account-sqli-text");
+    const icon = gate.querySelector(".account-sqli-lock");
+    if (icon) icon.textContent = secured ? "ok" : "++++";
+    if (text) text.textContent = secured ? "gepusht" : "Zusatz";
+  }
+
+  if (block) {
+    block.dataset.sqliState = locked ? "locked" : (secured ? "secured" : (injected ? "injected" : "ready"));
+    block.classList.toggle("is-sqli-locked", false);
+    block.classList.toggle("is-sqli-ready", !secured);
+    block.classList.toggle("is-sqli-secured", secured);
+  }
+
+  [document.getElementById("loginUser"), document.getElementById("loginPass")].forEach((input) => {
+    if (!input) return;
+    input.readOnly = false;
+    input.style.pointerEvents = "";
+  });
+  const loginBtn = document.getElementById("btnLogin");
+  if (loginBtn) {
+    loginBtn.style.pointerEvents = "";
+    loginBtn.setAttribute("aria-disabled", "false");
+  }
+}
+
+function emitSqliTaskSelection() {
+  try {
+    window.parent?.postMessage(
+      { __SCHULAZON__: true, type: "SHOP_ACTION", actionId: "sqli" },
+      window.location.origin
+    );
+  } catch (_) {}
+}
 
 
 
@@ -1113,11 +1213,42 @@ function fakeLogin(){
   // Absichtlich verwundbarer Demo-Login: SQL wird per String-Konkatenation gebaut.
   // Ziel der Aufgabe: per SQL-Injection die WHERE-Bedingung manipulieren.
 
-  // Eingaben robust finden (IDs können je nach HTML variieren)
+  // Eingaben robust finden (IDs k�nnen je nach HTML variieren)
   const container = document.querySelector('.account-login') || document.getElementById('accountPanel') || document;
   const inputs = Array.from(container.querySelectorAll('input'));
   const userRaw = (inputs[0]?.value ?? '').toString();
   const passRaw = (inputs[1]?.value ?? '').toString();
+
+  {
+    let ok = false;
+    let injectionBypass = false;
+    if (sqliProtectionEnabled) {
+      ok = queryLoginPrepared(sqliSecureSql, userRaw, passRaw, sqliSecureBinding);
+    } else {
+      try {
+        ok = runVulnerableLogin(userRaw, passRaw);
+        injectionBypass = ok && !isKnownLogin(userRaw, passRaw);
+      } catch (_) {
+        ok = false;
+      }
+    }
+
+    if (ok) {
+      status.textContent = "Login erfolgreich";
+      status.className = "login-status success";
+      try {
+        if (injectionBypass && localStorage.getItem('schulazon_sqli_done_v1') !== 'true') {
+          localStorage.setItem('schulazon_sqli_done_v1', 'true');
+          window.parent?.postMessage({ __SCHULAZON__: true, type: 'SQLI_SUCCESS' }, window.location.origin);
+        }
+      } catch (_) {}
+      return;
+    }
+
+    status.textContent = "Login fehlgeschlagen";
+    status.className = "login-status error";
+    return;
+  }
 
   // Versuche mehrere plausible Tabellen/Spalten, ohne die UI zu zerlegen.
   const candidates = [
@@ -1134,7 +1265,7 @@ function fakeLogin(){
       const res = db.exec(sql);
       if (res?.[0]?.values?.length) { ok = true; break; }
     } catch (_) {
-      // nächste Variante probieren
+      // n�chste Variante probieren
     }
   }
 
@@ -1165,7 +1296,7 @@ function showOrders(){
 
   if (ordersOpen) {
     target.innerHTML = "";
-    btn.textContent = "📦 Meine Bestellungen anzeigen";
+    btn.textContent = "?? Meine Bestellungen anzeigen";
     ordersOpen = false;
     return;
   }
@@ -1175,7 +1306,7 @@ function showOrders(){
       p.name,
       v.anzahl,
       ROUND(p.preis * v.anzahl, 2) AS summe
-    FROM verkäufe v
+    FROM verk�ufe v
     JOIN produkte p ON p.id = v.produkt_id
     WHERE v.nutzer_id = ${MEINE_ID}
     ORDER BY v.id DESC
@@ -1191,14 +1322,14 @@ function showOrders(){
       <div class="account-row">
         <div>
           <strong>${escapeHtml(r[0])}</strong>
-          <div class="muted">${r[1]}×</div>
+          <div class="muted">${r[1]}�</div>
         </div>
-        <div><strong>${Number(r[2]).toFixed(2)} €</strong></div>
+        <div><strong>${Number(r[2]).toFixed(2)} �</strong></div>
       </div>
     `).join("");
   }
 
-  btn.textContent = "📦 Meine Bestellungen einklappen";
+  btn.textContent = "?? Meine Bestellungen einklappen";
   ordersOpen = true;
 }
 
@@ -1212,7 +1343,7 @@ function showTopProducts(){
 
   if (topProductsOpen) {
     target.innerHTML = "";
-    btn.textContent = "⭐ Meine Top-Produkte anzeigen";
+    btn.textContent = "? Meine Top-Produkte anzeigen";
     topProductsOpen = false;
     return;
   }
@@ -1221,7 +1352,7 @@ function showTopProducts(){
     SELECT
       p.name,
       SUM(v.anzahl) AS gesamt
-    FROM verkäufe v
+    FROM verk�ufe v
     JOIN produkte p ON p.id = v.produkt_id
     GROUP BY p.id
     ORDER BY gesamt DESC
@@ -1237,13 +1368,13 @@ function showTopProducts(){
       <div class="account-row">
         <div>
           <strong>${escapeHtml(r[0])}</strong>
-          <div class="muted">${r[1]}× gekauft</div>
+          <div class="muted">${r[1]}� gekauft</div>
         </div>
       </div>
     `).join("");
   }
 
-  btn.textContent = "⭐ Meine Top-Produkte einklappen";
+  btn.textContent = "? Meine Top-Produkte einklappen";
   topProductsOpen = true;
 }
 
@@ -1252,7 +1383,7 @@ function showTopProducts(){
 
 
 function openAccount() {
-  closeCart(); // 🔥 wichtig: nie beide Panels gleichzeitig
+  closeCart(); // ?? wichtig: nie beide Panels gleichzeitig
   accountPanel.classList.add("open");
   accountOverlay.classList.add("open");
 }
@@ -1301,9 +1432,35 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
     const msg = e.data;
     if (!msg || msg.__SCHULAZON__ !== true) return;
 
+    if (msg.type === "SET_SQLI_STATE") {
+      updateSqliGateState(msg);
+      return;
+    }
+
+    if (msg.type === "SET_SQLI_PROTECTION") {
+      sqliProtectionEnabled = !!msg.enabled;
+      if (msg.sql) sqliSecureSql = String(msg.sql);
+      sqliSecureBinding = msg.binding || null;
+      try {
+        localStorage.setItem("schulazon_sqli_secured_v1", sqliProtectionEnabled ? "true" : "false");
+        localStorage.setItem("schulazon_sqli_secure_sql_v1", sqliSecureSql);
+        localStorage.setItem("schulazon_sqli_secure_binding_v1", JSON.stringify(sqliSecureBinding));
+      } catch (_) {}
+      return;
+    }
+
     // a) Button sperren/entsperren
     if (msg.type === "SET_LOCK") {
       const { taskId, locked } = msg;
+
+      if (taskId === "sqli") {
+        updateSqliGateState({
+          minPct: 5,
+          canOpen: !locked,
+          injected: localStorage.getItem("schulazon_sqli_done_v1") === "true",
+          secured: sqliProtectionEnabled
+        });
+      }
 
       if (taskId === "reset-filters") {
         document.querySelectorAll(`[data-task="${taskId}"]`).forEach((el) => {
@@ -1384,7 +1541,7 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
       return;
     }
 
-// b) Shop-Aktion auslösen (wie Klick)
+// b) Shop-Aktion ausl�sen (wie Klick)
     if (msg.type === "RUN_ACTION") {
       const { actionId } = msg;
       if (typeof onAction === "function") onAction(actionId);
@@ -1402,7 +1559,7 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
     } catch (_) {}
   }
 
-  // Hook: onAction wrapper (ändert Logik nicht)
+  // Hook: onAction wrapper (�ndert Logik nicht)
   const _onAction = (typeof onAction === "function") ? onAction : null;
   if (_onAction) {
     onAction = async function(actionId) {
