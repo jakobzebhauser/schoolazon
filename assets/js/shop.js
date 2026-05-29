@@ -10,6 +10,7 @@
 
 let db = null;
 const MEINE_ID = 1; // Demo-Nutzer
+const SHOP_DB_URL = new URL("../data/shop-datenbank.sqlite", document.currentScript?.src || window.location.href).toString();
 
 
 
@@ -93,8 +94,8 @@ async function init() {
       locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
     });
 
-    const res = await fetch("produkte.sqlite");
-    if (!res.ok) throw new Error("produkte.sqlite nicht gefunden (liegt die Datei im selben Ordner wie index.html?)");
+    const res = await fetch(SHOP_DB_URL);
+    if (!res.ok) throw new Error("shop-datenbank.sqlite nicht gefunden (erwartet unter assets/data/).");
 
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
     ensureDemoUsers();

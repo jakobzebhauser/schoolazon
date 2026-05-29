@@ -55,10 +55,10 @@
 
   function evalStepFromPage(p) {
     const pl = (p || "").toString().toLowerCase();
-    if (pl.includes("pretest")) return "pretest";
-    if (pl.includes("tutorial")) return "tutorial";
-    if (pl.includes("free")) return "free";
-    if (pl.includes("posttest")) return "posttest";
+    if (pl.includes("pretest") || pl.includes("einstiegstest")) return "pretest";
+    if (pl.includes("tutorial") || pl.includes("einfuehrung")) return "tutorial";
+    if (pl.includes("free") || pl.includes("lernmodus")) return "free";
+    if (pl.includes("posttest") || pl.includes("abschlusstest")) return "posttest";
     if (pl.includes("index")) return "start";
     return null;
   }
@@ -505,7 +505,7 @@
 
   function isTutorialPage() {
     const p = pageName().toLowerCase();
-    if (p.includes("tutorial")) return true;
+    if (p.includes("tutorial") || p.includes("einfuehrung")) return true;
     const mode = document?.body?.dataset?.mode;
     return mode === "tutorial";
   }
@@ -1099,7 +1099,7 @@ function buildFlowBlock() {
   const events = Array.isArray(data?.events) ? data.events : [];
 
   const sawTutorialStep = steps.some(s =>
-    s?.step === "tutorial" || String(s?.page || "").toLowerCase().includes("tutorial")
+    s?.step === "tutorial" || /tutorial|einfuehrung/.test(String(s?.page || "").toLowerCase())
   );
 
   const sawTutorialEvent = events.some(e => {
@@ -1107,7 +1107,7 @@ function buildFlowBlock() {
     if (type === "tutorial_start" || type === "tutorial_abort" || type === "tutorial_complete") return true;
     if (type === "page_view") {
       const p = String(e?.payload?.page || "").toLowerCase();
-      return p.includes("tutorial");
+      return /tutorial|einfuehrung/.test(p);
     }
     return false;
   });

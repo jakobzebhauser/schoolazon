@@ -625,7 +625,7 @@
 </head>
 
 <body>
-  <iframe class="game-bg" src="free.html" title="Schulazon Vorschau" aria-hidden="true"></iframe>
+  <iframe class="game-bg" src="lernmodus.html" title="Schulazon Vorschau" aria-hidden="true"></iframe>
 
   <main class="overlay">
     <section class="card" role="dialog" aria-modal="true" aria-labelledby="introTitle">
@@ -839,7 +839,7 @@
       const name = cleanName(importData.name || nameInput.value);
       if (name) saveName(name);
 
-      window.location.href = "free.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
+      window.location.href = "lernmodus.html" + (name ? `?name=${encodeURIComponent(name)}` : "");
     }
 
     function setStartLoading(active) {
@@ -878,7 +878,7 @@
       setStartLoading(true);
 
       window.setTimeout(() => {
-        window.location.href = `free.html?name=${encodeURIComponent(name)}&reset=1`;
+        window.location.href = `lernmodus.html?name=${encodeURIComponent(name)}&reset=1`;
       }, 900);
     }
 
@@ -916,8 +916,8 @@
       modePanel.classList.toggle("open");
     });
 
-    skillcheckBtn.addEventListener("click", () => openNamedMode("pretest.html"));
-    onboardingBtn.addEventListener("click", () => openNamedMode("tutorial.html"));
+    skillcheckBtn.addEventListener("click", () => openNamedMode("evaluation/einstiegstest.html"));
+    onboardingBtn.addEventListener("click", () => openNamedMode("einfuehrung.html"));
     importProgressBtn.addEventListener("click", openImportDialog);
 
     importFile.addEventListener("change", (event) => {

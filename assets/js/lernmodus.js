@@ -1,7 +1,8 @@
-﻿/* ===========================
+/* ===========================
    ShopBridge (Parent -> iframe)
    =========================== */
 
+const SCHULAZON_DB_URL = new URL("../data/shop-datenbank.sqlite", document.currentScript?.src || window.location.href).toString();
 
 // ===========================
 // Global message bridge (Shop iframe -> Mode)
@@ -2496,9 +2497,9 @@ async updateSqliShopState() {
         locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
       });
 
-      const res = await fetch('produkte.sqlite');
+      const res = await fetch(SCHULAZON_DB_URL);
       if (!res.ok) {
-        throw new Error('produkte.sqlite nicht gefunden oder nicht erreichbar. Tipp: Seite über einen lokalen Webserver (z.B. VSCode Live Server) öffnen und Datei im gleichen Ordner bereitstellen.');
+        throw new Error('shop-datenbank.sqlite nicht gefunden oder nicht erreichbar. Tipp: Seite über einen lokalen Webserver öffnen; die Datei wird unter assets/data/ erwartet.');
       }
 
       this.db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));

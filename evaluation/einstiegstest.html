@@ -1121,8 +1121,8 @@
 </head>
 
 <body>
-  <iframe class="game-bg" src="free.html" aria-hidden="true"></iframe>
-  <a class="close-link" href="index.html">Schließen</a>
+  <iframe class="game-bg" src="../lernmodus.html" aria-hidden="true"></iframe>
+  <a class="close-link" href="../index.html">Schließen</a>
   <div class="shell">
     <div class="card" id="appCard">
       <div class="skillcheck-state" aria-hidden="true">
@@ -1264,7 +1264,7 @@
   
   function goToGuidedTutorial(){
     const n = (state.name || "").toString().trim();
-    const url = "tutorial.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
+    const url = "../einfuehrung.html" + (n ? `?name=${encodeURIComponent(n)}` : "");
     smoothGo(url);
   }
 
@@ -1275,7 +1275,7 @@
         sessionStorage.setItem("schulazon_name", n);
         localStorage.setItem("schulazon_name", n);
       }catch(_){}
-      smoothGo(`free.html?name=${encodeURIComponent(n)}`);
+      smoothGo(`../lernmodus.html?name=${encodeURIComponent(n)}`);
     });
   }
 
@@ -1843,7 +1843,7 @@ function pickVariant(key, variants){
   });
   document.querySelector(".close-link")?.addEventListener("click", (event)=>{
     event.preventDefault();
-    smoothGo("index.html");
+    smoothGo("../index.html");
   });
 
   // Global: Enter = Weiter/Abgeben, ohne die Struktur zu verändern
@@ -1893,7 +1893,7 @@ function pickVariant(key, variants){
   renderStart();
 </script>
 <footer class="site-footer">
-  <a href="impressum.html">Impressum</a>
+  <a href="../impressum.html">Impressum</a>
 </footer>
 </body>
 </html>
