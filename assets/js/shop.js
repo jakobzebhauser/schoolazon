@@ -44,7 +44,7 @@ const TASKS = {
   express: {
     taskId: "express",
     title: "Expresslieferung freischalten",
-      difficulty: 1,
+    difficulty: 1,
     difficultyMax: 3,
     goal: "Zeige nur Produkte, die morgen geliefert werden (liefertage = 1).",
     tip: "Tipp: Die relevante Spalte hei�t `liefertage` in der Tabelle `produkte`.",
@@ -350,22 +350,13 @@ function clearAllActiveButtons() {
 
 
 async function onAction(actionId) {
-
-    // HARD LOCK: wenn der Button gelockt ist, darf nichts passieren
   const lockedEl = document.querySelector(`[data-task="${actionId}"][data-locked="true"]`);
-  if (lockedEl) {
-    // optional: kleines Feedback (kannst du auch weglassen)
-    console.log("Locked:", actionId);
-    return;
-  }
+  if (lockedEl) return;
 
-
-    // Wenn es eine Aufgabe ist und noch gesperrt: Lab �ffnen und NICHT normal ausf�hren
   if (TASKS[actionId] && LOCKS[actionId]) {
     openSqlLab(TASKS[actionId]);
     return;
   }
-
   switch (actionId) {
 
     /* ===== SHOP BAR ===== */
@@ -511,23 +502,6 @@ function setSortLabel(text) {
 
 // ---------- Query Builder (JOINs nach Schema) ----------
 function buildQuery() {
-
-  // ======================================================
-  // SCH�LER-AUFGABE (SQL):
-  // Ein Produkt ist ein BESTSELLER, wenn es mindestens
-  // 300 Verk�ufe hat.
-  //
-  // SELECT *
-  // FROM produkte p
-  // JOIN verk�ufe v ON v.produkt_id = p.id
-  // WHERE v.anzahl >= 300
-  // ORDER BY v.anzahl DESC;
-  //
-  // Umsetzung hier:
-  // - Verk�ufe werden summiert (SUM)
-  // - Bestseller werden �ber HAVING gefiltert
-  // ======================================================
-
   let sql = `
     SELECT
       p.id,
@@ -547,37 +521,27 @@ function buildQuery() {
 
   const where = [];
 
-
-  /* ---------- WHERE (einfache Filter) ---------- */
   if (state.searchTerm && state.searchTerm.length > 0) {
-  const term = state.searchTerm.replace(/'/g, "''");
-  where.push(`p.name LIKE '%${term}%'`);
-}
+    const term = state.searchTerm.replace(/'/g, "''");
+    where.push(`p.name LIKE '%${term}%'`);
+  }
 
   if (state.categoryId != null) where.push(`p.kategorie_id = ${Number(state.categoryId)}`);
   if (state.priceMin != null) where.push(`p.preis >= ${Number(state.priceMin)}`);
   if (state.priceMax != null) where.push(`p.preis <= ${Number(state.priceMax)}`);
   if (state.availableOnly) where.push(`p.lagerbestand BETWEEN 1 AND 5`);
-  if (state.expressDelivery) { where.push(`p.liefertage = 1`);}
+  if (state.expressDelivery) where.push(`p.liefertage = 1`);
 
   if (where.length) {
     sql += ` WHERE ${where.join(" AND ")}`;
   }
 
-  /* ---------- GROUP BY (Produkt-Ebene) ---------- */
   sql += ` GROUP BY p.id`;
 
-  /* ---------- HAVING (Aggregation) ---------- */
   const having = [];
 
-  // Bewertungsfilter
   if (state.exactRating != null) having.push(`AVG(b.sterne) = ${Number(state.exactRating)}`);
   if (state.minRating != null) having.push(`AVG(b.sterne) >= ${Number(state.minRating)}`);
-
-  // ======================================================
-  // SCH�LER-AUFGABE:
-  // Bestseller nur ab 300 Verk�ufen anzeigen
-  // ======================================================
   if (state.bestsellerOnly) {
     having.push(`SUM(v.anzahl) >= 300`);
   }
@@ -1207,81 +1171,37 @@ function emitSqliTaskSelection() {
 
 
 
-function fakeLogin(){
+function fakeLogin() {
   const status = document.getElementById("loginStatus");
-  if(!status) return;
+  if (!status) return;
 
-  // Absichtlich verwundbarer Demo-Login: SQL wird per String-Konkatenation gebaut.
-  // Ziel der Aufgabe: per SQL-Injection die WHERE-Bedingung manipulieren.
-
-  // Eingaben robust finden (IDs k�nnen je nach HTML variieren)
   const container = document.querySelector('.account-login') || document.getElementById('accountPanel') || document;
   const inputs = Array.from(container.querySelectorAll('input'));
   const userRaw = (inputs[0]?.value ?? '').toString();
   const passRaw = (inputs[1]?.value ?? '').toString();
 
-  {
-    let ok = false;
-    let injectionBypass = false;
-    if (sqliProtectionEnabled) {
-      ok = queryLoginPrepared(sqliSecureSql, userRaw, passRaw, sqliSecureBinding);
-    } else {
-      try {
-        ok = runVulnerableLogin(userRaw, passRaw);
-        injectionBypass = ok && !isKnownLogin(userRaw, passRaw);
-      } catch (_) {
-        ok = false;
-      }
-    }
-
-    if (ok) {
-      status.textContent = "Login erfolgreich";
-      status.className = "login-status success";
-      try {
-        if (injectionBypass && localStorage.getItem('schulazon_sqli_done_v1') !== 'true') {
-          localStorage.setItem('schulazon_sqli_done_v1', 'true');
-          window.parent?.postMessage({ __SCHULAZON__: true, type: 'SQLI_SUCCESS' }, window.location.origin);
-        }
-      } catch (_) {}
-      return;
-    }
-
-    status.textContent = "Login fehlgeschlagen";
-    status.className = "login-status error";
-    return;
-  }
-
-  // Versuche mehrere plausible Tabellen/Spalten, ohne die UI zu zerlegen.
-  const candidates = [
-    { table: 'nutzer', user: 'username', pass: 'passwort' },
-    { table: 'nutzer', user: 'name',     pass: 'passwort' },
-    { table: 'users',  user: 'username', pass: 'password' },
-    { table: 'users',  user: 'name',     pass: 'password' },
-  ];
-
   let ok = false;
-  for (const c of candidates) {
-    const sql = `SELECT id FROM ${c.table} WHERE ${c.user} = '${userRaw}' AND ${c.pass} = '${passRaw}' LIMIT 1;`;
+  let injectionBypass = false;
+  if (sqliProtectionEnabled) {
+    ok = queryLoginPrepared(sqliSecureSql, userRaw, passRaw, sqliSecureBinding);
+  } else {
     try {
-      const res = db.exec(sql);
-      if (res?.[0]?.values?.length) { ok = true; break; }
+      ok = runVulnerableLogin(userRaw, passRaw);
+      injectionBypass = ok && !isKnownLogin(userRaw, passRaw);
     } catch (_) {
-      // n�chste Variante probieren
+      ok = false;
     }
   }
 
   if (ok) {
     status.textContent = "Login erfolgreich";
     status.className = "login-status success";
-
-    // Einmaliger Bonus-Event an den Parent (Score +10)
     try {
-      if (localStorage.getItem('schulazon_sqli_done_v1') !== 'true') {
+      if (injectionBypass && localStorage.getItem('schulazon_sqli_done_v1') !== 'true') {
         localStorage.setItem('schulazon_sqli_done_v1', 'true');
         window.parent?.postMessage({ __SCHULAZON__: true, type: 'SQLI_SUCCESS' }, window.location.origin);
       }
     } catch (_) {}
-
     return;
   }
 

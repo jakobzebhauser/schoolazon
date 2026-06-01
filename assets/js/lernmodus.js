@@ -33,15 +33,6 @@ window.addEventListener("message", (event) => {
   }
 });
 
-function lockShop(taskId, locked){
-  const frame = document.getElementById("shopFrame");
-  if (!frame || !frame.contentWindow) return;
-
-  frame.contentWindow.postMessage(
-    { __SCHULAZON__: true, type: "SET_LOCK", taskId, locked },
-    window.location.origin
-  );
-}
 const ALL_TASK_IDS = [
   "all","express","bestseller","available",
   "cat-electronics","cat-household","cat-sport",
@@ -374,11 +365,6 @@ WHERE id IN (
 const FREE_HEADER_COLLAPSE_KEY = "schulazon_free_header_collapsed_v1";
 
 
-const SQLI_DEFAULT_VULNERABLE_SQL = `SELECT id, username, name
-FROM users
-WHERE username = '\${username}'
-  AND password = '\${password}'
-LIMIT 1;`;
 const SQLI_DEFAULT_SECURE_SQL = `SELECT id, username, name
 FROM users
 WHERE username = ?
@@ -392,18 +378,6 @@ const SQLI_DEFAULT_VULNERABLE_CODE = `function login(username, password) {
     "LIMIT 1";
 
   return db.exec(sql);
-}`;
-const SQLI_DEFAULT_SECURE_CODE = `function login(username, password) {
-  const sql =
-    "SELECT id, username FROM users " +
-    "WHERE username = ? " +
-    "AND password = ? " +
-    "LIMIT 1";
-
-  const stmt = db.prepare(sql);
-  stmt.bind([username, password]);
-
-  return stmt.step();
 }`;
 const SQLI_CODE_STARTER = `function login(username, password) {
   const sql =
@@ -424,14 +398,6 @@ function safeGet(storage, key) {
 
 function safeSet(storage, key, val) {
   try { storage && storage.setItem(key, val); } catch {}
-}
-
-function formatMMSS(totalSec) {
-  const sec = Math.max(0, Math.floor(totalSec));
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  const pad2 = (n) => String(n).padStart(2, "0");
-  return `${pad2(m)}:${pad2(s)}`;
 }
 
 function persistStudentName(name) {
@@ -616,11 +582,6 @@ if (msg.type === "SHOP_READY") {
         this.sqliHandlers.forEach(fn => fn());
       }
     });
-  }
-
-  frameComplete() {
-    // beste-effort: nach load ist sicher, sonst egal
-    return true;
   }
 
   send(type, payload = {}) {
@@ -2156,8 +2117,7 @@ setEmptyState(isEmpty) {
     this.setEmptyState(true);
   }
 
-  openBonus(forcedPhase = '') {
-    // Panels konsistent: keine Überschneidung mit anderen Views
+  openBonus() {
     this.hideHint();
     this.closeAllSideViews();
 
