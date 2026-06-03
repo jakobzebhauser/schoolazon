@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, follow" />
+  <title>Feedback</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111;
+      background: #fff;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    main {
+      width: 100%;
+      padding: 40px 56px 48px;
+      margin: 0;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 18px;
+      max-width: 840px;
+    }
+
+    a {
+      color: #111;
+    }
+
+    .section {
+      border-top: 1px solid #e5e5e5;
+      padding-top: 22px;
+      margin-top: 26px;
+      max-width: 840px;
+    }
+
+    .feedback-form {
+      display: grid;
+      gap: 16px;
+      max-width: 720px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: #111;
+      background: #fff;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid #f59e0b;
+      outline-offset: 2px;
+      border-color: #f59e0b;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-weight: 400;
+    }
+
+    .check-row input {
+      width: auto;
+      margin-top: 5px;
+    }
+
+    .honeypot {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button,
+    .back-button {
+      padding: 10px 16px;
+      border: 1px solid #bbb;
+      background: #f7f7f7;
+      color: #111;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      border-radius: 0;
+    }
+
+    button[type="submit"] {
+      border-color: #f59e0b;
+      background: #f59e0b;
+      color: #111;
+      font-weight: 700;
+    }
+
+    button:hover,
+    .back-button:hover {
+      background: #eee;
+    }
+
+    button[type="submit"]:hover {
+      background: #fbbf24;
+    }
+
+    .status {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      max-width: 720px;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      border-color: #dc2626;
+      background: #fef2f2;
+      color: #7f1d1d;
+    }
+
+    .note {
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        padding: 32px 28px 40px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      main {
+        padding: 28px 18px 36px;
+      }
+
+      h1 {
+        font-size: 1.55rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Feedback</h1>
+    <p>
+      Ich freue mich über Hinweise zu Fehlern in den Aufgaben, technische Probleme,
+      allgemeines Feedback und Ideen zur Weiterentwicklung von Schulazon.
+    </p>
+
+    <section class="section">
+      <form class="feedback-form" id="feedbackForm" novalidate>
+        <label for="name">
+          Name
+          <input id="name" name="name" type="text" maxlength="80" autocomplete="name" required />
+        </label>
+
+        <label for="email">
+          Antwort an
+          <input id="email" name="email" type="email" maxlength="120" autocomplete="email" required />
+        </label>
+
+        <label for="message">
+          Feedback
+          <textarea id="message" name="message" maxlength="4000" required></textarea>
+        </label>
+
+        <label class="honeypot" for="website">
+          Website
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </label>
+
+        <div class="actions">
+          <button type="submit">Feedback abschicken</button>
+          <button class="back-button" type="button" onclick="history.back()">Zurück</button>
+        </div>
+
+        <p class="note">
+          Es werden keine Daten auf dieser Website gespeichert. Der Versand erfolgt über dein E-Mail-Programm.
+        </p>
+      </form>
+
+      <div class="status" id="feedbackStatus" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("feedbackForm");
+    const statusEl = document.getElementById("feedbackStatus");
+
+    function showStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.className = `status show${isError ? " error" : ""}`;
+    }
+
+    function value(id) {
+      return document.getElementById(id)?.value.trim() || "";
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (value("website")) {
+        showStatus("Das Feedback konnte nicht vorbereitet werden.", true);
+        return;
+      }
+
+      const name = value("name");
+      const email = value("email");
+      const message = value("message");
+
+      if (!name || !email || !message) {
+        showStatus("Bitte fülle Name, Antwortadresse und Feedback aus.", true);
+        return;
+      }
+
+      if (!document.getElementById("email").checkValidity()) {
+        showStatus("Bitte gib eine gültige E-Mail-Adresse ein.", true);
+        return;
+      }
+
+      const subject = "Feedback zu Schulazon";
+      const body = [
+        "Feedback zu Schulazon",
+        "",
+        `Name: ${name}`,
+        `Antwort an: ${email}`,
+        "",
+        "Nachricht:",
+        message
+      ].join("\n");
+
+      const href = `mailto:j.zebhauser@campus.lmu.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = href;
+      showStatus("Die E-Mail wurde vorbereitet. Bitte bestätige den Versand in deinem E-Mail-Programm.");
+    });
+  </script>
+</body>
+</html>

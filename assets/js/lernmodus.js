@@ -87,14 +87,65 @@ function clearFreeModeStartState() {
   }
 }
 
+function getFreeModeNavigationType() {
+  try {
+    const nav = performance.getEntriesByType?.("navigation")?.[0];
+    if (nav?.type) return nav.type;
+  } catch (_) {}
+
+  try {
+    return performance.navigation?.type === 2 ? "back_forward" : "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function isLegalOrFeedbackPage(url) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.origin !== window.location.origin) return false;
+    const file = parsed.pathname.split("/").pop().toLowerCase();
+    return file === "impressum.html" || file === "feedback.html";
+  } catch (_) {
+    return false;
+  }
+}
+
+function shouldPreserveFreeModeStartState() {
+  try {
+    if (sessionStorage.getItem("schulazon_skip_reset_v1") === "true") return true;
+    if (getFreeModeNavigationType() === "back_forward") return true;
+    if (document.referrer && isLegalOrFeedbackPage(document.referrer)) return true;
+  } catch (_) {}
+  return false;
+}
+
 (function initFreeModeStateOnLoad(){
   try {
     if (!isTopLevelFreeModePage()) return;
-    const preserveExistingState = sessionStorage.getItem("schulazon_skip_reset_v1") === "true";
+    const preserveExistingState = shouldPreserveFreeModeStartState();
     sessionStorage.removeItem("schulazon_skip_reset_v1");
     if (!preserveExistingState) clearFreeModeStartState();
   } catch (_) {}
 })();
+
+function initFreeModeLegalNavigationPreserve() {
+  try {
+    if (!isTopLevelFreeModePage()) return;
+    document.addEventListener("click", (event) => {
+      const link = event.target?.closest?.("a[href]");
+      if (!link) return;
+      if (!isLegalOrFeedbackPage(link.getAttribute("href"))) return;
+      sessionStorage.setItem("schulazon_skip_reset_v1", "true");
+    }, true);
+  } catch (_) {}
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFreeModeLegalNavigationPreserve);
+} else {
+  initFreeModeLegalNavigationPreserve();
+}
 
 
 const THEORY_CHAPTERS = [
