@@ -21,6 +21,7 @@ const state = {
   // Filter
   categoryId: null,
   priceMax: null,
+  priceMaxExclusive: false,
   priceMin: null,
   availableOnly: false,
   expressDelivery: false,
@@ -32,6 +33,8 @@ const state = {
   // Rating
   minRating: null,
   exactRating: null,
+  minSingleRating: null,
+  exactSingleRating: null,
 
   // Sort
   sort: "popularity",
@@ -432,32 +435,39 @@ async function onAction(actionId) {
     case "price-25":
       state.priceMin = 0;
       state.priceMax = 25;
+      state.priceMaxExclusive = true;
       setActiveButton("price", actionId);
       break;
 
     case "price-50":
       state.priceMin = 25;
       state.priceMax = 50;
+      state.priceMaxExclusive = false;
       setActiveButton("price", actionId);
       break;
 
     case "price-100":
       state.priceMin = 50;
       state.priceMax = 100;
+      state.priceMaxExclusive = false;
       setActiveButton("price", actionId);
       break;
 
 
     /* ===== BEWERTUNG ===== */
     case "rating-5":
-      state.exactRating = 5;
+      state.exactRating = null;
       state.minRating = null;
+      state.minSingleRating = null;
+      state.exactSingleRating = 5;
       setActiveButton("rating", actionId);
       break;
 
     case "rating-4":
-      state.minRating = 4;
+      state.minRating = null;
       state.exactRating = null;
+      state.minSingleRating = 4;
+      state.exactSingleRating = null;
       setActiveButton("rating", actionId);
       break;
 
@@ -478,11 +488,14 @@ async function onAction(actionId) {
 function resetFilters() {
   state.categoryId = null;
   state.priceMax = null;
+  state.priceMaxExclusive = false;
   state.priceMin = null;
   state.availableOnly = false;
   state.expressDelivery = false;
   state.minRating = null;
   state.exactRating = null;
+  state.minSingleRating = null;
+  state.exactSingleRating = null;
   state.bestsellerOnly = false;
 }
 
@@ -536,12 +549,31 @@ function buildQuery() {
 
   if (state.categoryId != null) where.push(`p.kategorie_id = ${Number(state.categoryId)}`);
   if (state.priceMin != null) where.push(`p.preis >= ${Number(state.priceMin)}`);
-  if (state.priceMax != null) where.push(`p.preis <= ${Number(state.priceMax)}`);
+  if (state.priceMax != null) {
+    const op = state.priceMaxExclusive ? "<" : "<=";
+    where.push(`p.preis ${op} ${Number(state.priceMax)}`);
+  }
   if (state.availableOnly) where.push(`p.lagerbestand BETWEEN 1 AND 5`);
   if (state.expressDelivery) where.push(`p.liefertage = 1`);
   if (state.exactRating != null) where.push(`COALESCE(r.bewertung_avg, 0) = ${Number(state.exactRating)}`);
   if (state.minRating != null) where.push(`COALESCE(r.bewertung_avg, 0) >= ${Number(state.minRating)}`);
-  if (state.bestsellerOnly) where.push(`COALESCE(s.verkauft, 0) >= 300`);
+  if (state.exactSingleRating != null) {
+    where.push(`EXISTS (
+      SELECT 1
+      FROM bewertungen b
+      WHERE b.produkt_id = p.id
+        AND b.sterne = ${Number(state.exactSingleRating)}
+    )`);
+  }
+  if (state.minSingleRating != null) {
+    where.push(`EXISTS (
+      SELECT 1
+      FROM bewertungen b
+      WHERE b.produkt_id = p.id
+        AND b.sterne >= ${Number(state.minSingleRating)}
+    )`);
+  }
+  if (state.bestsellerOnly) where.push(`COALESCE(s.verkauft, 0) > 300`);
 
   if (where.length) {
     sql += ` WHERE ${where.join(" AND ")}`;
@@ -1259,7 +1291,7 @@ function showTopProducts(){
 
   if (topProductsOpen) {
     target.innerHTML = "";
-    btn.textContent = "\u2605 Meine Top-Produkte anzeigen";
+    btn.textContent = "\u2605 Top-Produkte anzeigen";
     topProductsOpen = false;
     return;
   }
@@ -1290,7 +1322,7 @@ function showTopProducts(){
     `).join("");
   }
 
-  btn.textContent = "\u2605 Meine Top-Produkte einklappen";
+  btn.textContent = "\u2605 Top-Produkte einklappen";
   topProductsOpen = true;
 }
 

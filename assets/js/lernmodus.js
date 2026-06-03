@@ -1454,6 +1454,7 @@ renderShell() {
     this._confirmAction = null;
     this.spickerUsed = false;
     this.lastExecutableResult = null;
+    this.resultTableMessage = null;
     this.sqlAutocompleteSuggestion = null;
 
     // Codeger\u00fcst card
@@ -2568,6 +2569,7 @@ async updateSqliShopState() {
 
   resetResultTable() {
     this.lastExecutableResult = null;
+    this.resultTableMessage = null;
     if (this.resultTableBtn) {
       this.resultTableBtn.disabled = true;
       this.resultTableBtn.setAttribute('aria-disabled', 'true');
@@ -2580,8 +2582,19 @@ async updateSqliShopState() {
     if (this.resultTableContentEl) this.resultTableContentEl.innerHTML = '';
   }
 
-  setResultTableAvailable(result) {
-    this.lastExecutableResult = Array.isArray(result) ? result : [];
+  getResultTableUnavailableMessage(taskId) {
+    if (taskId === 'search') {
+      return 'Die Ergebnistabelle kann hier nicht angezeigt werden, da der Parameter :q seinen Wert aus der Shop-Suchleiste erhält.';
+    }
+    if (taskId === 'cart-refresh' || taskId === 'cart-total') {
+      return 'Die Ergebnistabelle kann hier nicht angezeigt werden, da der Warenkorb in der Shop-Ansicht separat verwaltet wird.';
+    }
+    return '';
+  }
+
+  setResultTableAvailable(result, taskId = this.currentId) {
+    this.resultTableMessage = this.getResultTableUnavailableMessage(taskId);
+    this.lastExecutableResult = this.resultTableMessage ? [] : (Array.isArray(result) ? result : []);
     if (this.resultTableBtn) {
       this.resultTableBtn.disabled = false;
       this.resultTableBtn.setAttribute('aria-disabled', 'false');
@@ -2609,6 +2622,10 @@ async updateSqliShopState() {
 
   renderResultTable() {
     if (!this.resultTableContentEl) return;
+    if (this.resultTableMessage) {
+      this.resultTableContentEl.innerHTML = `<div class="task3-resultEmpty">${this.escapeHtml(this.resultTableMessage)}</div>`;
+      return;
+    }
     const resultSets = Array.isArray(this.lastExecutableResult) ? this.lastExecutableResult : [];
     if (!resultSets.length) {
       this.resultTableContentEl.innerHTML = '<div class="task3-resultEmpty">Die Abfrage wurde ausgeführt, liefert aber keine Ergebnistabelle.</div>';
@@ -2739,7 +2756,7 @@ async updateSqliShopState() {
       errorType = "syntax";
       return;
     }
-    this.setResultTableAvailable(studentRes);
+    this.setResultTableAvailable(studentRes, taskId);
     if (resultTableWasVisible && this.resultTableCardEl) {
       this.resultTableCardEl.style.display = '';
       this.resultTableCardEl.setAttribute('aria-hidden', 'false');
