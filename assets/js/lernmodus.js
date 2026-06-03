@@ -2079,6 +2079,18 @@ if (this.schemaTableTitleEl) this.schemaTableTitleEl.textContent = table;
     this.setHeaderCollapsed(saved, { persist: false });
   }
 
+getEmptyStateMessage() {
+    const base = 'Keine Aufgabe ausgewählt. Klicke im Shop auf einen gesperrten Button.';
+    const taskIds = Object.keys(this.TASKS || {});
+    const allShopTasksDone = taskIds.length > 0 && taskIds.every((id) => !!this.unlocked?.[id]);
+
+    if (allShopTasksDone) {
+      return 'Der Shop ist fertig implementiert. Danke für deine Hilfe.';
+    }
+
+    return this.unlocked?.all ? base : `${base} Beginne mit dem Button "Alle Produkte".`;
+  }
+
 setEmptyState(isEmpty) {
     // Hints ausblenden, wenn Nutzer aktiv wechselt
     this.hideHint();
@@ -2087,6 +2099,7 @@ setEmptyState(isEmpty) {
     this.showTaskShell();
 
     if (isEmpty) {
+      this.emptyEl.textContent = this.getEmptyStateMessage();
       this.emptyEl.style.display = 'block';
       this.taskViewEl.style.display = 'none';
       this.bonusViewEl.style.display = 'none';
