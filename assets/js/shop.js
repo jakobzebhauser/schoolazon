@@ -1,10 +1,10 @@
 /************************************************************
- * Schulazon Shop � stabile Basis (ohne Sperren/Rechtsklick)
+ * Schulazon Shop - stabile Basis (ohne Sperren/Rechtsklick)
  * DB-Schema:
  * produkte(id, name, preis, kategorie_id, lagerbestand, liefertage)
  * kategorien(id, name)
  * bewertungen(id, produkt_id, sterne)
- * verk�ufe(id, produkt_id, anzahl)
+ * verkäufe(id, produkt_id, anzahl)
  * warenkorb(produkt_id, menge)
  ************************************************************/
 
@@ -47,10 +47,10 @@ const TASKS = {
     difficulty: 1,
     difficultyMax: 3,
     goal: "Zeige nur Produkte, die morgen geliefert werden (liefertage = 1).",
-    tip: "Tipp: Die relevante Spalte hei�t `liefertage` in der Tabelle `produkte`.",
+    tip: "Tipp: Die relevante Spalte heißt `liefertage` in der Tabelle `produkte`.",
     starterSql: `SELECT * FROM produkte WHERE liefertage = 1;`,
 
-    // ? Validation: Ergebnis muss (ID-Menge) exakt matchen
+    // Validation: Ergebnis muss (ID-Menge) exakt matchen
     validate: (studentRes, db) => {
       const idsStudent = extractIdsFromResult(studentRes);
       const ref = db.exec(`SELECT id FROM produkte WHERE liefertage = 1;`);
@@ -67,7 +67,7 @@ const TASKS = {
   }
 };
 
-// Locks: Startzustand (sp�ter per localStorage speicherbar)
+// Locks: Startzustand (später per localStorage speicherbar)
 const LOCKS = {
   express: false
 };
@@ -102,7 +102,7 @@ async function init() {
 
     // rechter Bereich: Name beibehalten (nur Anzeige)
     const nameEl = els.studentName();
-    if (nameEl) nameEl.textContent = "Anna M�ller";
+    if (nameEl) nameEl.textContent = "Anna Müller";
 
     bindUI();
     await render();
@@ -111,7 +111,7 @@ async function init() {
 
   } catch (err) {
     const c = els.products();
-    if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">? ${escapeHtml(err.message)}</p>`;
+    if (c) c.innerHTML = `<p style="padding:20px;color:#b12704;font-weight:600">Fehler: ${escapeHtml(err.message)}</p>`;
     console.error(err);
   }
 }
@@ -202,7 +202,7 @@ function bindUI() {
   const _btnTotal = document.getElementById("btnTotal");
   if (_btnTotal && !_btnTotal.dataset.task) _btnTotal.dataset.task = "cart-total";
 
-  // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten �ber data-task
+  // Alle Buttons (Shop + Filter + Sort-Optionen) arbeiten über data-task
   document.querySelectorAll("[data-task]").forEach(el => {
     const id = el.dataset.task;
     el.addEventListener("click", (e) => {
@@ -372,7 +372,7 @@ async function onAction(actionId) {
     resetFilters();
     clearAllActiveButtons()
     state.showProducts = true;
-    state.expressDelivery = true; // ? RICHTIG
+    state.expressDelivery = true; // Richtig
     setActiveButton("shop", "express");
     break;
 
@@ -396,13 +396,13 @@ async function onAction(actionId) {
     /* ===== SORT ===== */
     case "priceAsc":
       state.sort = "priceAsc";
-      setSortLabel("Preis ?");
+      setSortLabel("Preis \u2191");
       closeSort();
       break;
 
     case "priceDesc":
       state.sort = "priceDesc";
-      setSortLabel("Preis ?");
+      setSortLabel("Preis \u2193");
       closeSort();
       break;
 
@@ -497,7 +497,7 @@ function setSortLabel(text) {
   const selected = els.sortSelected();
   if (!selected) return;
   // Text + Pfeil beibehalten
-  selected.innerHTML = `? Sortieren: ${escapeHtml(text)} <span class="sort-arrow">?</span>`;
+  selected.innerHTML = `\u21c5 Sortieren: ${escapeHtml(text)} <span class="sort-arrow">\u25be</span>`;
 }
 
 // ---------- Query Builder (JOINs nach Schema) ----------
@@ -511,12 +511,20 @@ function buildQuery() {
       k.name AS kategorie_name,
       p.lagerbestand,
       p.liefertage,
-      COALESCE(ROUND(AVG(b.sterne), 1), 0) AS bewertung_avg,
-      COALESCE(SUM(v.anzahl), 0) AS verkauft
+      COALESCE(r.bewertung_avg, 0) AS bewertung_avg,
+      COALESCE(s.verkauft, 0) AS verkauft
     FROM produkte p
     LEFT JOIN kategorien k ON k.id = p.kategorie_id
-    LEFT JOIN bewertungen b ON b.produkt_id = p.id
-    LEFT JOIN verk�ufe v ON v.produkt_id = p.id
+    LEFT JOIN (
+      SELECT produkt_id, ROUND(AVG(sterne), 1) AS bewertung_avg
+      FROM bewertungen
+      GROUP BY produkt_id
+    ) r ON r.produkt_id = p.id
+    LEFT JOIN (
+      SELECT produkt_id, SUM(anzahl) AS verkauft
+      FROM "verk\u00e4ufe"
+      GROUP BY produkt_id
+    ) s ON s.produkt_id = p.id
   `.trim();
 
   const where = [];
@@ -531,23 +539,12 @@ function buildQuery() {
   if (state.priceMax != null) where.push(`p.preis <= ${Number(state.priceMax)}`);
   if (state.availableOnly) where.push(`p.lagerbestand BETWEEN 1 AND 5`);
   if (state.expressDelivery) where.push(`p.liefertage = 1`);
+  if (state.exactRating != null) where.push(`COALESCE(r.bewertung_avg, 0) = ${Number(state.exactRating)}`);
+  if (state.minRating != null) where.push(`COALESCE(r.bewertung_avg, 0) >= ${Number(state.minRating)}`);
+  if (state.bestsellerOnly) where.push(`COALESCE(s.verkauft, 0) >= 300`);
 
   if (where.length) {
     sql += ` WHERE ${where.join(" AND ")}`;
-  }
-
-  sql += ` GROUP BY p.id`;
-
-  const having = [];
-
-  if (state.exactRating != null) having.push(`AVG(b.sterne) = ${Number(state.exactRating)}`);
-  if (state.minRating != null) having.push(`AVG(b.sterne) >= ${Number(state.minRating)}`);
-  if (state.bestsellerOnly) {
-    having.push(`SUM(v.anzahl) >= 300`);
-  }
-
-  if (having.length) {
-    sql += ` HAVING ${having.join(" AND ")}`;
   }
 
   /* ---------- SORTIERUNG ---------- */
@@ -562,7 +559,6 @@ function buildQuery() {
 
   return sql + ";";
 }
-
 
 // ---------- Render ----------
 async function render() {
@@ -584,7 +580,7 @@ async function render() {
     return;
   }
 
-  container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte�</p>`;
+  container.innerHTML = `<p style="padding:20px;opacity:.6">Lade Produkte...</p>`;
 
   const sql = buildQuery();
 
@@ -610,12 +606,11 @@ async function render() {
 
     const rating = Number(p.bewertung_avg || 0);
     const starsFull = Math.round(rating); // simple rendering
-    const stars = "?".repeat(Math.max(0, Math.min(5, starsFull))) + "?".repeat(Math.max(0, 5 - Math.min(5, starsFull)));
+    const stars = "\u2605".repeat(Math.max(0, Math.min(5, starsFull))) + "\u2606".repeat(Math.max(0, 5 - Math.min(5, starsFull)));
 
     const isFast = Number(p.liefertage) === 1;
-    const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei w�hlbar
+    const isBestseller = Number(p.verkauft) >= 300; // Schwelle frei wählbar
     const isLowStock = Number(p.lagerbestand) > 0 && Number(p.lagerbestand) <= 5;
-
    container.insertAdjacentHTML("beforeend", `
       <div class="product" data-product-id="${p.id}">
         
@@ -643,15 +638,15 @@ async function render() {
 
         <div class="rating" title="${rating.toFixed(1)} / 5">${stars}</div>
 
-        <div class="price">${Number(p.preis).toFixed(2)} �</div>
+        <div class="price">${Number(p.preis).toFixed(2)} €</div>
 
         <div class="delivery ${isFast ? "fast" : ""}">
           Lieferung in ${Number(p.liefertage)} Tagen
         </div>
 
         <div class="meta">
-          <span class="meta-chip">${escapeHtml(String(p.kategorie_name || "�"))}</span>
-          <span class="meta-chip">${Number(p.lagerbestand) > 0 ? "Auf Lager" : "Nicht verf�gbar"}</span>
+          <span class="meta-chip">${escapeHtml(String(p.kategorie_name || "-"))}</span>
+          <span class="meta-chip">${Number(p.lagerbestand) > 0 ? "Auf Lager" : "Nicht verfügbar"}</span>
         </div>
       </div>
     `);
@@ -695,7 +690,7 @@ function openSqlLab(task) {
 
   renderDifficulty(task.difficulty, task.difficultyMax);
 
-  labEls.title().textContent = `?? ${task.title}`;
+  labEls.title().textContent = `SQL-Aufgabe: ${task.title}`;
   labEls.goal().textContent = `Ziel: ${task.goal}`;
 
   labEls.tipBox().textContent = task.tip || "";
@@ -969,7 +964,7 @@ cartContent?.addEventListener("click", (e) => {
     cartContent.innerHTML = `<p class="cart-hint">Warenkorb ist leer.</p>`;
   }
 
-  toast("??? Entfernt");
+  toast("Entfernt");
 });
 
 
@@ -1023,10 +1018,10 @@ function showCart() {
 
   cartContent.innerHTML = rows.map(r => `
     <div class="cart-row" data-cart-product="${r[0]}">
-      <strong>${escapeHtml(r[1])}<div class="muted">${Number(r[2]).toFixed(2)} �</div></strong>
-      <span>� ${r[3]}</span>
-      <span><strong>${Number(r[4]).toFixed(2)} �</strong></span>
-      <button class="cart-remove" data-remove-cart="${r[0]}" title="Entfernen">?</button>
+      <strong>${escapeHtml(r[1])}<div class="muted">${Number(r[2]).toFixed(2)} €</div></strong>
+      <span>× ${r[3]}</span>
+      <span><strong>${Number(r[4]).toFixed(2)} €</strong></span>
+      <button class="cart-remove" data-remove-cart="${r[0]}" title="Entfernen">\u00d7</button>
     </div>
   `).join("");
 
@@ -1045,7 +1040,7 @@ function showTotal() {
   const res = db.exec(sql);
   const total = (res[0]?.values?.[0]?.[0] ?? 0);
 
-  cartTotal.textContent = `Gesamtpreis: ${Number(total).toFixed(2)} �`;
+  cartTotal.textContent = `Gesamtpreis: ${Number(total).toFixed(2)} €`;
 }
 
 
@@ -1067,7 +1062,7 @@ try {
   sqliSecureBinding = JSON.parse(localStorage.getItem("schulazon_sqli_secure_binding_v1") || "null");
 } catch (_) {}
 
-// Trigger: Klick auf "Hallo, Anna � Konto & Listen"
+// Trigger: Klick auf "Hallo, Anna - Konto & Listen"
 const accountTrigger = Array.from(document.querySelectorAll(".profile"))
   .find(p => p.textContent.includes("Konto"));
 
@@ -1217,7 +1212,7 @@ function showOrders(){
 
   if (ordersOpen) {
     target.innerHTML = "";
-    btn.textContent = "?? Meine Bestellungen anzeigen";
+    btn.textContent = "\ud83d\udce6 Meine Bestellungen anzeigen";
     ordersOpen = false;
     return;
   }
@@ -1227,7 +1222,7 @@ function showOrders(){
       p.name,
       v.anzahl,
       ROUND(p.preis * v.anzahl, 2) AS summe
-    FROM verk�ufe v
+    FROM "verk\u00e4ufe" v
     JOIN produkte p ON p.id = v.produkt_id
     WHERE v.nutzer_id = ${MEINE_ID}
     ORDER BY v.id DESC
@@ -1243,14 +1238,14 @@ function showOrders(){
       <div class="account-row">
         <div>
           <strong>${escapeHtml(r[0])}</strong>
-          <div class="muted">${r[1]}�</div>
+          <div class="muted">${r[1]}×</div>
         </div>
-        <div><strong>${Number(r[2]).toFixed(2)} �</strong></div>
+        <div><strong>${Number(r[2]).toFixed(2)} €</strong></div>
       </div>
     `).join("");
   }
 
-  btn.textContent = "?? Meine Bestellungen einklappen";
+  btn.textContent = "\ud83d\udce6 Meine Bestellungen einklappen";
   ordersOpen = true;
 }
 
@@ -1264,7 +1259,7 @@ function showTopProducts(){
 
   if (topProductsOpen) {
     target.innerHTML = "";
-    btn.textContent = "? Meine Top-Produkte anzeigen";
+    btn.textContent = "\u2605 Meine Top-Produkte anzeigen";
     topProductsOpen = false;
     return;
   }
@@ -1273,7 +1268,7 @@ function showTopProducts(){
     SELECT
       p.name,
       SUM(v.anzahl) AS gesamt
-    FROM verk�ufe v
+    FROM "verk\u00e4ufe" v
     JOIN produkte p ON p.id = v.produkt_id
     GROUP BY p.id
     ORDER BY gesamt DESC
@@ -1289,13 +1284,13 @@ function showTopProducts(){
       <div class="account-row">
         <div>
           <strong>${escapeHtml(r[0])}</strong>
-          <div class="muted">${r[1]}� gekauft</div>
+          <div class="muted">${r[1]}× gekauft</div>
         </div>
       </div>
     `).join("");
   }
 
-  btn.textContent = "? Meine Top-Produkte einklappen";
+  btn.textContent = "\u2605 Meine Top-Produkte einklappen";
   topProductsOpen = true;
 }
 
@@ -1304,7 +1299,7 @@ function showTopProducts(){
 
 
 function openAccount() {
-  closeCart(); // ?? wichtig: nie beide Panels gleichzeitig
+  closeCart(); // Wichtig: nie beide Panels gleichzeitig.
   accountPanel.classList.add("open");
   accountOverlay.classList.add("open");
 }
@@ -1462,7 +1457,7 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
       return;
     }
 
-// b) Shop-Aktion ausl�sen (wie Klick)
+// b) Shop-Aktion auslösen (wie Klick)
     if (msg.type === "RUN_ACTION") {
       const { actionId } = msg;
       if (typeof onAction === "function") onAction(actionId);
@@ -1480,7 +1475,7 @@ document.getElementById("accountPanel")?.addEventListener("click", (e) => {
     } catch (_) {}
   }
 
-  // Hook: onAction wrapper (�ndert Logik nicht)
+  // Hook: onAction wrapper (ändert Logik nicht)
   const _onAction = (typeof onAction === "function") ? onAction : null;
   if (_onAction) {
     onAction = async function(actionId) {

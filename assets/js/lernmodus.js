@@ -2276,16 +2276,26 @@ password = geheim</pre>
 
   extractPreparedSqlFromCode(code) {
     const text = String(code || '');
-    const sqlVar = text.match(/\b(?:const|let|var)\s+sql\s*=\s*([\s\S]*?);/i);
-    if (sqlVar) {
-      const pieces = this.collectSqliStringLiterals(sqlVar[1]);
-      if (pieces && pieces.length) return pieces.join('');
+    const stringVars = new Map();
+    const varRe = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([\s\S]*?);/g;
+    let varMatch;
+    while ((varMatch = varRe.exec(text)) !== null) {
+      const pieces = this.collectSqliStringLiterals(varMatch[2]);
+      if (pieces && pieces.length) stringVars.set(varMatch[1], pieces.join(''));
     }
+
+    if (stringVars.has('sql')) return stringVars.get('sql');
+
     const directPrepare = text.match(/\bdb\s*\.\s*prepare\s*\(\s*([\s\S]*?)\s*\)/i);
     if (directPrepare) {
-      const pieces = this.collectSqliStringLiterals(directPrepare[1]);
+      const argument = directPrepare[1].trim();
+      const pieces = this.collectSqliStringLiterals(argument);
       if (pieces && pieces.length) return pieces.join('');
+      if (/^[A-Za-z_$][\w$]*$/.test(argument) && stringVars.has(argument)) {
+        return stringVars.get(argument);
+      }
     }
+
     return '';
   }
 
@@ -2327,6 +2337,14 @@ password = geheim</pre>
     }
 
     const validLoginWorks = this.runPreparedLoginCheck(sql, 'anna', 'geheim', binding);
+    const invalidCredentialsFail = [
+      ['anna', 'falsch'],
+      ['niemand', 'geheim'],
+      ['%', '%'],
+      ['anna', '%'],
+      ['%', 'geheim'],
+      ['_', '_']
+    ].every(([username, password]) => !this.runPreparedLoginCheck(sql, username, password, binding));
     const injectionPayloads = [
       "' OR '1'='1' --",
       "' OR 1=1 --",
@@ -2337,6 +2355,9 @@ password = geheim</pre>
     const passInjectionFails = injectionPayloads.every((payload) => !this.runPreparedLoginCheck(sql, 'anna', payload, binding));
     if (!validLoginWorks) {
       return { ok: false, message: 'Test fehlgeschlagen: Benutzername anna und Passwort geheim müssen weiterhin funktionieren.' };
+    }
+    if (!invalidCredentialsFail) {
+      return { ok: false, message: 'Test fehlgeschlagen: Ungültige Zugangsdaten dürfen nicht erfolgreich sein. Prüfe, ob username und password exakt verglichen werden.' };
     }
     if (!userInjectionFails || !passInjectionFails) {
       return { ok: false, message: 'Test fehlgeschlagen: Die SQL-Injection aus Teil 1 funktioniert noch. Prüfe, ob alle Eingaben nur über bind(...) gebunden werden.' };

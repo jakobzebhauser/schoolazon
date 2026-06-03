@@ -1,9 +1,8 @@
-````markdown
 # Schulazon
 
 **Schulazon** ist ein interaktives SQL-Lernspiel für den Informatikunterricht der 10. Jahrgangsstufe.
 
-Die Lernenden bearbeiten SQL-Aufgaben in einer simulierten Onlineshop-Umgebung. Richtige Abfragen schalten Funktionen/ Buttons frei und machen sichtbar, wie SQL in einer datenbankgestützten Anwendung eingesetzt wird.
+Die Lernenden bearbeiten SQL-Aufgaben in einer simulierten Onlineshop-Umgebung. Richtige Abfragen schalten Funktionen und Buttons frei und machen sichtbar, wie SQL in einer datenbankgestützten Anwendung eingesetzt wird.
 
 ## Direkt starten
 
@@ -11,7 +10,7 @@ Die aktuelle Version ist über GitHub Pages verfügbar:
 
 ```text
 https://jakobzebhauser.github.io/schoolazon/
-````
+```
 
 Eine Installation ist nicht erforderlich. Die Anwendung läuft direkt im Browser.
 
@@ -21,22 +20,21 @@ Schulazon richtet sich an den Informatikunterricht der 10. Jahrgangsstufe.
 
 Geeignet für:
 
-* Wiederholungsstunde zu SQL
-* Übung von SQL-Abfragen
-* Einzelarbeit
-* Partnerarbeit
+- Wiederholungsstunde zu SQL
+- Übung von SQL-Abfragen
+- Einzelarbeit
+- Partnerarbeit
 
 ## Inhalte
 
-* SELECT
-* WHERE
-* Sortierung mit ORDER BY
-* Suche mit LIKE
-* Tabellenverknüpfungen
-* Aggregatfunktionen
-* Gruppierung mit GROUP BY
-* einfache Sicherheitsaspekte wie SQL-Injection
-
+- SELECT
+- WHERE
+- Sortierung mit ORDER BY
+- Suche mit LIKE
+- Tabellenverknüpfungen
+- Aggregatfunktionen
+- Gruppierung mit GROUP BY
+- einfache Sicherheitsaspekte wie SQL-Injection
 
 ## Technische Umsetzung
 
@@ -73,6 +71,3 @@ Das Projekt wurde im Rahmen einer Zulassungsarbeit am Lehrstuhl für Didaktik de
 ## Autor
 
 Jakob Zebhauser
-
-```
-```
