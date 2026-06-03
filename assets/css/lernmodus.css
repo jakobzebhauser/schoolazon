@@ -1797,6 +1797,41 @@ body.help-open{
   margin: 0 0 12px;
 }
 
+.spicker-help-detail{
+  margin: 0 0 12px;
+}
+
+.spicker-help-caption{
+  margin: 0 0 7px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(11,15,24,.56);
+}
+
+.spicker-help-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.spicker-help{
+  display:inline-flex;
+  align-items:center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(240,136,4,.26);
+  background: rgba(255,247,237,.78);
+  color: rgba(98,55,12,.96);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .spicker-tag{
   font-size: 11px;
   font-weight: 900;
@@ -1936,6 +1971,22 @@ body.help-open{
   overflow: auto;
   white-space: pre;
   box-shadow: 0 12px 26px rgba(10,15,24,.06);
+}
+
+.spicker-example-output{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(10,15,24,.10);
+  background: rgba(255,255,255,.70);
+  color: rgba(11,15,24,.74);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.spicker-example-output strong{
+  color: rgba(11,15,24,.90);
+  font-weight: 950;
 }
 
 .spicker-template-block{

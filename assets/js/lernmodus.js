@@ -153,9 +153,9 @@ const THEORY_CHAPTERS = [
     id: 'grundmuster',
     title: 'SQL-Grundmuster',
     goal: 'Ich will eine einfache Abfrage richtig aufbauen.',
-    tags: ['SELECT', 'FROM'],
+    helps: ['Grundlagen'],
     html: `<div class="spicker-recipe">
-<p><code>SELECT</code> nennt die Spalten. <code>FROM</code> nennt die Tabelle.</p>
+<p><code>SELECT</code> legt fest, welche Spalten ausgegeben werden. <code>FROM</code> legt fest, aus welcher Tabelle die Daten gelesen werden.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle;`,
@@ -165,41 +165,41 @@ FROM produkte;`
   {
     id: 'spalten-auswaehlen',
     title: 'Spalten auswählen',
-    goal: 'Ich will nicht alle Spalten sehen, sondern nur bestimmte.',
-    tags: ['SELECT'],
+    goal: 'Ich will alle oder nur bestimmte Spalten ausgeben.',
+    helps: ['Grundlagen'],
     html: `<div class="spicker-recipe">
-<p>Mehrere Spalten werden mit Komma getrennt. <code>*</code> zeigt alle Spalten. <code>AS</code> benennt eine Ergebnisspalte.</p>
+<p><code>*</code> gibt alle Spalten aus. Einzelne Spalten werden mit Komma getrennt. <code>AS</code> benennt eine Ergebnisspalte.</p>
 </div>`,
-    templateSql: `SELECT spalte1 AS neuer_name,
-       spalte2
+    templateSql: `SELECT spalte1,
+       spalte2 AS neuer_name
 FROM tabelle;`,
-    exampleSql: `SELECT name AS produktname,
-       preis,
+    exampleSql: `SELECT name,
+       preis AS euro,
        lagerbestand
 FROM produkte;`
   },
   {
     id: 'filtern',
     title: 'Zeilen filtern',
-    goal: 'Ich will nur Zeilen anzeigen, die eine Bedingung erfüllen.',
-    tags: ['WHERE', '<', '>'],
+    goal: 'Ich will nur Datensätze anzeigen, die eine Bedingung erfüllen.',
+    helps: ['Expresslieferung', 'Preisfilter', 'Lagerbestand'],
     html: `<div class="spicker-recipe">
-<p><code>WHERE</code> steht nach <code>FROM</code>. Wichtige Vergleiche: <code>=</code>, <code>&lt;&gt;</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>.</p>
+<p><code>WHERE</code> filtert Zeilen vor der Ausgabe. Häufige Vergleiche sind <code>=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code> und <code>&gt;=</code>.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
-WHERE spalte > wert;`,
-    exampleSql: `SELECT name, preis
+WHERE spalte = wert;`,
+    exampleSql: `SELECT name, liefertage
 FROM produkte
-WHERE lagerbestand > 0;`
+WHERE liefertage = 2;`
   },
   {
     id: 'bedingungen-verknuepfen',
     title: 'Bedingungen verbinden',
-    goal: 'Ich will mehrere Bedingungen gleichzeitig prüfen.',
-    tags: ['AND', 'OR'],
+    goal: 'Ich will mehrere Bedingungen in einer Abfrage prüfen.',
+    helps: ['Preis 25-50', 'Preis 50-100', 'Meine Bestellungen'],
     html: `<div class="spicker-recipe">
-<p><code>AND</code>: alles muss passen. <code>OR</code>: mindestens eine Bedingung muss passen.</p>
+<p><code>AND</code> bedeutet: alle Bedingungen müssen wahr sein. <code>OR</code> bedeutet: mindestens eine Bedingung muss wahr sein.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
@@ -207,35 +207,35 @@ WHERE bedingung1
   AND bedingung2;`,
     exampleSql: `SELECT name, preis
 FROM produkte
-WHERE lagerbestand > 0
-  AND preis <= 80;`
+WHERE preis >= 10
+  AND preis < 30;`
   },
   {
     id: 'textwerte',
     title: 'Nach Text suchen',
     goal: 'Ich will Textwerte oder Textteile finden.',
-    tags: ['Text', 'LIKE', '%'],
+    helps: ['Produkte suchen'],
     html: `<div class="spicker-recipe">
-<p>Text steht in <code>'...'</code> oder <code>"..."</code>. <code>=</code> sucht exakt, <code>LIKE</code> sucht Muster, <code>%</code> steht für beliebig viele Zeichen.</p>
+<p>Textwerte stehen in Anführungszeichen. <code>=</code> vergleicht exakt. <code>LIKE</code> sucht Muster; <code>%</code> steht für beliebig viele Zeichen.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
-WHERE textspalte LIKE '%text%';`,
+WHERE textspalte LIKE '%suchtext%';`,
     exampleSql: `SELECT name
 FROM produkte
-WHERE name LIKE '%ball%';`
+WHERE name LIKE '%USB%';`
   },
   {
     id: 'kommentare',
-    title: 'Kommentare schreiben',
-    goal: 'Ich will Text in SQL auskommentieren.',
-    tags: ['--', 'Kommentar'],
+    title: 'SQL-Kommentare',
+    goal: 'Ich will verstehen, wie Kommentare in SQL funktionieren.',
+    helps: ['Hacking'],
     html: `<div class="spicker-recipe">
-<p><code>--</code> kommentiert den Rest der Zeile aus. Das wird oft zum Erklären genutzt, kann aber bei unsicheren Logins auch missbraucht werden.</p>
+<p><code>--</code> kommentiert den Rest der Zeile aus. In normalem SQL dient das zur Erklärung; bei unsicher zusammengesetzten Abfragen kann es die Abfragelogik verändern.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
-WHERE bedingung -- Kommentar`,
+WHERE bedingung -- Kommentar bis Zeilenende`,
     exampleSql: `SELECT name
 FROM produkte
 WHERE lagerbestand > 0 -- nur verfügbare Produkte`
@@ -243,122 +243,118 @@ WHERE lagerbestand > 0 -- nur verfügbare Produkte`
   {
     id: 'sortieren',
     title: 'Sortieren',
-    goal: 'Ich will die Reihenfolge der Zeilen festlegen.',
-    tags: ['ORDER BY', 'ASC', 'DESC'],
+    goal: 'Ich will die Reihenfolge der Ergebniszeilen festlegen.',
+    helps: ['Preis sortieren', 'Beliebtheit', 'Bestellungen'],
     html: `<div class="spicker-recipe">
-<p><code>ORDER BY</code> sortiert. <code>ASC</code> ist aufsteigend, <code>DESC</code> absteigend.</p>
+<p><code>ORDER BY</code> steht nach <code>WHERE</code> und sortiert das Ergebnis. <code>ASC</code> ist aufsteigend, <code>DESC</code> absteigend.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
 ORDER BY spalte ASC;`,
     exampleSql: `SELECT name, preis
 FROM produkte
-ORDER BY name ASC;`
+ORDER BY preis DESC;`
   },
   {
     id: 'begrenzen',
     title: 'Ergebnis begrenzen',
-    goal: 'Ich will nur die ersten Zeilen anzeigen.',
-    tags: ['LIMIT'],
+    goal: 'Ich will nur die ersten Ergebniszeilen anzeigen.',
+    helps: ['Meine Bestellungen', 'Top-Produkte'],
     html: `<div class="spicker-recipe">
-<p><code>LIMIT</code> steht am Ende und begrenzt die Anzahl der Ergebniszeilen.</p>
+<p><code>LIMIT</code> steht am Ende der Abfrage. Meist wird vorher mit <code>ORDER BY</code> festgelegt, welche Zeilen zuerst kommen.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
+ORDER BY spalte DESC
 LIMIT anzahl;`,
-    exampleSql: `SELECT name
+    exampleSql: `SELECT name, preis
 FROM produkte
-ORDER BY name ASC
-LIMIT 4;`
+ORDER BY preis DESC
+LIMIT 5;`
   },
   {
     id: 'distinct',
-    title: 'Doppelte Werte vermeiden',
-    goal: 'Ich will jeden Wert nur einmal sehen.',
-    tags: ['DISTINCT'],
+    title: 'Doppelte Zeilen vermeiden',
+    goal: 'Ich will Produkte nur einmal anzeigen, obwohl mehrere passende Zeilen existieren.',
+    helps: ['Bewertungen'],
     html: `<div class="spicker-recipe">
-<p><code>DISTINCT</code> entfernt doppelte Ergebniszeilen. Es steht direkt nach <code>SELECT</code>.</p>
+<p><code>DISTINCT</code> entfernt doppelte Ergebniszeilen. Das ist wichtig, wenn ein Produkt mehrere passende Bewertungen besitzt.</p>
 </div>`,
     templateSql: `SELECT DISTINCT spalte
 FROM tabelle;`,
-    exampleSql: `SELECT DISTINCT liefertage
-FROM produkte
-ORDER BY liefertage ASC;`
+    exampleSql: `SELECT DISTINCT p.name
+FROM produkte p, bewertungen b
+WHERE p.id = b.produkt_id;`
   },
   {
     id: 'tabellen-verbinden',
     title: 'Tabellen verbinden',
-    goal: 'Ich will Informationen aus mehreren Tabellen nutzen.',
-    tags: ['WHERE', 'JOIN', 'FK'],
+    goal: 'Ich will Informationen aus mehreren Tabellen gemeinsam nutzen.',
+    helps: ['Kategorie', 'Bewertungen', 'Warenkorb', 'Bestellungen'],
     html: `<div class="spicker-recipe">
-<p><strong>PK</strong> erkennt eine Zeile eindeutig. <strong>FK</strong> verweist darauf. Verbinde FK und PK mit <code>WHERE</code> oder <code>JOIN ... ON</code>.</p>
+<p>Eine Fremdschlüsselspalte verweist auf die ID einer anderen Tabelle. Verbinde beide Spalten entweder in <code>WHERE</code> oder mit <code>JOIN ... ON</code>.</p>
 </div>`,
     templateSql: `-- WHERE-Verknüpfung
 SELECT ...
 FROM tabelle1 a, tabelle2 b
-WHERE a.fremdschluessel = b.primaerschluessel;
+WHERE a.fremdschluessel = b.id;
 
--- JOIN-Verknüpfung
+-- JOIN-Schreibweise
 SELECT ...
 FROM tabelle1 a
-JOIN tabelle2 b ON a.fremdschluessel = b.primaerschluessel;`,
-    exampleSql: `-- Variante mit WHERE-Verknüpfung
+JOIN tabelle2 b ON a.fremdschluessel = b.id;`,
+    exampleSql: `-- Gleiche Verbindung in zwei Schreibweisen
 SELECT p.name, k.name AS kategorie
 FROM produkte p, kategorien k
-WHERE p.kategorie_id = k.id
-  AND p.lagerbestand > 0;
+WHERE p.kategorie_id = k.id;
 
--- Gleiche Verbindung mit JOIN
 SELECT p.name, k.name AS kategorie
 FROM produkte p
-JOIN kategorien k ON p.kategorie_id = k.id
-WHERE p.lagerbestand > 0;`
+JOIN kategorien k ON p.kategorie_id = k.id;`
   },
   {
     id: 'rechnen',
     title: 'Mit Spalten rechnen',
-    goal: 'Ich will aus vorhandenen Werten neue Werte berechnen.',
-    tags: ['Rechnen', 'AS'],
+    goal: 'Ich will aus vorhandenen Spalten einen neuen Wert berechnen.',
+    helps: ['Warenkorb', 'Meine Bestellungen'],
     html: `<div class="spicker-recipe">
-<p>Du kannst Spalten in Rechnungen verwenden. Gib dem Ergebnis mit <code>AS</code> einen Namen.</p>
+<p>Rechnungen wie <code>preis * menge</code> können direkt in <code>SELECT</code> stehen. Mit <code>AS</code> bekommt das Ergebnis einen Spaltennamen.</p>
 </div>`,
     templateSql: `SELECT spalte1,
-       spalte1 * zahl AS neuer_wert
+       spalte1 * spalte2 AS neuer_wert
 FROM tabelle;`,
-    exampleSql: `SELECT name,
-       preis,
-       preis * 0.9 AS aktionspreis
-FROM produkte;`
+    exampleSql: `SELECT p.name,
+       p.preis,
+       p.preis * 2 AS preis_fuer_zwei
+FROM produkte p;`
   },
   {
     id: 'aggregieren',
     title: 'Kennwerte berechnen',
-    goal: 'Ich will aus vielen Zeilen einen Wert berechnen.',
-    tags: ['COUNT', 'SUM', 'AVG'],
+    goal: 'Ich will aus mehreren Zeilen einen Wert berechnen.',
+    helps: ['Beliebtheit', 'Bestseller', 'Warenkorb', 'Top-Produkte'],
     html: `<div class="spicker-recipe">
 <table class="spicker-table spicker-table-compact"><thead><tr><th>Funktion</th><th>Zweck</th></tr></thead><tbody>
 <tr><td><code>COUNT(*)</code></td><td>Zeilen zählen</td></tr>
-<tr><td><code>SUM(...)</code></td><td>Summe bilden</td></tr>
-<tr><td><code>AVG(...)</code></td><td>Durchschnitt</td></tr>
+<tr><td><code>SUM(spalte)</code></td><td>Summe bilden</td></tr>
+<tr><td><code>AVG(spalte)</code></td><td>Durchschnitt berechnen</td></tr>
 </tbody></table>
 </div>`,
-    templateSql: `SELECT COUNT(*) AS anzahl,
-       AVG(spalte) AS durchschnitt
+    templateSql: `SELECT SUM(spalte) AS summe
 FROM tabelle;`,
-    exampleSql: `SELECT COUNT(*) AS produkte,
-       AVG(preis) AS durchschnitt
+    exampleSql: `SELECT SUM(lagerbestand) AS gesamtbestand
 FROM produkte;`
   },
   {
     id: 'gruppieren',
     title: 'Gruppen bilden',
-    goal: 'Ich will pro Gruppe einen Kennwert berechnen.',
-    tags: ['GROUP BY'],
+    goal: 'Ich will pro Produkt oder pro Kategorie einen Kennwert berechnen.',
+    helps: ['Beliebtheit', 'Bestseller', 'Top-Produkte'],
     html: `<div class="spicker-recipe">
-<p><code>GROUP BY</code> fasst Zeilen mit gleichem Wert zusammen.</p>
+<p><code>GROUP BY</code> fasst Zeilen mit gleichem Wert zu Gruppen zusammen. Spalten in <code>SELECT</code> sind dann entweder Gruppenspalten oder Aggregatfunktionen.</p>
 </div>`,
     templateSql: `SELECT gruppenspalte,
-       COUNT(*) AS anzahl
+       SUM(wertspalte) AS summe
 FROM tabelle
 GROUP BY gruppenspalte;`,
     exampleSql: `SELECT produkt_id,
@@ -369,16 +365,16 @@ GROUP BY produkt_id;`
   {
     id: 'gruppen-filtern',
     title: 'Gruppen filtern',
-    goal: 'Ich will nur bestimmte Gruppen anzeigen.',
-    tags: ['HAVING'],
+    goal: 'Ich will nur Gruppen mit einem bestimmten Kennwert anzeigen.',
+    helps: ['Bestseller'],
     html: `<div class="spicker-recipe">
-<p><code>HAVING</code> filtert nach dem Gruppieren.</p>
+<p><code>WHERE</code> filtert einzelne Zeilen vor dem Gruppieren. <code>HAVING</code> filtert Gruppen nach <code>GROUP BY</code>.</p>
 </div>`,
     templateSql: `SELECT gruppenspalte,
-       COUNT(*) AS anzahl
+       SUM(wertspalte) AS summe
 FROM tabelle
 GROUP BY gruppenspalte
-HAVING COUNT(*) >= wert;`,
+HAVING SUM(wertspalte) > wert;`,
     exampleSql: `SELECT produkt_id,
        COUNT(*) AS anzahl_bewertungen
 FROM bewertungen
@@ -388,10 +384,10 @@ HAVING COUNT(*) >= 2;`
   {
     id: 'unterabfragen',
     title: 'Unterabfragen nutzen',
-    goal: 'Ich will erst eine Liste berechnen und damit weiterfiltern.',
-    tags: ['IN', 'Unterabfrage'],
+    goal: 'Ich will zuerst eine Liste berechnen und damit weiterfiltern.',
+    helps: ['Bestseller'],
     html: `<div class="spicker-recipe">
-<p>Eine Unterabfrage steht in Klammern. Mit <code>IN</code> prüfst du, ob ein Wert in dieser berechneten Liste vorkommt.</p>
+<p>Eine Unterabfrage steht in Klammern. Mit <code>IN</code> prüfst du, ob ein Wert in der Ergebnisliste der Unterabfrage vorkommt.</p>
 </div>`,
     templateSql: `SELECT spalte
 FROM tabelle
@@ -404,10 +400,28 @@ FROM kategorien
 WHERE id IN (
   SELECT kategorie_id
   FROM produkte
-  WHERE liefertage <= 2
+  WHERE lagerbestand > 0
 );`
   }
 ];
+
+const THEORY_EXAMPLE_OUTPUTS = {
+  grundmuster: 'Alle Produkte mit den Spalten name und preis.',
+  'spalten-auswaehlen': 'Alle Produkte mit name, preis als euro und lagerbestand.',
+  filtern: 'Namen und Lieferzeit aller Produkte, deren Lieferzeit genau 2 Tage beträgt.',
+  'bedingungen-verknuepfen': 'Namen und Preise aller Produkte, deren Preis mindestens 10 und kleiner als 30 ist.',
+  textwerte: 'Namen aller Produkte, deren Name den Text USB enthält.',
+  kommentare: 'Namen aller Produkte mit Lagerbestand größer als 0; der Kommentar wird nicht ausgeführt.',
+  sortieren: 'Namen und Preise aller Produkte, beginnend mit dem höchsten Preis.',
+  begrenzen: 'Namen und Preise der fünf teuersten Produkte.',
+  distinct: 'Jeden bewerteten Produktnamen nur einmal, auch wenn ein Produkt mehrere Bewertungen hat.',
+  'tabellen-verbinden': 'Zu jedem Produkt den Produktnamen und den passenden Kategorienamen; beide Schreibweisen liefern dasselbe Ergebnis.',
+  rechnen: 'Zu jedem Produkt den Namen, den Einzelpreis und den berechneten Preis für zwei Stück.',
+  aggregieren: 'Eine einzelne Zeile mit der Summe aller Lagerbestände.',
+  gruppieren: 'Pro produkt_id eine Zeile mit der Anzahl der Bewertungen.',
+  'gruppen-filtern': 'Nur Produktgruppen mit mindestens zwei Bewertungen.',
+  unterabfragen: 'Alle Kategorien, in denen es mindestens ein Produkt mit Lagerbestand größer als 0 gibt.'
+};
 
 /* ===========================
    Shell chrome helpers (Name, Fullscreen)
@@ -1638,6 +1652,12 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     this.setHeaderEditMode(!!this.currentId);
   }
 
+  renderSpickerHelps(helps) {
+    const items = Array.isArray(helps) ? helps.filter(Boolean) : [];
+    if (!items.length) return '';
+    return `<div class="spicker-help-list">${items.map((item) => `<span class="spicker-help">${this.escapeHtml(item)}</span>`).join('')}</div>`;
+  }
+
   openSpickerIndex() {
     if (!this.spickerListEl) return;
 
@@ -1645,14 +1665,13 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
       const title = this.escapeHtml(c.title);
       const id = this.escapeHtml(c.id);
       const goal = c.goal ? `<div class="spicker-item-goal">${this.escapeHtml(c.goal)}</div>` : '';
-      const tags = Array.isArray(c.tags) ? c.tags : [];
-      const tagsHtml = tags.length ? `<div class="spicker-tags">${tags.map((tag) => `<span class="spicker-tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : '';
+      const helpsHtml = this.renderSpickerHelps(c.helps);
       return `
         <button class="spicker-item" type="button" data-chapter="${id}">
           <div>
             <div class="spicker-item-title">${title}</div>
             ${goal}
-            ${tagsHtml}
+            ${helpsHtml}
           </div>
           <div class="spicker-item-meta">Öffnen</div>
         </button>
@@ -1672,10 +1691,11 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
     if (this.spickerContentEl) {
       const ex = (ch && ch.exampleSql) ? String(ch.exampleSql) : '';
       const template = (ch && ch.templateSql) ? String(ch.templateSql) : '';
-      const tags = Array.isArray(ch.tags) ? ch.tags : [];
+      const helpsHtml = this.renderSpickerHelps(ch.helps);
+      const exampleOutput = THEORY_EXAMPLE_OUTPUTS[ch.id] || '';
       const intro = `
         ${ch.goal ? `<p class="spicker-goal">${this.escapeHtml(ch.goal)}</p>` : ''}
-        ${tags.length ? `<div class="spicker-tags spicker-tags-detail">${tags.map((tag) => `<span class="spicker-tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+        ${helpsHtml ? `<div class="spicker-help-detail"><div class="spicker-help-caption">Hilft bei</div>${helpsHtml}</div>` : ''}
       `;
       const templateBlock = template ? `
         <div class="spicker-block spicker-template-block" style="margin-top:14px;">
@@ -1687,6 +1707,7 @@ this.confirmCloseBtn.addEventListener('click', () => this.closeConfirm());
         <div class="spicker-block" style="margin-top:14px;">
           <div class="spicker-block-title">Beispielabfrage aus dem Shop-Schema</div>
           <pre class="spicker-code">${this.escapeHtml(ex)}</pre>
+          ${exampleOutput ? `<div class="spicker-example-output"><strong>Gibt aus:</strong> ${this.escapeHtml(exampleOutput)}</div>` : ''}
         </div>
       ` : '';
       this.spickerContentEl.innerHTML = `${intro}${ch.html}${templateBlock}${exBlock}`;
